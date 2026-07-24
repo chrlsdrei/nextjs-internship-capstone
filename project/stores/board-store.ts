@@ -65,6 +65,6 @@ export const useBoardStore = () => {
     tasks: [],
     isLoading: false,
     loadProject: (projectId: string) => console.log(`TODO: Load project ${projectId}`),
-    createTask: (listId: string, task: any) => console.log(`TODO: Create task in list ${listId}`, task),
+    createTask: (listId: string, task: unknown) => console.log(`TODO: Create task in list ${listId}`, task),
   }
 }
