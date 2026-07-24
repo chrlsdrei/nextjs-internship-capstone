@@ -1,42 +1,153 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #46494c;
+  --card: #ffffff;
+  --card-foreground: #46494c;
+  --popover: #ffffff;
+  --popover-foreground: #46494c;
+  --primary: #1985a1;
+  --primary-foreground: #ffffff;
+  --secondary: #dcdcdd;
+  --secondary-foreground: #46494c;
+  --muted: #f1f1f1;
+  --muted-foreground: #4c5c68;
+  --accent: #c7edf6;
+  --accent-foreground: #0a3540;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #c5c3c6;
+  --input: #c5c3c6;
+  --ring: #1985a1;
+  --radius: 0.625rem;
+  --platinum: #dcdcdd;
+  --french-gray: #c5c3c6;
+  --outer-space: #46494c;
+  --paynes-gray: #4c5c68;
+  --blue-munsell: #1985a1;
+}
+
+.dark {
+  --background: #2b2c2e;
+  --foreground: #f1f1f1;
+  --card: #46494c;
+  --card-foreground: #f1f1f1;
+  --popover: #46494c;
+  --popover-foreground: #f1f1f1;
+  --primary: #22b3d7;
+  --primary-foreground: #0e0f0f;
+  --secondary: #4c5c68;
+  --secondary-foreground: #f1f1f1;
+  --muted: #3c4953;
+  --muted-foreground: #c5c3c6;
+  --accent: #0a3540;
+  --accent-foreground: #c7edf6;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #677d8e;
+  --input: #677d8e;
+  --ring: #22b3d7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-platinum-50: #f8f8f8;
+  --color-platinum-100: #f1f1f1;
+  --color-platinum-200: #e9e9ea;
+  --color-platinum-300: #e2e2e3;
+  --color-platinum-400: #afafb0;
+  --color-platinum-500: #dcdcdd;
+  --color-platinum-600: #828285;
+  --color-platinum-700: #575759;
+  --color-platinum-800: #2b2b2c;
+  --color-platinum-900: #f8f8f8;
+
+  --color-french-gray-50: #f3f3f4;
+  --color-french-gray-100: #e8e7e8;
+  --color-french-gray-200: #dcdbdd;
+  --color-french-gray-300: #d1cfd1;
+  --color-french-gray-400: #9e9aa0;
+  --color-french-gray-500: #c5c3c6;
+  --color-french-gray-600: #777279;
+  --color-french-gray-700: #4f4c51;
+  --color-french-gray-800: #282628;
+  --color-french-gray-900: #f3f3f4;
+
+  --color-outer-space-50: #d9dbdc;
+  --color-outer-space-100: #b4b7b9;
+  --color-outer-space-200: #8e9297;
+  --color-outer-space-300: #6a6e73;
+  --color-outer-space-400: #393b3e;
+  --color-outer-space-500: #46494c;
+  --color-outer-space-600: #2b2c2e;
+  --color-outer-space-700: #1c1e1f;
+  --color-outer-space-800: #0e0f0f;
+  --color-outer-space-900: #d9dbdc;
+
+  --color-paynes-gray-50: #d9dfe3;
+  --color-paynes-gray-100: #b2bec7;
+  --color-paynes-gray-200: #8c9eab;
+  --color-paynes-gray-300: #677d8e;
+  --color-paynes-gray-400: #3c4953;
+  --color-paynes-gray-500: #4c5c68;
+  --color-paynes-gray-600: #2d373e;
+  --color-paynes-gray-700: #1e2429;
+  --color-paynes-gray-800: #0f1215;
+  --color-paynes-gray-900: #d9dfe3;
+
+  --color-blue-munsell-50: #c7edf6;
+  --color-blue-munsell-100: #8edaed;
+  --color-blue-munsell-200: #56c8e5;
+  --color-blue-munsell-300: #22b3d7;
+  --color-blue-munsell-400: #146a7f;
+  --color-blue-munsell-500: #1985a1;
+  --color-blue-munsell-600: #0f4f5f;
+  --color-blue-munsell-700: #0a3540;
+  --color-blue-munsell-800: #051a20;
+  --color-blue-munsell-900: #c7edf6;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
 
 @layer base {
-  :root {
-    /* Custom color palette variables */
-    --platinum: #dcdcdd;
-    --french-gray: #c5c3c6;
-    --outer-space: #46494c;
-    --paynes-gray: #4c5c68;
-    --blue-munsell: #1985a1;
+  * {
+    @apply border-border outline-ring/50;
   }
 
-  .dark {
-    /* Dark theme color adjustments */
+  body {
+    @apply bg-background text-foreground;
   }
 }
 
-@layer utilities {
-  .line-clamp-2 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .line-clamp-3 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-  }
-}
-
-/* Custom scrollbar styles */
 .scrollbar-thin {
-  scrollbar-width: thin;
   scrollbar-color: var(--french-gray) transparent;
+  scrollbar-width: thin;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
