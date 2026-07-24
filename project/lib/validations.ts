@@ -1,41 +1,79 @@
-// TODO: Task 3.6 - Set up data validation with Zod schemas
+import { z } from "zod"
 
-/*
-TODO: Implementation Notes for Interns:
+const trimmedText = (field: string, maximum: number) =>
+  z.string().trim().min(1, `${field} is required`).max(maximum, `${field} must be ${maximum} characters or fewer`)
 
-1. Install Zod: pnpm add zod
-2. Create validation schemas for all forms and API endpoints
-3. Add proper error messages
-4. Set up client and server-side validation
+const optionalDate = z.preprocess(
+  (value) => (value === "" || value === null ? undefined : value),
+  z.coerce.date().optional(),
+)
 
-Example schemas needed:
-- Project creation/update
-- Task creation/update
-- User profile update
-- List/column management
-- Comment creation
-
-Example structure:
-import { z } from 'zod'
+const optionalNullableDate = z.preprocess(
+  (value) => (value === "" ? null : value),
+  z.coerce.date().nullable().optional(),
+)
 
 export const projectSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
-  description: z.string().max(500, 'Description too long').optional(),
-  dueDate: z.date().min(new Date(), 'Due date must be in future').optional(),
+  name: trimmedText("Project name", 100),
+  description: z.string().trim().max(500, "Description must be 500 characters or fewer").nullable().optional(),
+  dueDate: optionalDate,
 })
+
+export const updateProjectSchema = projectSchema
+  .omit({ dueDate: true })
+  .partial()
+  .extend({ dueDate: optionalNullableDate })
+
+export const listSchema = z.object({
+  name: trimmedText("List name", 100),
+  projectId: z.uuid("Project ID must be a valid UUID"),
+  position: z.int().min(0, "Position cannot be negative").default(0),
+})
+
+export const updateListSchema = listSchema.omit({ projectId: true }).partial()
 
 export const taskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
-  description: z.string().max(1000, 'Description too long').optional(),
-  priority: z.enum(['low', 'medium', 'high']),
-  dueDate: z.date().optional(),
-  assigneeId: z.string().uuid().optional(),
+  title: trimmedText("Task title", 200),
+  description: z.string().trim().max(1000, "Description must be 1000 characters or fewer").nullable().optional(),
+  listId: z.uuid("List ID must be a valid UUID"),
+  assigneeId: z.uuid("Assignee ID must be a valid UUID").nullable().optional(),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  dueDate: optionalDate,
+  position: z.int().min(0, "Position cannot be negative").default(0),
 })
-*/
 
-// Placeholder exports to prevent import errors
-export const projectSchema = "TODO: Implement project validation schema"
-export const taskSchema = "TODO: Implement task validation schema"
-export const userSchema = "TODO: Implement user validation schema"
-export const listSchema = "TODO: Implement list validation schema"
-export const commentSchema = "TODO: Implement comment validation schema"
+export const updateTaskSchema = taskSchema
+  .omit({ listId: true, dueDate: true })
+  .partial()
+  .extend({
+    listId: z.uuid("List ID must be a valid UUID").optional(),
+    dueDate: optionalNullableDate,
+  })
+
+export const commentSchema = z.object({
+  content: trimmedText("Comment", 2000),
+  taskId: z.uuid("Task ID must be a valid UUID"),
+  authorId: z.uuid("Author ID must be a valid UUID"),
+})
+
+export const updateCommentSchema = commentSchema.pick({ content: true })
+
+export const userProfileSchema = z.object({
+  email: z.email("Enter a valid email address"),
+  name: trimmedText("Name", 100),
+})
+
+export const userSyncSchema = userProfileSchema.extend({
+  clerkId: z.string().trim().min(1, "Clerk user ID is required"),
+})
+
+export type CreateProjectInput = z.infer<typeof projectSchema>
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>
+export type CreateListInput = z.infer<typeof listSchema>
+export type UpdateListInput = z.infer<typeof updateListSchema>
+export type CreateTaskInput = z.infer<typeof taskSchema>
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>
+export type CreateCommentInput = z.infer<typeof commentSchema>
+export type UpdateCommentInput = z.infer<typeof updateCommentSchema>
+export type UserProfileInput = z.infer<typeof userProfileSchema>
+export type UserSyncInput = z.infer<typeof userSyncSchema>
