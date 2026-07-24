@@ -1,4 +1,4 @@
-import { Kanban, Users, Calendar, BarChart3, Shield, Zap } from "lucide-react"
+import { BarChart3, Calendar, Kanban, Shield, Users, Zap } from "lucide-react"
 
 const features = [
   {
@@ -38,27 +38,27 @@ export function Features() {
     <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-outer_space-500 dark:text-platinum-500 mb-4">
+          <h2 className="text-4xl font-bold text-outer-space-500 dark:text-platinum-500 mb-4">
             Everything You Need to Succeed
           </h2>
-          <p className="text-xl text-payne's_gray-500 dark:text-french_gray-500 max-w-2xl mx-auto">
+          <p className="text-xl text-paynes-gray-500 dark:text-french-gray-500 max-w-2xl mx-auto">
             Powerful features designed to help teams collaborate effectively and deliver projects on time.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <div
-              key={index}
-              className="p-6 bg-white dark:bg-outer_space-400 rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-french_gray-300 dark:border-payne's_gray-400"
+              key={feature.title}
+              className="p-6 bg-white dark:bg-outer-space-400 rounded-xl shadow-lg hover:shadow-xl transition-shadow border border-french-gray-300 dark:border-paynes-gray-400"
             >
-              <div className="w-12 h-12 bg-blue_munsell-100 dark:bg-blue_munsell-900 rounded-lg flex items-center justify-center mb-4">
-                <feature.icon className="text-blue_munsell-500" size={24} />
+              <div className="w-12 h-12 bg-blue-munsell-100 dark:bg-blue-munsell-900 rounded-lg flex items-center justify-center mb-4">
+                <feature.icon className="text-blue-munsell-500" size={24} />
               </div>
-              <h3 className="text-xl font-semibold text-outer_space-500 dark:text-platinum-500 mb-2">
+              <h3 className="text-xl font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">
                 {feature.title}
               </h3>
-              <p className="text-payne's_gray-500 dark:text-french_gray-500">{feature.description}</p>
+              <p className="text-paynes-gray-500 dark:text-french-gray-500">{feature.description}</p>
             </div>
           ))}
         </div>
