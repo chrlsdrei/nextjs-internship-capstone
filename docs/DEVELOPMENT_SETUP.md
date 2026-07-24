@@ -2,18 +2,17 @@
 
 ## Prerequisites
 
-- **Node.js**: Version 18+ LTS
+- **Node.js**: Version 22 LTS
 - **pnpm**: Latest version (`npm install -g pnpm`)
 - **Git**: Latest version
 - **VS Code**: Recommended IDE
-- **PostgreSQL**: Database (we'll set up cloud version)
+- **Neon PostgreSQL**: Cloud database
 
 ## Required VS Code Extensions
 
 Install these extensions for the best development experience:
 
-- **ESLint** (`ms-vscode.vscode-eslint`)
-- **Prettier** (`esbenp.prettier-vscode`)
+- **Biome** (`biomejs.biome`)
 - **Tailwind CSS IntelliSense** (`bradlc.vscode-tailwindcss`)
 - **TypeScript Importer** (`pmneo.tsimporter`)
 - **Auto Rename Tag** (`formulahendry.auto-rename-tag`)
@@ -140,8 +139,11 @@ Use conventional commits:
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint
-- `pnpm lint:fix` - Fix ESLint issues automatically
+- `pnpm check` - Run Biome formatting, linting, and import checks
+- `pnpm check:write` - Apply Biome formatting and safe lint fixes
+- `pnpm lint` - Run Biome linting
+- `pnpm format` - Format files with Biome
+- `pnpm format:check` - Check formatting with Biome
 - `pnpm type-check` - Run TypeScript type checking
 - `pnpm test` - Run unit tests
 - `pnpm test:watch` - Run tests in watch mode

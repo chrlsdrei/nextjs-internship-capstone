@@ -11,9 +11,9 @@ While each intern works on their own fork independently, code reviews remain val
 Since you own your entire codebase, self-review becomes crucial:
 
 #### Self-Review Checklist
-- [ ] Code follows TypeScript and ESLint rules
+- [ ] Code follows TypeScript and Biome rules
 - [ ] All tests pass locally (`pnpm test`)
-- [ ] Code is properly formatted (`pnpm lint:fix`)
+- [ ] Code is properly formatted (`pnpm format:check`)
 - [ ] No console.log statements or debugging code
 - [ ] Meaningful commit messages following convention
 - [ ] Feature works as expected in browser
@@ -302,8 +302,8 @@ function updateTask(id: string, data: UpdateTaskData): Promise<Task> {
 #### Automated Checks
 - **CI/CD Pipeline**: All tests must pass before merge
 - **Type checking**: TypeScript compilation must succeed
-- **Linting**: ESLint rules must pass
-- **Format checking**: Prettier formatting must be correct
+- **Linting**: Biome rules must pass
+- **Format checking**: `pnpm format:check` must pass
 
 ### 6. Conflict Resolution
 
