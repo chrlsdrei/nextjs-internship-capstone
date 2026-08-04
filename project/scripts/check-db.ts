@@ -3,7 +3,7 @@ import { config } from "dotenv"
 
 config({ path: ".env.local" })
 
-const expectedTables = ["comments", "lists", "projects", "tasks", "users"]
+const expectedTables = ["comments", "lists", "project_members", "projects", "tasks", "users"]
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL
@@ -18,7 +18,7 @@ async function main() {
     select table_name
     from information_schema.tables
     where table_schema = 'public'
-      and table_name in ('comments', 'lists', 'projects', 'tasks', 'users')
+      and table_name in ('comments', 'lists', 'project_members', 'projects', 'tasks', 'users')
     order by table_name
   `
   const actualTables = rows.map((row) => String(row.table_name))
