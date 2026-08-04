@@ -29,7 +29,13 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "correctness": {
+        "noPrivateImports": "error"
+      },
+      "suspicious": {
+        "noImportCycles": "error"
+      }
     }
   },
   "assist": {
@@ -39,5 +45,87 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["components/**/*.tsx", "features/**/components/**/*.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/features/**/actions/**", "@/features/**/server/**", "@/server/**"],
+                    "message": "Presentational components must receive data and callbacks through props."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["features/**/controllers/**/*.tsx", "features/**/controllers/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/features/**/server/**", "@/server/**"],
+                    "message": "Client controllers may call actions but cannot import server infrastructure."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["features/**/actions/**/*.ts", "app/api/**/route.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/features/**/server/*.repository", "@/server/**"],
+                    "message": "Transport adapters must call services instead of repositories or database infrastructure."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["features/**/server/*.service.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/server/**"],
+                    "message": "Business services must use repositories instead of database infrastructure."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
