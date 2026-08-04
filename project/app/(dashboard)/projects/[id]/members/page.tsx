@@ -2,10 +2,10 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
-import { ProjectMemberManager } from "@/components/project-member-manager"
-import { getProjectManagementData } from "@/lib/db/queries/projects"
-import { ProjectAccessError } from "@/lib/project-access"
-import { projectIdSchema } from "@/lib/validations"
+import { ProjectMemberManagerController } from "@/features/members/controllers/project-member-manager.controller"
+import { getProjectManagementData } from "@/features/members/server/member.service"
+import { projectIdSchema } from "@/features/projects/project.schema"
+import { ProjectAccessError } from "@/features/projects/server/project-access.service"
 
 export default async function ProjectMembersPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,7 +29,7 @@ export default async function ProjectMembersPage({ params }: { params: Promise<{
             <p className="mt-1 text-paynes-gray-500 dark:text-french-gray-500">Project settings and team membership.</p>
           </div>
         </div>
-        <ProjectMemberManager project={project} members={members} role={role} />
+        <ProjectMemberManagerController project={project} members={members} role={role} />
       </div>
     )
   } catch (error) {

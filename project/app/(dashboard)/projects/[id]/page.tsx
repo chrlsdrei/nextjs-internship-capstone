@@ -2,11 +2,11 @@ import { ArrowLeft, Settings } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
-import { KanbanBoard } from "@/components/kanban-board"
-import { getProjectBoard } from "@/lib/db/queries/board"
-import { getProjectById } from "@/lib/db/queries/projects"
-import { ProjectAccessError } from "@/lib/project-access"
-import { projectIdSchema } from "@/lib/validations"
+import { BoardController } from "@/features/board/controllers/board.controller"
+import { getProjectBoard } from "@/features/board/server/board.service"
+import { projectIdSchema } from "@/features/projects/project.schema"
+import { getProjectById } from "@/features/projects/server/project.service"
+import { ProjectAccessError } from "@/features/projects/server/project-access.service"
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -46,7 +46,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             </Link>
           )}
         </header>
-        <KanbanBoard projectId={project.id} board={board} />
+        <BoardController projectId={project.id} serverBoard={board} />
       </div>
     )
   } catch (error) {
