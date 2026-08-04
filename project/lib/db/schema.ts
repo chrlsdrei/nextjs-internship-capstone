@@ -10,6 +10,7 @@ const timestamps = {
 }
 
 export const taskPriority = pgEnum("task_priority", ["low", "medium", "high"])
+export const projectMemberRole = pgEnum("project_member_role", ["owner", "admin", "member"])
 
 export const users = pgTable(
   "users",
@@ -39,6 +40,27 @@ export const projects = pgTable(
     ...timestamps,
   },
   (table) => [index("projects_owner_id_idx").on(table.ownerId)],
+)
+
+export const projectMembers = pgTable(
+  "project_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: projectMemberRole("role").default("member").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("project_members_project_user_unique").on(table.projectId, table.userId),
+    uniqueIndex("project_members_one_owner_per_project").on(table.projectId).where(sql`${table.role} = 'owner'`),
+    index("project_members_project_id_idx").on(table.projectId),
+    index("project_members_user_id_idx").on(table.userId),
+  ],
 )
 
 export const lists = pgTable(
@@ -101,6 +123,7 @@ export const comments = pgTable(
 
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
+  projectMemberships: many(projectMembers),
   assignedTasks: many(tasks, { relationName: "taskAssignee" }),
   comments: many(comments),
 }))
@@ -111,6 +134,18 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [users.id],
   }),
   lists: many(lists),
+  members: many(projectMembers),
+}))
+
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectMembers.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectMembers.userId],
+    references: [users.id],
+  }),
 }))
 
 export const listsRelations = relations(lists, ({ one, many }) => ({
@@ -149,6 +184,8 @@ export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
+export type ProjectMember = typeof projectMembers.$inferSelect
+export type NewProjectMember = typeof projectMembers.$inferInsert
 export type List = typeof lists.$inferSelect
 export type NewList = typeof lists.$inferInsert
 export type Task = typeof tasks.$inferSelect
@@ -156,3 +193,4 @@ export type NewTask = typeof tasks.$inferInsert
 export type Comment = typeof comments.$inferSelect
 export type NewComment = typeof comments.$inferInsert
 export type TaskPriority = (typeof taskPriority.enumValues)[number]
+export type ProjectMemberRole = (typeof projectMemberRole.enumValues)[number]

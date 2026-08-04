@@ -1,45 +1,53 @@
-// TODO: Task 4.5 - Design and implement project cards and layouts
+import { Calendar, Settings, Users } from "lucide-react"
+import Link from "next/link"
 
-/*
-TODO: Implementation Notes for Interns:
+import type { ProjectSummary } from "@/lib/db/queries/projects"
 
-This component should display:
-- Project name and description
-- Progress indicator
-- Team member count
-- Due date
-- Status badge
-- Actions menu (edit, delete, etc.)
+export function ProjectCard({ project }: { project: ProjectSummary }) {
+  const dueDate = project.dueDate
+    ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(project.dueDate)
+    : "No due date"
 
-Props interface:
-interface ProjectCardProps {
-  project: {
-    id: string
-    name: string
-    description?: string
-    progress: number
-    memberCount: number
-    dueDate?: Date
-    status: 'active' | 'completed' | 'on-hold'
-  }
-  onEdit?: (id: string) => void
-  onDelete?: (id: string) => void
-}
-
-Features to implement:
-- Hover effects
-- Click to navigate to project board
-- Responsive design
-- Loading states
-- Error states
-*/
-
-export function ProjectCard() {
   return (
-    <div className="bg-white dark:bg-outer-space-500 p-6 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400">
-      <p className="text-center text-paynes-gray-500 dark:text-french-gray-400">
-        TODO: Implement ProjectCard component
+    <article className="bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-munsell-100 text-blue-munsell-700 dark:bg-blue-munsell-900 dark:text-blue-munsell-300 capitalize">
+          {project.role}
+        </span>
+        {project.role !== "member" && (
+          <Link
+            href={`/projects/${project.id}/members`}
+            className="p-1 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400 rounded"
+            aria-label={`Manage ${project.name}`}
+          >
+            <Settings size={16} />
+          </Link>
+        )}
+      </div>
+
+      <Link
+        href={`/projects/${project.id}`}
+        className="block focus:outline-none focus:ring-2 focus:ring-blue-munsell-500 rounded"
+      >
+        <h2 className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">{project.name}</h2>
+        <p className="text-sm text-paynes-gray-500 dark:text-french-gray-400 mb-4 line-clamp-2 min-h-10">
+          {project.description || "No description yet."}
+        </p>
+      </Link>
+
+      <div className="flex items-center justify-between gap-3 text-sm text-paynes-gray-500 dark:text-french-gray-400">
+        <span className="flex items-center gap-1">
+          <Users size={16} />
+          {project.memberCount} {project.memberCount === 1 ? "member" : "members"}
+        </span>
+        <span className="flex items-center gap-1">
+          <Calendar size={16} />
+          {dueDate}
+        </span>
+      </div>
+      <p className="mt-4 text-sm text-paynes-gray-500 dark:text-french-gray-400">
+        {project.taskCount} {project.taskCount === 1 ? "task" : "tasks"}
       </p>
-    </div>
+    </article>
   )
 }

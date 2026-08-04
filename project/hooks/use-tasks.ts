@@ -1,77 +1,70 @@
-// TODO: Task 4.4 - Build task creation and editing functionality
-// TODO: Task 5.4 - Implement optimistic UI updates for smooth interactions
+"use client"
 
-/*
-TODO: Implementation Notes for Interns:
+import { useRouter } from "next/navigation"
+import { useCallback } from "react"
 
-Custom hook for task data management:
-- Fetch tasks for a project
-- Create new task
-- Update task
-- Delete task
-- Move task between lists
-- Bulk operations
+import {
+  initialBoardActionState,
+  moveTaskAction,
+  reorderTasksAction,
+} from "@/app/(dashboard)/projects/[id]/board-actions"
+import type { ProjectBoard } from "@/lib/db/queries/board"
+import { useBoardStore } from "@/stores/board-store"
 
-Features:
-- Optimistic updates for smooth UX
-- Real-time synchronization
-- Conflict resolution
-- Undo functionality
-- Batch operations
-
-Example structure:
-export function useTasks(projectId: string) {
-  const queryClient = useQueryClient()
-  
-  const {
-    data: tasks,
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['tasks', projectId],
-    queryFn: () => queries.tasks.getByProject(projectId),
-    enabled: !!projectId
-  })
-  
-  const createTask = useMutation({
-    mutationFn: queries.tasks.create,
-    onMutate: async (newTask) => {
-      // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] })
-      const previousTasks = queryClient.getQueryData(['tasks', projectId])
-      queryClient.setQueryData(['tasks', projectId], (old: Task[]) => [...old, { ...newTask, id: 'temp-' + Date.now() }])
-      return { previousTasks }
-    },
-    onError: (err, newTask, context) => {
-      // Rollback on error
-      queryClient.setQueryData(['tasks', projectId], context?.previousTasks)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] })
-    }
-  })
-  
-  return {
-    tasks,
-    isLoading,
-    error,
-    createTask: createTask.mutate,
-    isCreating: createTask.isPending
-  }
+function makeFormData(values: Record<string, string>) {
+  const formData = new FormData()
+  for (const [key, value] of Object.entries(values)) formData.set(key, value)
+  return formData
 }
-*/
 
-// Placeholder to prevent import errors
-export function useTasks(projectId: string) {
-  console.log(`TODO: Implement useTasks hook for project ${projectId}`)
+/** Coordinates optimistic task drags with the existing authorized server actions. */
+export function useTasks(projectId: string, board: ProjectBoard) {
+  const router = useRouter()
+  const setSaving = useBoardStore((state) => state.setSaving)
+  const setError = useBoardStore((state) => state.setError)
+  const restoreBoard = useBoardStore((state) => state.restoreBoard)
+  const moveTaskOptimistically = useBoardStore((state) => state.moveTaskOptimistically)
+
+  const moveTask = useCallback(
+    async (taskId: string, sourceListId: string, targetListId: string, targetIndex: number) => {
+      const previousBoard = board
+      moveTaskOptimistically(projectId, previousBoard, taskId, targetListId, targetIndex)
+      setSaving(true)
+      setError(null)
+
+      try {
+        if (sourceListId === targetListId) {
+          const sourceList = previousBoard.lists.find((list) => list.id === sourceListId)
+          const activeTask = sourceList?.tasks.find((task) => task.id === taskId)
+          if (!sourceList || !activeTask) throw new Error("Task is no longer available")
+          const taskIds = sourceList.tasks.filter((task) => task.id !== taskId).map((task) => task.id)
+          taskIds.splice(Math.max(0, Math.min(targetIndex, taskIds.length)), 0, activeTask.id)
+          const result = await reorderTasksAction(
+            initialBoardActionState,
+            makeFormData({ projectId, listId: sourceListId, taskIds: JSON.stringify(taskIds) }),
+          )
+          if (!result.success) throw new Error(result.error ?? "Unable to reorder task")
+        } else {
+          const result = await moveTaskAction(
+            initialBoardActionState,
+            makeFormData({ projectId, taskId, listId: targetListId, targetIndex: String(targetIndex) }),
+          )
+          if (!result.success) throw new Error(result.error ?? "Unable to move task")
+        }
+      } catch (error) {
+        restoreBoard(projectId, previousBoard)
+        setError(error instanceof Error ? error.message : "Unable to save task movement")
+      } finally {
+        setSaving(false)
+        router.refresh()
+      }
+    },
+    [board, moveTaskOptimistically, projectId, restoreBoard, router, setError, setSaving],
+  )
+
   return {
-    tasks: [],
-    isLoading: false,
-    error: null,
-    createTask: (data: unknown) => console.log("TODO: Create task", data),
-    updateTask: (id: string, data: unknown) => console.log(`TODO: Update task ${id}`, data),
-    deleteTask: (id: string) => console.log(`TODO: Delete task ${id}`),
-    moveTask: (taskId: string, newListId: string, position: number) =>
-      console.log(`TODO: Move task ${taskId} to list ${newListId} at position ${position}`),
+    isSaving: useBoardStore((state) => state.isSaving),
+    error: useBoardStore((state) => state.error),
+    moveTask,
   }
 }

@@ -1,70 +1,63 @@
-// TODO: Task 5.3 - Set up client-side state management with Zustand
-// TODO: Task 5.4 - Implement optimistic UI updates for smooth interactions
+"use client"
 
-/*
-TODO: Implementation Notes for Interns:
+import { create } from "zustand"
 
-Board state management for Kanban functionality:
-- Current project data
-- Lists/columns
-- Tasks
-- Drag and drop state
-- Optimistic updates
-- Sync with server
+import type { ProjectBoard } from "@/lib/db/queries/board"
 
-Key features:
-- Optimistic task creation/updates
-- Drag and drop state management
-- Real-time synchronization
-- Conflict resolution
-- Offline support (optional)
-
-Example structure:
-import { create } from 'zustand'
-import { subscribeWithSelector } from 'zustand/middleware'
-
-interface BoardState {
-  // Data
-  currentProject: Project | null
-  lists: List[]
-  tasks: Task[]
-  
-  // UI state
-  draggedTask: Task | null
-  draggedOverList: string | null
-  
-  // Loading states
-  isLoading: boolean
+type BoardState = {
+  projectId: string | null
+  board: ProjectBoard | null
   isSaving: boolean
-  
-  // Actions
-  loadProject: (projectId: string) => Promise<void>
-  createTask: (listId: string, task: Partial<Task>) => Promise<void>
-  updateTask: (taskId: string, updates: Partial<Task>) => Promise<void>
-  moveTask: (taskId: string, newListId: string, newPosition: number) => Promise<void>
-  deleteTask: (taskId: string) => Promise<void>
-  
-  // Drag and drop
-  setDraggedTask: (task: Task | null) => void
-  setDraggedOverList: (listId: string | null) => void
+  error: string | null
+  setBoard: (projectId: string, board: ProjectBoard) => void
+  restoreBoard: (projectId: string, board: ProjectBoard) => void
+  moveTaskOptimistically: (
+    projectId: string,
+    fallbackBoard: ProjectBoard,
+    taskId: string,
+    targetListId: string,
+    targetIndex: number,
+  ) => void
+  setSaving: (isSaving: boolean) => void
+  setError: (error: string | null) => void
 }
 
-export const useBoardStore = create<BoardState>()(
-  subscribeWithSelector((set, get) => ({
-    // ... implementation
-  }))
-)
-*/
+function moveTask(board: ProjectBoard, taskId: string, targetListId: string, targetIndex: number): ProjectBoard {
+  const sourceList = board.lists.find((list) => list.tasks.some((task) => task.id === taskId))
+  const targetList = board.lists.find((list) => list.id === targetListId)
+  if (!sourceList || !targetList) return board
 
-// Placeholder to prevent import errors
-export const useBoardStore = () => {
-  console.log("TODO: Implement board store with Zustand")
+  const task = sourceList.tasks.find((item) => item.id === taskId)
+  if (!task) return board
+
+  const sourceTasks = sourceList.tasks.filter((item) => item.id !== taskId)
+  const targetTasks = sourceList.id === targetList.id ? sourceTasks : [...targetList.tasks]
+  const insertionIndex = Math.max(0, Math.min(targetIndex, targetTasks.length))
+  targetTasks.splice(insertionIndex, 0, task)
+
   return {
-    currentProject: null,
-    lists: [],
-    tasks: [],
-    isLoading: false,
-    loadProject: (projectId: string) => console.log(`TODO: Load project ${projectId}`),
-    createTask: (listId: string, task: unknown) => console.log(`TODO: Create task in list ${listId}`, task),
+    ...board,
+    lists: board.lists.map((list) => {
+      if (list.id === sourceList.id) return { ...list, tasks: sourceTasks }
+      if (list.id === targetList.id) return { ...list, tasks: targetTasks }
+      return list
+    }),
   }
 }
+
+export const useBoardStore = create<BoardState>((set) => ({
+  projectId: null,
+  board: null,
+  isSaving: false,
+  error: null,
+  setBoard: (projectId, board) =>
+    set((state) => ({ projectId, board, ...(state.projectId === projectId ? {} : { error: null, isSaving: false }) })),
+  restoreBoard: (projectId, board) => set({ projectId, board }),
+  moveTaskOptimistically: (projectId, fallbackBoard, taskId, targetListId, targetIndex) =>
+    set((state) => {
+      const board = state.projectId === projectId && state.board ? state.board : fallbackBoard
+      return { projectId, board: moveTask(board, taskId, targetListId, targetIndex) }
+    }),
+  setSaving: (isSaving) => set({ isSaving }),
+  setError: (error) => set({ error }),
+}))

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "project_members_one_owner_per_project" ON "project_members" USING btree ("project_id") WHERE "project_members"."role" = 'owner';

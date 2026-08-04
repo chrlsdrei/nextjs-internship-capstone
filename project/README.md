@@ -2,7 +2,7 @@
 
 ## 🚀 Project Overview
 
-**ProjectFlow** is a collaborative project management tool built with Next.js 16 App Router, designed as the capstone project for a 12-week full-stack development internship program. This is currently a **mockup/prototype** with placeholder components and incomplete functionality.
+**ProjectFlow** is a collaborative project management tool built with Next.js 16 App Router, designed as the capstone project for a 12-week full-stack development internship program.
 
 ### 📋 What We're Building
 
@@ -10,10 +10,10 @@ A modern, Kanban-style project management application similar to Trello or Asana
 
 - **Landing Page** with project overview and roadmap ✅ *Implemented*
 - **Dashboard Layout** with navigation and theme toggle ✅ *Implemented*
-- **Project Management Interface** with placeholder components ✅ *Basic Structure*
-- **User Authentication** with Clerk ⏳ *Planned*
-- **Interactive Kanban Board** with drag-and-drop ⏳ *Planned*
-- **Real-time Collaboration** features ⏳ *Planned*
+- **Project Management Interface** with authenticated, database-backed projects and members ✅
+- **User Authentication** with Clerk ✅
+- **Interactive Kanban Board** with accessible drag-and-drop and optimistic persistence ✅
+- **Local real-time board reconciliation** through authenticated SSE ✅
 - **Responsive Design** with Tailwind CSS + custom color scheme ✅ *Implemented*
 
 ## 🎯 Learning Objectives
@@ -139,11 +139,10 @@ project/
 - `pnpm start` - Start production server
 - `pnpm lint` - Run ESLint
 
-### 🚧 Current Limitations
-- **No Authentication**: Sign-in/sign-up buttons are placeholders
-- **No Database**: All data is mocked/placeholder
-- **No State Management**: Zustand stores are placeholder functions
-- **No Real Functionality**: Most interactions are visual only
+### Current Limitations
+
+- Live board events use an in-memory, single-process hub for local development. Each SSE connection receives a sync event so a reconnect reconciles missed changes, but sessions are synchronized only when handled by the same Node.js process; multi-instance production deployment needs a shared realtime service.
+- Automated tests and deployment work remain outside the completed board feature.
 
 
 

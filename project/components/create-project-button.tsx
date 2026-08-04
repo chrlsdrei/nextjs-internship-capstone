@@ -1,10 +1,19 @@
 "use client"
 
 import { Plus, X } from "lucide-react"
-import { useState } from "react"
+import { useActionState, useEffect, useState } from "react"
+
+import { createProjectAction, initialProjectActionState } from "@/app/(dashboard)/projects/actions"
 
 export function CreateProjectButton() {
   const [isOpen, setIsOpen] = useState(false)
+  const [state, formAction, isPending] = useActionState(createProjectAction, initialProjectActionState)
+
+  useEffect(() => {
+    if (state.success) {
+      setIsOpen(false)
+    }
+  }, [state.success])
 
   return (
     <>
@@ -18,77 +27,75 @@ export function CreateProjectButton() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-outer-space-500 rounded-lg p-6 w-full max-w-md mx-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-project-title"
+        >
+          <div className="bg-white dark:bg-outer-space-500 rounded-lg p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500">Create New Project</h3>
+              <h2
+                id="create-project-title"
+                className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500"
+              >
+                Create new project
+              </h2>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 className="p-1 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400 rounded"
+                aria-label="Close"
               >
                 <X size={20} />
               </button>
             </div>
-
-            <form className="space-y-4">
-              <div>
-                <label
-                  htmlFor="project-name"
-                  className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500 mb-2"
-                >
-                  Project Name
-                </label>
+            <form action={formAction} className="space-y-4">
+              <label className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500">
+                Project name
                 <input
-                  type="text"
-                  id="project-name"
-                  className="w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400 text-outer-space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
-                  placeholder="Enter project name"
+                  name="name"
+                  required
+                  maxLength={100}
+                  className="mt-2 w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400"
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="project-description"
-                  className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500 mb-2"
-                >
-                  Description
-                </label>
+              </label>
+              <label className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500">
+                Description
                 <textarea
-                  id="project-description"
+                  name="description"
+                  maxLength={500}
                   rows={3}
-                  className="w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400 text-outer-space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
-                  placeholder="Project description"
+                  className="mt-2 w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400"
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="project-due-date"
-                  className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500 mb-2"
-                >
-                  Due Date
-                </label>
+              </label>
+              <label className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500">
+                Due date
                 <input
+                  name="dueDate"
                   type="date"
-                  id="project-due-date"
-                  className="w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400 text-outer-space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
+                  className="mt-2 w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400"
                 />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
+              </label>
+              {state.error && (
+                <p role="alert" className="text-sm text-red-600">
+                  {state.error}
+                </p>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 text-paynes-gray-500 dark:text-french-gray-400 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400 rounded-lg transition-colors"
+                  className="px-4 py-2 rounded-lg hover:bg-platinum-500 dark:hover:bg-paynes-gray-400"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-munsell-500 text-white rounded-lg hover:bg-blue-munsell-600 transition-colors"
+                  disabled={isPending}
+                  className="px-4 py-2 bg-blue-munsell-500 disabled:opacity-60 text-white rounded-lg hover:bg-blue-munsell-600"
                 >
-                  Create Project
+                  {isPending ? "Creating…" : "Create project"}
                 </button>
               </div>
             </form>

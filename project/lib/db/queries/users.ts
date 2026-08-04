@@ -24,6 +24,11 @@ export async function upsertUserFromClerk(input: UserSyncInput) {
   return user
 }
 
+export async function getUserByClerkId(clerkId: string) {
+  const [user] = await db.select().from(users).where(eq(users.clerkId, clerkId)).limit(1)
+  return user ?? null
+}
+
 export async function deleteUserByClerkId(clerkId: string) {
   const [deletedUser] = await db.delete(users).where(eq(users.clerkId, clerkId)).returning({ id: users.id })
   return deletedUser ?? null
