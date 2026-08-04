@@ -1,6 +1,6 @@
-import { ProjectAccessError, requireProjectPermission } from "@/lib/project-access"
-import { type ProjectEvent, subscribeToProjectEvents } from "@/lib/project-events"
-import { projectIdSchema } from "@/lib/validations"
+import { type ProjectEvent, subscribeToProjectEvents } from "@/features/board/server/project-event.service"
+import { projectIdSchema } from "@/features/projects/project.schema"
+import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
