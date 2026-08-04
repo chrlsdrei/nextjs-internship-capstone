@@ -1,6 +1,6 @@
-import { CreateProjectButton } from "@/components/create-project-button"
-import { ProjectDirectory } from "@/components/project-directory"
-import { getAccessibleProjectSummaries } from "@/lib/db/queries/projects"
+import { ProjectDirectory } from "@/features/projects/components/project-directory"
+import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
+import { getAccessibleProjectSummaries } from "@/features/projects/server/project.service"
 
 export default async function ProjectsPage() {
   const projects = await getAccessibleProjectSummaries()
@@ -12,7 +12,7 @@ export default async function ProjectsPage() {
           <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">Projects</h1>
           <p className="mt-2 text-paynes-gray-500 dark:text-french-gray-500">Projects you own or collaborate on.</p>
         </div>
-        <CreateProjectButton />
+        <CreateProjectController />
       </div>
       <ProjectDirectory projects={projects} />
     </div>
