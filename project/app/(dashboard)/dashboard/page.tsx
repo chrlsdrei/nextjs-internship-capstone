@@ -1,7 +1,7 @@
-import { CreateProjectButton } from "@/components/create-project-button"
-import { DashboardStats } from "@/components/dashboard-stats"
-import { RecentProjects } from "@/components/recent-projects"
-import { getDashboardSummary } from "@/lib/db/queries/projects"
+import { DashboardStats } from "@/features/dashboard/components/dashboard-stats"
+import { RecentProjects } from "@/features/dashboard/components/recent-projects"
+import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
+import { getDashboardSummary } from "@/features/projects/server/project.service"
 
 export default async function DashboardPage() {
   const summary = await getDashboardSummary()
@@ -15,7 +15,7 @@ export default async function DashboardPage() {
             An overview of the projects you can access.
           </p>
         </div>
-        <CreateProjectButton />
+        <CreateProjectController />
       </div>
       <DashboardStats
         projectCount={summary.projectCount}

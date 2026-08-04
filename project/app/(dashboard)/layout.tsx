@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import type React from "react"
 
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { DashboardLayout } from "@/components/layout/dashboard-layout"
 
 export default async function ProtectedDashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   await auth.protect()
