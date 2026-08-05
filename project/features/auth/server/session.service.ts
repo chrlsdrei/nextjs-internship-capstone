@@ -2,6 +2,7 @@ import "server-only"
 
 import { auth, currentUser } from "@clerk/nextjs/server"
 
+import { assertAccountCanAccessApplication } from "@/features/auth/account.policy"
 import { findUserByClerkId } from "@/features/auth/server/user.repository"
 
 export async function requireClerkUserId() {
@@ -22,6 +23,8 @@ export async function getCurrentDatabaseUser() {
   if (!user) {
     throw new Error("Your account is not synchronized yet. Please try again shortly.")
   }
+
+  assertAccountCanAccessApplication(user.accountStatus)
 
   return user
 }

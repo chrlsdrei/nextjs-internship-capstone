@@ -1,7 +1,7 @@
 import "server-only"
 
 import { userSyncSchema } from "@/features/auth/auth.schema"
-import { deleteUserByClerkId, upsertUser } from "@/features/auth/server/user.repository"
+import { softDeleteUserByClerkId, upsertUser } from "@/features/auth/server/user.repository"
 
 type ClerkUserPayload = {
   id: string
@@ -52,5 +52,5 @@ export async function synchronizeClerkUser(data: ClerkUserPayload) {
 }
 
 export async function removeSynchronizedClerkUser(clerkId: string) {
-  return deleteUserByClerkId(clerkId)
+  return softDeleteUserByClerkId(clerkId)
 }

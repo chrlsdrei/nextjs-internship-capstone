@@ -11,3 +11,4 @@ const identity = assertIsolatedTestDatabase({
 })
 
 process.env.VERIFIED_TEST_DATABASE_IDENTITY = formatDatabaseIdentity(identity)
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL

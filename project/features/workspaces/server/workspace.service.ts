@@ -1,0 +1,195 @@
+import "server-only"
+
+import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
+import {
+  countActiveWorkspaceMembers,
+  createWorkspaceWithOwner,
+  findActiveWorkspaceAccess,
+  findActiveWorkspaceMember,
+  listActiveWorkspaceMembers,
+  listActiveWorkspaceMemberships,
+  softRemoveWorkspaceMemberById,
+  transferWorkspaceOwnership,
+  updateWorkspaceDetailsById,
+  updateWorkspaceMemberRoleById,
+  updateWorkspaceSettingsById,
+} from "@/features/workspaces/server/workspace.repository"
+import {
+  canChangeWorkspaceMemberRole,
+  canRemoveWorkspaceMember,
+  canTransferWorkspaceOwnership,
+  resolveWorkspaceRole,
+  workspaceCapabilities,
+} from "@/features/workspaces/workspace.policy"
+import {
+  createWorkspaceSchema,
+  removeWorkspaceMemberSchema,
+  transferWorkspaceOwnershipSchema,
+  updateWorkspaceDetailsSchema,
+  updateWorkspaceMemberRoleSchema,
+  updateWorkspaceSettingsSchema,
+  workspaceIdSchema,
+} from "@/features/workspaces/workspace.schema"
+import type {
+  WorkspaceDetailDto,
+  WorkspaceMemberDto,
+  WorkspaceRole,
+  WorkspaceSummaryDto,
+} from "@/features/workspaces/workspace.types"
+
+export class WorkspaceAccessError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message)
+    this.name = "WorkspaceAccessError"
+  }
+}
+
+type WorkspaceAccess = NonNullable<Awaited<ReturnType<typeof findActiveWorkspaceAccess>>>
+
+function effectiveRole(access: WorkspaceAccess): WorkspaceRole {
+  const role = resolveWorkspaceRole(access.ownerWorkspaceMemberId, {
+    id: access.membershipId,
+    role: access.membershipRole,
+    removedAt: access.membershipRemovedAt,
+  })
+  if (!role) throw new WorkspaceAccessError("Workspace not found", 404)
+  return role
+}
+
+function summaryDto(access: WorkspaceAccess, role: WorkspaceRole, memberCount: number): WorkspaceSummaryDto {
+  return {
+    id: access.id,
+    name: access.name,
+    description: access.description,
+    status: access.status,
+    role,
+    memberCount,
+    membersCanCreateProjects: access.membersCanCreateProjects,
+    createdAt: access.createdAt.toISOString(),
+    updatedAt: access.updatedAt.toISOString(),
+  }
+}
+
+async function requireWorkspaceAccess(workspaceId: string) {
+  const id = workspaceIdSchema.parse(workspaceId)
+  const user = await getCurrentDatabaseUser()
+  const access = await findActiveWorkspaceAccess(id, user.id)
+  if (!access) throw new WorkspaceAccessError("Workspace not found", 404)
+  return { access, role: effectiveRole(access), user }
+}
+
+function requireActiveWorkspace(access: WorkspaceAccess) {
+  if (access.status !== "active") {
+    throw new WorkspaceAccessError("This workspace is suspended and cannot be changed", 403)
+  }
+}
+
+export async function listWorkspaces(): Promise<WorkspaceSummaryDto[]> {
+  const user = await getCurrentDatabaseUser()
+  const memberships = await listActiveWorkspaceMemberships(user.id)
+  return Promise.all(
+    memberships.map(async (access) => {
+      const role = effectiveRole(access)
+      return summaryDto(access, role, await countActiveWorkspaceMembers(access.id))
+    }),
+  )
+}
+
+export async function getWorkspaceDetails(workspaceId: string): Promise<WorkspaceDetailDto> {
+  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  const members = await listActiveWorkspaceMembers(access.id)
+  const memberDtos: WorkspaceMemberDto[] = members.map((member) => ({
+    id: member.id,
+    userId: member.userId,
+    name: member.name,
+    email: member.email,
+    role: member.id === access.ownerWorkspaceMemberId ? "owner" : member.role,
+    joinedAt: member.joinedAt.toISOString(),
+  }))
+
+  return {
+    ...summaryDto(access, role, memberDtos.length),
+    capabilities: workspaceCapabilities(role),
+    members: memberDtos,
+  }
+}
+
+export async function createWorkspace(input: unknown): Promise<WorkspaceSummaryDto> {
+  const values = createWorkspaceSchema.parse(input)
+  const user = await getCurrentDatabaseUser()
+  const workspace = await createWorkspaceWithOwner(user.id, values)
+  if (!workspace) throw new Error("Unable to create the workspace")
+  const access = await findActiveWorkspaceAccess(workspace.id, user.id)
+  if (!access) throw new Error("Unable to load the newly created workspace")
+  return summaryDto(access, "owner", 1)
+}
+
+export async function updateWorkspaceDetails(workspaceId: string, input: unknown) {
+  const values = updateWorkspaceDetailsSchema.parse(input)
+  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  requireActiveWorkspace(access)
+  if (role !== "owner") throw new WorkspaceAccessError("Only the workspace owner can update its details", 403)
+  const workspace = await updateWorkspaceDetailsById(access.id, values)
+  if (!workspace) throw new WorkspaceAccessError("Workspace not found", 404)
+  return getWorkspaceDetails(access.id)
+}
+
+export async function updateWorkspaceSettings(workspaceId: string, input: unknown) {
+  const values = updateWorkspaceSettingsSchema.parse(input)
+  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  requireActiveWorkspace(access)
+  if (role !== "owner") throw new WorkspaceAccessError("Only the workspace owner can update settings", 403)
+  const settings = await updateWorkspaceSettingsById(access.id, values)
+  if (!settings) throw new WorkspaceAccessError("Workspace settings not found", 404)
+  return getWorkspaceDetails(access.id)
+}
+
+export async function updateWorkspaceMemberRole(workspaceId: string, input: unknown) {
+  const values = updateWorkspaceMemberRoleSchema.parse(input)
+  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  requireActiveWorkspace(access)
+  const target = await findActiveWorkspaceMember(access.id, values.memberId)
+  if (!target) throw new WorkspaceAccessError("Workspace member not found", 404)
+  const targetRole = target.id === access.ownerWorkspaceMemberId ? "owner" : target.role
+  if (!canChangeWorkspaceMemberRole(role, targetRole)) {
+    throw new WorkspaceAccessError("Only the owner can change non-owner member roles", 403)
+  }
+  const member = await updateWorkspaceMemberRoleById(target.id, values.role)
+  if (!member) throw new WorkspaceAccessError("Workspace member not found", 404)
+  return getWorkspaceDetails(access.id)
+}
+
+export async function removeWorkspaceMember(workspaceId: string, input: unknown) {
+  const values = removeWorkspaceMemberSchema.parse(input)
+  const { access, role, user } = await requireWorkspaceAccess(workspaceId)
+  requireActiveWorkspace(access)
+  const target = await findActiveWorkspaceMember(access.id, values.memberId)
+  if (!target) throw new WorkspaceAccessError("Workspace member not found", 404)
+  const targetRole: WorkspaceRole = target.id === access.ownerWorkspaceMemberId ? "owner" : target.role
+  if (!canRemoveWorkspaceMember(role, targetRole, target.userId === user.id)) {
+    throw new WorkspaceAccessError("You cannot remove this workspace member", 403)
+  }
+  const member = await softRemoveWorkspaceMemberById(target.id)
+  if (!member) throw new WorkspaceAccessError("Workspace member not found", 404)
+  return { workspaceId: access.id, removedMemberId: member.id }
+}
+
+export async function transferWorkspaceOwnershipTo(workspaceId: string, input: unknown) {
+  const values = transferWorkspaceOwnershipSchema.parse(input)
+  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  requireActiveWorkspace(access)
+  if (!canTransferWorkspaceOwnership(role)) {
+    throw new WorkspaceAccessError("Only the owner can transfer workspace ownership", 403)
+  }
+  if (values.newOwnerMemberId === access.ownerWorkspaceMemberId) {
+    throw new WorkspaceAccessError("This member already owns the workspace", 400)
+  }
+  const target = await findActiveWorkspaceMember(access.id, values.newOwnerMemberId)
+  if (!target) throw new WorkspaceAccessError("The new owner must be an active workspace member", 400)
+  const workspace = await transferWorkspaceOwnership(access.id, access.ownerWorkspaceMemberId, target.id)
+  if (!workspace) throw new WorkspaceAccessError("Workspace ownership changed; refresh and try again", 409)
+  return getWorkspaceDetails(access.id)
+}
