@@ -11,7 +11,9 @@ export default defineConfig({
   test: {
     environment: "node",
     fileParallelism: false,
+    hookTimeout: 30_000,
     include: ["tests/database/**/*.test.ts"],
     setupFiles: ["./tests/database/setup.ts"],
+    testTimeout: 30_000,
   },
 })

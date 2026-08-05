@@ -7,14 +7,16 @@ import { db } from "@/server/db/client"
 import { users } from "@/server/db/schema"
 
 export async function upsertUser(input: UserSyncInput) {
+  const normalizedEmail = input.email.trim().toLowerCase()
   const [user] = await db
     .insert(users)
-    .values(input)
+    .values({ ...input, normalizedEmail })
     .onConflictDoUpdate({
       target: users.clerkId,
       set: {
         email: input.email,
         name: input.name,
+        normalizedEmail,
         updatedAt: new Date(),
       },
     })

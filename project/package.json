@@ -17,6 +17,7 @@
     "test:db": "vitest run --config vitest.db.config.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:test:migrate": "drizzle-kit migrate --config drizzle.test.config.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:check": "tsx scripts/check-db.ts",
