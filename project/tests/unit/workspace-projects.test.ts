@@ -18,7 +18,7 @@ function workspace(id: string, name: string): WorkspaceSummaryDto {
   }
 }
 
-function project(id: string, workspaceId: string | null): ProjectSummaryDto {
+function project(id: string, workspaceId: string): ProjectSummaryDto {
   return {
     id,
     workspaceId,
@@ -26,7 +26,7 @@ function project(id: string, workspaceId: string | null): ProjectSummaryDto {
     description: null,
     dueDate: null,
     updatedAt: "2026-08-06T00:00:00.000Z",
-    role: "member",
+    role: "viewer",
     memberCount: 1,
     taskCount: 0,
   }
@@ -45,15 +45,15 @@ describe("workspace project grouping", () => {
     ])
   })
 
-  it("keeps legacy and inaccessible workspace references in an unassigned group", () => {
+  it("keeps inaccessible workspace references out of accessible workspace groups", () => {
     const groups = groupProjectsByWorkspace(
       [workspace("workspace-a", "Workspace A")],
-      [project("legacy", null), project("unknown", "workspace-not-accessible")],
+      [project("unknown", "workspace-not-accessible")],
     )
 
     expect(groups).toHaveLength(1)
     expect(groups[0]?.key).toBe("unassigned")
-    expect(groups[0]?.projects.map((item) => item.id)).toEqual(["legacy", "unknown"])
+    expect(groups[0]?.projects.map((item) => item.id)).toEqual(["unknown"])
   })
 
   it("can retain empty accessible workspace groups for an explicit filter", () => {
