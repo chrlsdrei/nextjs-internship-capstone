@@ -13,6 +13,7 @@ const expectedTables = [
   "rate_limit_buckets",
   "tasks",
   "users",
+  "workspace_invitations",
   "workspace_members",
   "workspace_settings",
   "workspaces",
@@ -33,7 +34,7 @@ async function main() {
     where table_schema = 'public'
       and table_name in (
         'ai_usage_logs', 'comments', 'lists', 'project_members', 'project_settings', 'projects',
-        'rate_limit_buckets', 'tasks', 'users',
+        'rate_limit_buckets', 'tasks', 'users', 'workspace_invitations',
         'workspace_members', 'workspace_settings', 'workspaces'
       )
     order by table_name

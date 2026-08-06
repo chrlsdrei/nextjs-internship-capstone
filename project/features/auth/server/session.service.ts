@@ -16,6 +16,16 @@ export async function getSessionUser() {
   return currentUser()
 }
 
+export async function getVerifiedPrimaryEmail() {
+  const user = await currentUser()
+  if (!user) throw new Error("You must sign in to accept this invitation")
+  const primaryEmail = user.emailAddresses.find((address) => address.id === user.primaryEmailAddressId)
+  if (primaryEmail?.verification?.status !== "verified") {
+    throw new Error("Verify your primary email address before accepting this invitation")
+  }
+  return primaryEmail.emailAddress.trim().toLowerCase()
+}
+
 export async function getCurrentDatabaseUser() {
   const clerkId = await requireClerkUserId()
   const user = await findUserByClerkId(clerkId)

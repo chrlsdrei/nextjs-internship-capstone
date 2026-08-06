@@ -37,6 +37,14 @@ export const rateLimitPolicies = {
     actor: { maxRequests: 10, windowSeconds: hour },
     workspace: { maxRequests: 50, windowSeconds: hour },
   },
+  "invitation.resend": {
+    actor: { maxRequests: 10, windowSeconds: hour },
+    workspace: { maxRequests: 30, windowSeconds: hour },
+  },
+  "invitation.revoke": {
+    actor: { maxRequests: 30, windowSeconds: 5 * minute },
+    workspace: { maxRequests: 120, windowSeconds: 5 * minute },
+  },
   "invitation.accept": { actor: { maxRequests: 20, windowSeconds: hour } },
   "comment.write": {
     actor: { maxRequests: 30, windowSeconds: minute },

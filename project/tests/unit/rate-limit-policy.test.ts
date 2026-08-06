@@ -11,6 +11,8 @@ describe("rate-limit policy", () => {
     expect(getRateLimitPolicy("board.task.write").actor.maxRequests).toBeGreaterThan(0)
     expect(getRateLimitPolicy("board.drag").workspace?.maxRequests).toBeGreaterThan(0)
     expect(getRateLimitPolicy("invitation.create").workspace).toBeDefined()
+    expect(getRateLimitPolicy("invitation.resend").workspace).toBeDefined()
+    expect(getRateLimitPolicy("invitation.revoke").workspace).toBeDefined()
     expect(getRateLimitPolicy("comment.write").workspace).toBeDefined()
     expect(getRateLimitPolicy("attachment.write").workspace).toBeDefined()
   })

@@ -30,6 +30,8 @@ export const accountStatus = pgEnum("account_status", ["active", "suspended", "d
 export const workspaceStatus = pgEnum("workspace_status", ["active", "suspended", "deleted"])
 export const workspaceMemberRole = pgEnum("workspace_member_role", ["admin", "member"])
 export const rateLimitScope = pgEnum("rate_limit_scope", ["actor", "workspace"])
+export const invitationKind = pgEnum("invitation_kind", ["workspace", "project"])
+export const invitationDeliveryStatus = pgEnum("invitation_delivery_status", ["pending", "sent", "failed"])
 
 export const users = pgTable(
   "users",
@@ -303,12 +305,92 @@ export const aiUsageLogs = pgTable(
   ],
 )
 
+export const workspaceInvitations = pgTable(
+  "workspace_invitations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    kind: invitationKind("kind").notNull(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id"),
+    invitedByWorkspaceMemberId: uuid("invited_by_workspace_member_id").notNull(),
+    email: text("email").notNull(),
+    normalizedEmail: text("normalized_email").notNull(),
+    workspaceRole: workspaceMemberRole("workspace_role"),
+    boardRole: boardRole("board_role"),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    acceptedByUserId: uuid("accepted_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedByUserId: uuid("revoked_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    deliveryStatus: invitationDeliveryStatus("delivery_status").default("pending").notNull(),
+    deliveryAttempt: integer("delivery_attempt").default(1).notNull(),
+    resendMessageId: text("resend_message_id"),
+    deliveryErrorCode: text("delivery_error_code"),
+    lastSentAt: timestamp("last_sent_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [projects.id, projects.workspaceId],
+      name: "workspace_invitations_project_workspace_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.invitedByWorkspaceMemberId, table.workspaceId],
+      foreignColumns: [workspaceMembers.id, workspaceMembers.workspaceId],
+      name: "workspace_invitations_inviter_workspace_fk",
+    }).onDelete("cascade"),
+    uniqueIndex("workspace_invitations_token_hash_unique").on(table.tokenHash),
+    uniqueIndex("workspace_invitations_active_workspace_email_unique")
+      .on(table.workspaceId, table.normalizedEmail)
+      .where(sql`${table.kind} = 'workspace' AND ${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
+    uniqueIndex("workspace_invitations_active_project_email_unique")
+      .on(table.projectId, table.normalizedEmail)
+      .where(sql`${table.kind} = 'project' AND ${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
+    index("workspace_invitations_workspace_created_idx").on(table.workspaceId, table.createdAt),
+    index("workspace_invitations_project_created_idx").on(table.projectId, table.createdAt),
+    index("workspace_invitations_normalized_email_idx").on(table.normalizedEmail),
+    index("workspace_invitations_expires_at_idx").on(table.expiresAt),
+    check("workspace_invitations_expiry_valid", sql`${table.expiresAt} > ${table.createdAt}`),
+    check("workspace_invitations_delivery_attempt_positive", sql`${table.deliveryAttempt} > 0`),
+    check(
+      "workspace_invitations_kind_roles_valid",
+      sql`(
+        (
+          ${table.kind} = 'workspace'
+          AND ${table.workspaceRole} IS NOT NULL
+          AND (
+            (${table.projectId} IS NULL AND ${table.boardRole} IS NULL)
+            OR (${table.projectId} IS NOT NULL AND ${table.boardRole} IS NOT NULL)
+          )
+        )
+        OR
+        (
+          ${table.kind} = 'project'
+          AND ${table.workspaceRole} IS NULL
+          AND ${table.projectId} IS NOT NULL
+          AND ${table.boardRole} IS NOT NULL
+        )
+      )`,
+    ),
+    check(
+      "workspace_invitations_lifecycle_valid",
+      sql`NOT (${table.acceptedAt} IS NOT NULL AND ${table.revokedAt} IS NOT NULL)`,
+    ),
+  ],
+)
+
 export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
   assignedTasks: many(tasks, { relationName: "taskAssignee" }),
   comments: many(comments),
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
+  acceptedInvitations: many(workspaceInvitations, { relationName: "acceptedInvitationUser" }),
+  revokedInvitations: many(workspaceInvitations, { relationName: "revokedInvitationUser" }),
 }))
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
@@ -322,6 +404,7 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   projects: many(projects),
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
+  invitations: many(workspaceInvitations),
 }))
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ many, one }) => ({
@@ -336,6 +419,7 @@ export const workspaceMembersRelations = relations(workspaceMembers, ({ many, on
   }),
   createdProjects: many(projects, { relationName: "projectCreator" }),
   projectMemberships: many(projectMembers),
+  sentInvitations: many(workspaceInvitations),
 }))
 
 export const workspaceSettingsRelations = relations(workspaceSettings, ({ one }) => ({
@@ -359,6 +443,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   lists: many(lists),
   members: many(projectMembers),
   aiUsageLogs: many(aiUsageLogs),
+  invitations: many(workspaceInvitations),
 }))
 
 export const rateLimitBucketsRelations = relations(rateLimitBuckets, ({ one }) => ({
@@ -384,6 +469,31 @@ export const aiUsageLogsRelations = relations(aiUsageLogs, ({ one }) => ({
   project: one(projects, {
     fields: [aiUsageLogs.projectId],
     references: [projects.id],
+  }),
+}))
+
+export const workspaceInvitationsRelations = relations(workspaceInvitations, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [workspaceInvitations.workspaceId],
+    references: [workspaces.id],
+  }),
+  project: one(projects, {
+    fields: [workspaceInvitations.projectId],
+    references: [projects.id],
+  }),
+  invitedByWorkspaceMember: one(workspaceMembers, {
+    fields: [workspaceInvitations.invitedByWorkspaceMemberId],
+    references: [workspaceMembers.id],
+  }),
+  acceptedByUser: one(users, {
+    fields: [workspaceInvitations.acceptedByUserId],
+    references: [users.id],
+    relationName: "acceptedInvitationUser",
+  }),
+  revokedByUser: one(users, {
+    fields: [workspaceInvitations.revokedByUserId],
+    references: [users.id],
+    relationName: "revokedInvitationUser",
   }),
 }))
 
@@ -461,6 +571,8 @@ export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect
 export type NewRateLimitBucket = typeof rateLimitBuckets.$inferInsert
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect
 export type NewAiUsageLog = typeof aiUsageLogs.$inferInsert
+export type WorkspaceInvitation = typeof workspaceInvitations.$inferSelect
+export type NewWorkspaceInvitation = typeof workspaceInvitations.$inferInsert
 export type TaskPriority = (typeof taskPriority.enumValues)[number]
 export type BoardRole = (typeof boardRole.enumValues)[number]
 export type SystemRole = (typeof systemRole.enumValues)[number]
@@ -468,3 +580,5 @@ export type AccountStatus = (typeof accountStatus.enumValues)[number]
 export type WorkspaceStatus = (typeof workspaceStatus.enumValues)[number]
 export type WorkspaceMemberRole = (typeof workspaceMemberRole.enumValues)[number]
 export type RateLimitScope = (typeof rateLimitScope.enumValues)[number]
+export type InvitationKind = (typeof invitationKind.enumValues)[number]
+export type InvitationDeliveryStatus = (typeof invitationDeliveryStatus.enumValues)[number]
