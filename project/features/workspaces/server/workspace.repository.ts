@@ -1,7 +1,7 @@
 import "server-only"
 
 import { randomUUID } from "node:crypto"
-import { and, count, eq, isNull } from "drizzle-orm"
+import { and, count, desc, eq, isNull } from "drizzle-orm"
 
 import type {
   CreateWorkspaceInput,
@@ -51,6 +51,7 @@ export async function listActiveWorkspaceMemberships(userId: string) {
     .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
     .innerJoin(workspaceSettings, eq(workspaceSettings.workspaceId, workspaces.id))
     .where(and(eq(workspaceMembers.userId, userId), isNull(workspaceMembers.removedAt), isNull(workspaces.deletedAt)))
+    .orderBy(desc(workspaces.updatedAt))
 }
 
 export async function countActiveWorkspaceMembers(workspaceId: string) {
@@ -101,6 +102,7 @@ export async function listActiveWorkspaceMembers(workspaceId: string) {
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
     .where(and(eq(workspaceMembers.workspaceId, workspaceId), isNull(workspaceMembers.removedAt)))
+    .orderBy(workspaceMembers.joinedAt)
 }
 
 export async function findActiveWorkspaceMember(workspaceId: string, memberId: string) {

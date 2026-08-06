@@ -1,6 +1,6 @@
 import type { ActionState } from "@/lib/action-state"
 
-export function ActionFeedback({ state }: { state: ActionState }) {
+export function ActionFeedback({ state }: { state: ActionState<unknown> }) {
   if (state.status === "error") {
     return (
       <p role="alert" className="mt-2 text-sm text-red-600">

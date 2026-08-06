@@ -1,7 +1,7 @@
 "use client"
 
 import { UserButton } from "@clerk/nextjs"
-import { BarChart3, Bell, Calendar, FolderOpen, Home, Menu, Search, Settings, Users, X } from "lucide-react"
+import { BarChart3, Bell, Building2, Calendar, FolderOpen, Home, Menu, Search, Settings, Users, X } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type React from "react"
@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Workspaces", href: "/workspaces", icon: Building2 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
   { name: "Team", href: "/team", icon: Users },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },

@@ -1,22 +1,25 @@
-import { CheckCircle, FolderKanban, Users } from "lucide-react"
+import { Building2, CheckCircle, FolderKanban, Users } from "lucide-react"
 
 export function DashboardStats({
   projectCount,
   memberCount,
   taskCount,
+  workspaceCount,
 }: {
   projectCount: number
   memberCount: number
   taskCount: number
+  workspaceCount: number
 }) {
   const stats = [
+    { name: "Workspaces", value: workspaceCount, icon: Building2 },
     { name: "Projects", value: projectCount, icon: FolderKanban },
     { name: "Collaborators", value: memberCount, icon: Users },
     { name: "Tasks", value: taskCount, icon: CheckCircle },
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
         <div
           key={stat.name}

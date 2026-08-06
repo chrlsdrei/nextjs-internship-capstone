@@ -1,6 +1,14 @@
 import { clerkMiddleware } from "@clerk/nextjs/server"
 
-const protectedRoutePrefixes = ["/dashboard", "/projects", "/team", "/analytics", "/calendar", "/settings"]
+const protectedRoutePrefixes = [
+  "/dashboard",
+  "/workspaces",
+  "/projects",
+  "/team",
+  "/analytics",
+  "/calendar",
+  "/settings",
+]
 
 export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl

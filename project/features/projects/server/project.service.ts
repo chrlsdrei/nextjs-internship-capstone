@@ -46,6 +46,7 @@ export async function getAccessibleProjectSummaries(limit?: number): Promise<Pro
   return Promise.all(
     memberships.map(async (project) => ({
       ...project,
+      workspaceId: null,
       dueDate: project.dueDate?.toISOString() ?? null,
       updatedAt: project.updatedAt.toISOString(),
       ...(await getProjectCounts(project.id)),

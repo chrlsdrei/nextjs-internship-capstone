@@ -1,9 +1,14 @@
 import { ProjectDirectory } from "@/features/projects/components/project-directory"
 import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
 import { getAccessibleProjectSummaries } from "@/features/projects/server/project.service"
+import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
 
-export default async function ProjectsPage() {
-  const projects = await getAccessibleProjectSummaries()
+export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ workspace?: string }> }) {
+  const [{ workspace }, projects, workspaces] = await Promise.all([
+    searchParams,
+    getAccessibleProjectSummaries(),
+    listWorkspaces(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -14,7 +19,7 @@ export default async function ProjectsPage() {
         </div>
         <CreateProjectController />
       </div>
-      <ProjectDirectory projects={projects} />
+      <ProjectDirectory initialWorkspaceId={workspace} projects={projects} workspaces={workspaces} />
     </div>
   )
 }

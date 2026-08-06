@@ -2,6 +2,7 @@ export type ProjectRole = "owner" | "admin" | "member"
 
 export type ProjectSummaryDto = {
   id: string
+  workspaceId: string | null
   name: string
   description: string | null
   dueDate: string | null

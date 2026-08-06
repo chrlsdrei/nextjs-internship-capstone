@@ -2,9 +2,11 @@ import { DashboardStats } from "@/features/dashboard/components/dashboard-stats"
 import { RecentProjects } from "@/features/dashboard/components/recent-projects"
 import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
 import { getDashboardSummary } from "@/features/projects/server/project.service"
+import { WorkspaceDashboardPanel } from "@/features/workspaces/components/workspace-dashboard-panel"
+import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
 
 export default async function DashboardPage() {
-  const summary = await getDashboardSummary()
+  const [summary, workspaces] = await Promise.all([getDashboardSummary(), listWorkspaces()])
 
   return (
     <div className="space-y-6">
@@ -21,8 +23,10 @@ export default async function DashboardPage() {
         projectCount={summary.projectCount}
         memberCount={summary.memberCount}
         taskCount={summary.taskCount}
+        workspaceCount={workspaces.length}
       />
-      <RecentProjects projects={summary.recentProjects} />
+      <WorkspaceDashboardPanel workspaces={workspaces} />
+      <RecentProjects projects={summary.recentProjects} workspaces={workspaces} />
     </div>
   )
 }
