@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   canChangeWorkspaceMemberRole,
   canCreateProjectInWorkspace,
+  canInviteWorkspaceOutsiders,
   canRemoveWorkspaceMember,
   canTransferWorkspaceOwnership,
   resolveWorkspaceRole,
@@ -43,6 +44,7 @@ describe("workspace role resolution", () => {
       canManageMemberRoles: true,
       canRemoveMembers: true,
       canTransferOwnership: true,
+      canInviteWorkspaceMembers: true,
     })
     expect(workspaceCapabilities("admin")).toEqual({
       canManageDetails: false,
@@ -50,7 +52,9 @@ describe("workspace role resolution", () => {
       canManageMemberRoles: false,
       canRemoveMembers: true,
       canTransferOwnership: false,
+      canInviteWorkspaceMembers: true,
     })
+    expect(workspaceCapabilities("member").canInviteWorkspaceMembers).toBe(false)
   })
 })
 
@@ -67,6 +71,13 @@ describe("workspace member permission matrix", () => {
     expect(canTransferWorkspaceOwnership("owner")).toBe(true)
     expect(canTransferWorkspaceOwnership("admin")).toBe(false)
     expect(canTransferWorkspaceOwnership("member")).toBe(false)
+  })
+
+  it("shows outsider invitation controls only to workspace owners and administrators", () => {
+    expect(canInviteWorkspaceOutsiders("owner")).toBe(true)
+    expect(canInviteWorkspaceOutsiders("admin")).toBe(true)
+    expect(canInviteWorkspaceOutsiders("member")).toBe(false)
+    expect(canInviteWorkspaceOutsiders(null)).toBe(false)
   })
 
   it("prevents admins from removing owners or other admins", () => {

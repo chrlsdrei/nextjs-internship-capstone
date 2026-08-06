@@ -8,7 +8,7 @@ import {
   createWorkspaceInvitationSchema,
   invitationIdSchema,
 } from "@/features/invitations/invitation.schema"
-import type { InvitationDto } from "@/features/invitations/invitation.types"
+import type { InvitationDto, InvitationPreviewDto } from "@/features/invitations/invitation.types"
 import {
   acceptInvitationRecord,
   createInvitationRecord,
@@ -31,12 +31,19 @@ import {
 import { requireProjectPermission } from "@/features/projects/server/project-access.service"
 import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
 import { findActiveWorkspaceAccess } from "@/features/workspaces/server/workspace.repository"
-import { resolveWorkspaceRole } from "@/features/workspaces/workspace.policy"
+import { canInviteWorkspaceOutsiders, resolveWorkspaceRole } from "@/features/workspaces/workspace.policy"
 
 type InvitationRecord = NonNullable<Awaited<ReturnType<typeof findInvitationById>>>
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
+}
+
+function maskEmail(email: string) {
+  const [localPart, domain] = email.split("@")
+  if (!localPart || !domain) return "Hidden recipient"
+  const visible = localPart.slice(0, Math.min(2, localPart.length))
+  return `${visible}${"•".repeat(Math.max(3, localPart.length - visible.length))}@${domain}`
 }
 
 function toDto(invitation: InvitationRecord): InvitationDto {
@@ -190,14 +197,53 @@ export async function createProjectInvitation(input: unknown): Promise<Invitatio
 
 export async function listWorkspaceInvitations(workspaceId: string): Promise<InvitationDto[]> {
   const { access } = await requireWorkspaceInvitationAuthority(workspaceId)
-  return (await listWorkspaceInvitationRecords(access.id)).map(toDto)
+  return (await listWorkspaceInvitationRecords(access.id))
+    .filter((invitation) => invitation.kind === "workspace")
+    .map(toDto)
 }
 
 export async function listProjectInvitations(projectId: string): Promise<InvitationDto[]> {
   const access = await requireProjectPermission(projectId, "manage")
+  const workspaceAccess = await findActiveWorkspaceAccess(access.workspaceId, access.user.id)
+  const workspaceRole = workspaceAccess
+    ? resolveWorkspaceRole(workspaceAccess.ownerWorkspaceMemberId, {
+        id: workspaceAccess.membershipId,
+        role: workspaceAccess.membershipRole,
+        removedAt: workspaceAccess.membershipRemovedAt,
+      })
+    : null
+  const canManageWorkspaceInvitations = canInviteWorkspaceOutsiders(workspaceRole)
   return (await listWorkspaceInvitationRecords(access.workspaceId))
-    .filter((invitation) => invitation.projectId === access.projectId)
+    .filter(
+      (invitation) =>
+        invitation.projectId === access.projectId && (invitation.kind === "project" || canManageWorkspaceInvitations),
+    )
     .map(toDto)
+}
+
+export async function getInvitationPreview(token: string): Promise<InvitationPreviewDto> {
+  const parsed = acceptInvitationSchema.safeParse({ token })
+  if (!parsed.success) {
+    return { state: "invalid", workspaceName: null, projectTitle: null, maskedEmail: null, expiresAt: null }
+  }
+  const invitation = await findInvitationByTokenHash(hashInvitationToken(parsed.data.token))
+  if (!invitation) {
+    return { state: "invalid", workspaceName: null, projectTitle: null, maskedEmail: null, expiresAt: null }
+  }
+  const state = invitation.acceptedAt
+    ? "accepted"
+    : invitation.revokedAt
+      ? "revoked"
+      : invitation.expiresAt <= new Date()
+        ? "expired"
+        : "active"
+  return {
+    state,
+    workspaceName: invitation.workspaceName,
+    projectTitle: invitation.projectTitle,
+    maskedEmail: maskEmail(invitation.email),
+    expiresAt: invitation.expiresAt.toISOString(),
+  }
 }
 
 export async function resendInvitation(invitationId: string): Promise<InvitationDto> {

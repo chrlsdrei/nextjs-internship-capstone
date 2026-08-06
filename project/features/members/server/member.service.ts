@@ -1,5 +1,6 @@
 import "server-only"
 
+import { listProjectInvitations } from "@/features/invitations/server/invitation.service"
 import {
   projectMemberIdSchema,
   projectMemberSchema,
@@ -19,6 +20,11 @@ import { projectIdSchema } from "@/features/projects/project.schema"
 import { getProjectById, getProjectSettings } from "@/features/projects/server/project.service"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
 import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
+import {
+  findActiveWorkspaceAccess,
+  listActiveWorkspaceMembers,
+} from "@/features/workspaces/server/workspace.repository"
+import { canInviteWorkspaceOutsiders, resolveWorkspaceRole } from "@/features/workspaces/workspace.policy"
 
 export async function getProjectMembers(projectId: string): Promise<ProjectMemberDto[]> {
   const id = projectIdSchema.parse(projectId)
@@ -30,16 +36,35 @@ export async function getProjectMembers(projectId: string): Promise<ProjectMembe
 export async function getProjectManagementData(projectId: string): Promise<ProjectManagementDto> {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "manage")
-  const [project, members, workspaceOwner, settings] = await Promise.all([
+  const [project, members, workspaceOwner, settings, workspaceAccess, invitations] = await Promise.all([
     getProjectById(id),
     getProjectMembers(id),
     findWorkspaceOwnerForProject(id),
     getProjectSettings(id),
+    findActiveWorkspaceAccess(access.workspaceId, access.user.id),
+    listProjectInvitations(id),
   ])
   if (!workspaceOwner) throw new ProjectAccessError("Workspace owner not found", 404)
+  if (!workspaceAccess) throw new ProjectAccessError("Workspace access not found", 404)
+  const workspaceRole = resolveWorkspaceRole(workspaceAccess.ownerWorkspaceMemberId, {
+    id: workspaceAccess.membershipId,
+    role: workspaceAccess.membershipRole,
+    removedAt: workspaceAccess.membershipRemovedAt,
+  })
+  const activeWorkspaceMembers = await listActiveWorkspaceMembers(access.workspaceId)
+  const projectWorkspaceMemberIds = new Set(members.map((member) => member.workspaceMemberId))
+  const activelyInvitedEmails = new Set(
+    invitations
+      .filter((invitation) => !invitation.acceptedAt && !invitation.revokedAt)
+      .map((invitation) => invitation.email.trim().toLowerCase()),
+  )
   return {
     project,
-    workspace: { id: workspaceOwner.workspaceId, name: workspaceOwner.workspaceName },
+    workspace: {
+      id: workspaceOwner.workspaceId,
+      name: workspaceOwner.workspaceName,
+      canInviteNewMembers: canInviteWorkspaceOutsiders(workspaceRole),
+    },
     members,
     workspaceOwner: {
       userId: workspaceOwner.userId,
@@ -52,6 +77,13 @@ export async function getProjectManagementData(projectId: string): Promise<Proje
     settings,
     capabilities: projectManagementCapabilities(access.role),
     role: access.role,
+    availableWorkspaceMembers: activeWorkspaceMembers
+      .filter(
+        (member) =>
+          !projectWorkspaceMemberIds.has(member.id) && !activelyInvitedEmails.has(member.email.trim().toLowerCase()),
+      )
+      .map((member) => ({ id: member.id, email: member.email, name: member.name })),
+    invitations,
   }
 }
 

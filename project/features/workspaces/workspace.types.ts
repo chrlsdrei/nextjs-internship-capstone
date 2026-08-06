@@ -8,6 +8,7 @@ export type WorkspaceCapabilitiesDto = {
   canManageMemberRoles: boolean
   canRemoveMembers: boolean
   canTransferOwnership: boolean
+  canInviteWorkspaceMembers: boolean
 }
 
 export type WorkspaceSummaryDto = {
@@ -29,6 +30,11 @@ export type WorkspaceMemberDto = {
   email: string
   role: WorkspaceRole
   joinedAt: string
+  capabilities: {
+    canChangeRole: boolean
+    canRemove: boolean
+    canReceiveOwnership: boolean
+  }
 }
 
 export type WorkspaceDetailDto = WorkspaceSummaryDto & {

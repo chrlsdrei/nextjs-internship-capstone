@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { ZodError } from "zod"
 
 import { InvitationError } from "@/features/invitations/invitation.error"
+import type { InvitationAcceptanceDto } from "@/features/invitations/invitation.types"
 import {
   acceptInvitation,
   createProjectInvitation,
@@ -86,12 +87,15 @@ export async function revokeInvitationAction(_: ActionState, formData: FormData)
   }
 }
 
-export async function acceptInvitationAction(_: ActionState, formData: FormData): Promise<ActionState> {
+export async function acceptInvitationAction(
+  _: ActionState<InvitationAcceptanceDto>,
+  formData: FormData,
+): Promise<ActionState<InvitationAcceptanceDto>> {
   try {
     const accepted = await acceptInvitation({ token: formData.get("token") })
     refreshInvitationPaths(accepted.workspaceId, accepted.projectId)
-    return actionSuccess(undefined, "Invitation accepted.")
+    return actionSuccess(accepted, "Invitation accepted.")
   } catch (error) {
-    return errorState(error)
+    return errorState<InvitationAcceptanceDto>(error)
   }
 }

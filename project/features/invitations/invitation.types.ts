@@ -25,3 +25,13 @@ export type InvitationAcceptanceDto = {
   workspaceId: string
   projectId: string | null
 }
+
+export type InvitationPreviewState = "active" | "expired" | "revoked" | "accepted" | "invalid"
+
+export type InvitationPreviewDto = {
+  state: InvitationPreviewState
+  workspaceName: string | null
+  projectTitle: string | null
+  maskedEmail: string | null
+  expiresAt: string | null
+}

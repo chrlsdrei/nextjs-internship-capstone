@@ -1,3 +1,4 @@
+import type { InvitationDto } from "@/features/invitations/invitation.types"
 import type {
   BoardRole,
   ProjectDto,
@@ -20,6 +21,7 @@ export type ProjectManagementDto = {
   workspace: {
     id: string
     name: string
+    canInviteNewMembers: boolean
   }
   settings: ProjectSettingsDto
   capabilities: ProjectManagementCapabilitiesDto
@@ -33,4 +35,10 @@ export type ProjectManagementDto = {
     explicitRole: BoardRole | null
   }
   role: BoardRole
+  availableWorkspaceMembers: Array<{
+    id: string
+    email: string
+    name: string
+  }>
+  invitations: InvitationDto[]
 }

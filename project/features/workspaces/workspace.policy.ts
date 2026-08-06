@@ -28,6 +28,7 @@ export function workspaceCapabilities(role: WorkspaceRole): WorkspaceCapabilitie
     canManageMemberRoles: isOwner,
     canRemoveMembers: role !== "member",
     canTransferOwnership: isOwner,
+    canInviteWorkspaceMembers: canInviteWorkspaceOutsiders(role),
   }
 }
 
@@ -37,6 +38,10 @@ export function canChangeWorkspaceMemberRole(actorRole: WorkspaceRole, targetRol
 
 export function canTransferWorkspaceOwnership(actorRole: WorkspaceRole) {
   return actorRole === "owner"
+}
+
+export function canInviteWorkspaceOutsiders(actorRole: WorkspaceRole | null) {
+  return actorRole === "owner" || actorRole === "admin"
 }
 
 export function canRemoveWorkspaceMember(actorRole: WorkspaceRole, targetRole: WorkspaceRole, isSelf: boolean) {
