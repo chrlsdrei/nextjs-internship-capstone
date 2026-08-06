@@ -31,7 +31,7 @@ async function main() {
   const databaseUrl = process.env.DATABASE_URL as string
   const sql = neon(databaseUrl)
 
-  await sql`truncate table comments, tasks, lists, project_members, projects restart identity cascade`
+  await sql`truncate table projects restart identity cascade`
 
   console.log(`Development project data reset completed for ${formatDatabaseIdentity(identity)}.`)
 }

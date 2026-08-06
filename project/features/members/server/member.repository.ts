@@ -1,31 +1,75 @@
 import "server-only"
 
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, isNotNull, isNull, or, sql } from "drizzle-orm"
 
-import type {
-  ProjectMemberInput,
-  TransferProjectOwnershipInput,
-  UpdateProjectMemberRoleInput,
-} from "@/features/members/member.schema"
+import type { ProjectMemberInput, UpdateProjectMemberRoleInput } from "@/features/members/member.schema"
+import type { BoardRole } from "@/features/projects/project.types"
 import { db } from "@/server/db/client"
-import { projectMembers, users } from "@/server/db/schema"
+import { projectMembers, projects, users, workspaceMembers, workspaces } from "@/server/db/schema"
 
 function canManageProject(projectId: string, userId: string) {
   return sql`EXISTS (
-    SELECT 1 FROM "project_members" AS "manager"
-    WHERE "manager"."project_id" = ${projectId}
-      AND "manager"."user_id" = ${userId}
-      AND "manager"."role" IN ('owner', 'admin')
+    SELECT 1
+    FROM "projects" AS "authorized_project"
+    INNER JOIN "workspaces" AS "authorized_workspace"
+      ON "authorized_workspace"."id" = "authorized_project"."workspace_id"
+      AND "authorized_workspace"."status" = 'active'
+    INNER JOIN "workspace_members" AS "actor_workspace_member"
+      ON "actor_workspace_member"."workspace_id" = "authorized_project"."workspace_id"
+      AND "actor_workspace_member"."user_id" = ${userId}
+      AND "actor_workspace_member"."removed_at" IS NULL
+    LEFT JOIN "project_members" AS "actor_project_member"
+      ON "actor_project_member"."project_id" = "authorized_project"."id"
+      AND "actor_project_member"."workspace_member_id" = "actor_workspace_member"."id"
+      AND "actor_project_member"."removed_at" IS NULL
+    WHERE "authorized_project"."id" = ${projectId}
+      AND (
+        "authorized_workspace"."owner_workspace_member_id" = "actor_workspace_member"."id"
+        OR "actor_project_member"."role" = 'board_admin'
+      )
   )`
 }
 
 export async function findProjectAccess(projectId: string, userId: string) {
-  const [membership] = await db
-    .select({ projectId: projectMembers.projectId, role: projectMembers.role })
-    .from(projectMembers)
-    .where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)))
+  const effectiveRole = sql<BoardRole>`CASE
+    WHEN ${workspaces.ownerWorkspaceMemberId} = ${workspaceMembers.id} THEN 'board_admin'::board_role
+    ELSE ${projectMembers.role}
+  END`
+  const [access] = await db
+    .select({
+      projectId: projects.id,
+      workspaceId: projects.workspaceId,
+      workspaceMemberId: workspaceMembers.id,
+      projectMemberId: projectMembers.id,
+      role: effectiveRole,
+      isWorkspaceOwner: sql<boolean>`${workspaces.ownerWorkspaceMemberId} = ${workspaceMembers.id}`,
+    })
+    .from(projects)
+    .innerJoin(workspaces, and(eq(workspaces.id, projects.workspaceId), eq(workspaces.status, "active")))
+    .innerJoin(
+      workspaceMembers,
+      and(
+        eq(workspaceMembers.workspaceId, projects.workspaceId),
+        eq(workspaceMembers.userId, userId),
+        isNull(workspaceMembers.removedAt),
+      ),
+    )
+    .leftJoin(
+      projectMembers,
+      and(
+        eq(projectMembers.projectId, projects.id),
+        eq(projectMembers.workspaceMemberId, workspaceMembers.id),
+        isNull(projectMembers.removedAt),
+      ),
+    )
+    .where(
+      and(
+        eq(projects.id, projectId),
+        or(eq(workspaces.ownerWorkspaceMemberId, workspaceMembers.id), isNotNull(projectMembers.id)),
+      ),
+    )
     .limit(1)
-  return membership ?? null
+  return access ?? null
 }
 
 export function listProjectMembers(projectId: string) {
@@ -33,33 +77,65 @@ export function listProjectMembers(projectId: string) {
     .select({
       id: projectMembers.id,
       userId: users.id,
+      workspaceMemberId: workspaceMembers.id,
       email: users.email,
       name: users.name,
       role: projectMembers.role,
-      createdAt: projectMembers.createdAt,
+      createdAt: projectMembers.joinedAt,
     })
     .from(projectMembers)
-    .innerJoin(users, eq(projectMembers.userId, users.id))
-    .where(eq(projectMembers.projectId, projectId))
-    .orderBy(projectMembers.createdAt)
+    .innerJoin(workspaceMembers, eq(projectMembers.workspaceMemberId, workspaceMembers.id))
+    .innerJoin(users, eq(workspaceMembers.userId, users.id))
+    .where(and(eq(projectMembers.projectId, projectId), isNull(projectMembers.removedAt)))
+    .orderBy(projectMembers.joinedAt)
 }
 
-export async function findUserByEmail(email: string) {
-  const [user] = await db.select().from(users).where(sql`lower(${users.email}) = ${email}`).limit(1)
-  return user ?? null
+export async function findWorkspaceOwnerForProject(projectId: string) {
+  const [owner] = await db
+    .select({
+      workspaceMemberId: workspaceMembers.id,
+      userId: users.id,
+      email: users.email,
+      name: users.name,
+    })
+    .from(projects)
+    .innerJoin(workspaces, eq(workspaces.id, projects.workspaceId))
+    .innerJoin(workspaceMembers, eq(workspaceMembers.id, workspaces.ownerWorkspaceMemberId))
+    .innerJoin(users, eq(users.id, workspaceMembers.userId))
+    .where(eq(projects.id, projectId))
+    .limit(1)
+  return owner ?? null
+}
+
+export async function findWorkspaceMemberByEmail(projectId: string, email: string) {
+  const [member] = await db
+    .select({ id: workspaceMembers.id, userId: workspaceMembers.userId, workspaceId: workspaceMembers.workspaceId })
+    .from(projects)
+    .innerJoin(
+      workspaceMembers,
+      and(eq(workspaceMembers.workspaceId, projects.workspaceId), isNull(workspaceMembers.removedAt)),
+    )
+    .innerJoin(users, eq(users.id, workspaceMembers.userId))
+    .where(and(eq(projects.id, projectId), eq(users.normalizedEmail, email)))
+    .limit(1)
+  return member ?? null
 }
 
 export async function insertProjectMember(
   projectId: string,
-  actorId: string,
-  userId: string,
+  actorUserId: string,
+  workspaceMember: { id: string; workspaceId: string },
   values: ProjectMemberInput,
 ) {
   const { rows } = await db.execute<{ id: string }>(sql`
-    INSERT INTO "project_members" ("project_id", "user_id", "role")
-    SELECT ${projectId}, ${userId}, ${values.role}
-    WHERE ${canManageProject(projectId, actorId)}
-    ON CONFLICT ("project_id", "user_id") DO NOTHING
+    INSERT INTO "project_members" ("workspace_id", "project_id", "workspace_member_id", "role")
+    SELECT ${workspaceMember.workspaceId}, ${projectId}, ${workspaceMember.id}, ${values.role}
+    WHERE ${canManageProject(projectId, actorUserId)}
+      AND EXISTS (
+        SELECT 1 FROM "projects"
+        WHERE "id" = ${projectId} AND "workspace_id" = ${workspaceMember.workspaceId}
+      )
+    ON CONFLICT ("project_id", "workspace_member_id") WHERE "removed_at" IS NULL DO NOTHING
     RETURNING "id"
   `)
   return rows[0] ?? null
@@ -67,91 +143,46 @@ export async function insertProjectMember(
 
 export async function updateMemberRole(
   projectId: string,
-  actorId: string,
+  actorUserId: string,
   memberId: string,
   values: UpdateProjectMemberRoleInput,
 ) {
   const { rows } = await db.execute<{ id: string }>(sql`
     UPDATE "project_members" AS "member"
-    SET "role" = ${values.role}
+    SET "role" = ${values.role}, "updated_at" = NOW()
     WHERE "member"."id" = ${memberId}
       AND "member"."project_id" = ${projectId}
-      AND "member"."role" <> 'owner'
-      AND ${canManageProject(projectId, actorId)}
+      AND "member"."removed_at" IS NULL
+      AND ${canManageProject(projectId, actorUserId)}
     RETURNING "member"."id" AS "id"
   `)
   return rows[0] ?? null
 }
 
-export async function deleteMemberAndUnassignTasks(projectId: string, actorId: string, memberId: string) {
+export async function softRemoveMemberAndUnassignTasks(projectId: string, actorUserId: string, memberId: string) {
   const [, result] = await db.batch([
     db.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`project-write:${projectId}`}, 0))`),
     db.execute<{ userId: string }>(sql`
       WITH "removed_member" AS (
-        DELETE FROM "project_members" AS "member"
+        UPDATE "project_members" AS "member"
+        SET "removed_at" = NOW(), "updated_at" = NOW()
+        FROM "workspace_members" AS "workspace_member"
         WHERE "member"."id" = ${memberId}
           AND "member"."project_id" = ${projectId}
-          AND "member"."role" <> 'owner'
-          AND ${canManageProject(projectId, actorId)}
-        RETURNING "member"."user_id" AS "userId"
+          AND "member"."removed_at" IS NULL
+          AND "workspace_member"."id" = "member"."workspace_member_id"
+          AND ${canManageProject(projectId, actorUserId)}
+        RETURNING "workspace_member"."user_id" AS "userId"
       ),
       "unassigned_tasks" AS (
         UPDATE "tasks"
-        SET "assignee_id" = NULL
-        WHERE "assignee_id" = (SELECT "userId" FROM "removed_member")
-          AND "list_id" IN (SELECT "id" FROM "lists" WHERE "project_id" = ${projectId})
+        SET "assignee_id" = NULL, "updated_at" = NOW()
+        WHERE "project_id" = ${projectId}
+          AND "assignee_id" = (SELECT "userId" FROM "removed_member")
         RETURNING "id"
       )
       SELECT "userId" FROM "removed_member"
     `),
   ])
   return result.rows[0] ?? null
-}
-
-export async function transferOwnership(projectId: string, actorId: string, values: TransferProjectOwnershipInput) {
-  const { rows } = await db.execute<{ id: string }>(sql`
-    WITH "authorized_transfer" AS (
-      SELECT "target"."user_id" AS "targetUserId"
-      FROM "projects" AS "project"
-      INNER JOIN "project_members" AS "current_member"
-        ON "current_member"."project_id" = "project"."id"
-        AND "current_member"."user_id" = ${actorId}
-        AND "current_member"."role" = 'owner'
-      INNER JOIN "project_members" AS "target"
-        ON "target"."id" = ${values.memberId}
-        AND "target"."project_id" = "project"."id"
-        AND "target"."role" IN ('admin', 'member')
-      WHERE "project"."id" = ${projectId}
-        AND "project"."owner_id" = ${actorId}
-      FOR UPDATE OF "project", "current_member", "target"
-    ),
-    "demoted_owner" AS (
-      UPDATE "project_members" AS "current_member"
-      SET "role" = 'admin'
-      FROM "authorized_transfer"
-      WHERE "current_member"."project_id" = ${projectId}
-        AND "current_member"."user_id" = ${actorId}
-        AND "current_member"."role" = 'owner'
-      RETURNING "current_member"."id"
-    ),
-    "promoted_owner" AS (
-      UPDATE "project_members" AS "target"
-      SET "role" = 'owner'
-      FROM "authorized_transfer", "demoted_owner"
-      WHERE "target"."project_id" = ${projectId}
-        AND "target"."user_id" = "authorized_transfer"."targetUserId"
-        AND "target"."role" IN ('admin', 'member')
-      RETURNING "target"."user_id" AS "userId"
-    ),
-    "updated_project" AS (
-      UPDATE "projects" AS "project"
-      SET "owner_id" = "promoted_owner"."userId"
-      FROM "promoted_owner"
-      WHERE "project"."id" = ${projectId}
-        AND "project"."owner_id" = ${actorId}
-      RETURNING "project"."id" AS "id"
-    )
-    SELECT "id" FROM "updated_project"
-  `)
-  return rows[0] ?? null
 }

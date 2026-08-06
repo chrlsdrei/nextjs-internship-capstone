@@ -1,16 +1,23 @@
-import type { ProjectDto, ProjectRole } from "@/features/projects/project.types"
+import type { BoardRole, ProjectDto } from "@/features/projects/project.types"
 
 export type ProjectMemberDto = {
   id: string
   userId: string
+  workspaceMemberId: string
   email: string
   name: string
-  role: ProjectRole
+  role: BoardRole
   createdAt: string
 }
 
 export type ProjectManagementDto = {
   project: ProjectDto
   members: ProjectMemberDto[]
-  role: ProjectRole
+  workspaceOwner: {
+    userId: string
+    workspaceMemberId: string
+    email: string
+    name: string
+  }
+  role: BoardRole
 }

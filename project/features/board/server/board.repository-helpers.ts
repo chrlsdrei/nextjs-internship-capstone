@@ -4,30 +4,76 @@ import { type SQL, sql } from "drizzle-orm"
 
 import { db } from "@/server/db/client"
 
-export function canManageBoard(projectId: string, userId: string) {
+function authorizedProjectAccess(projectId: string, userId: string, allowedRoles: readonly string[]) {
   return sql`EXISTS (
-    SELECT 1 FROM "project_members" AS "membership"
-    WHERE "membership"."project_id" = ${projectId}
-      AND "membership"."user_id" = ${userId}
-      AND "membership"."role" IN ('owner', 'admin')
+    SELECT 1
+    FROM "projects" AS "authorized_project"
+    INNER JOIN "workspaces" AS "authorized_workspace"
+      ON "authorized_workspace"."id" = "authorized_project"."workspace_id"
+      AND "authorized_workspace"."status" = 'active'
+    INNER JOIN "workspace_members" AS "actor_workspace_member"
+      ON "actor_workspace_member"."workspace_id" = "authorized_project"."workspace_id"
+      AND "actor_workspace_member"."user_id" = ${userId}
+      AND "actor_workspace_member"."removed_at" IS NULL
+    LEFT JOIN "project_members" AS "actor_project_member"
+      ON "actor_project_member"."project_id" = "authorized_project"."id"
+      AND "actor_project_member"."workspace_member_id" = "actor_workspace_member"."id"
+      AND "actor_project_member"."removed_at" IS NULL
+    WHERE "authorized_project"."id" = ${projectId}
+      AND (
+        "authorized_workspace"."owner_workspace_member_id" = "actor_workspace_member"."id"
+        OR "actor_project_member"."role" IN (${sql.join(
+          allowedRoles.map((role) => sql`${role}`),
+          sql`, `,
+        )})
+      )
   )`
 }
 
+export function canManageBoard(projectId: string, userId: string) {
+  return authorizedProjectAccess(projectId, userId, ["board_admin"])
+}
+
 export function canWorkOnTasks(projectId: string, userId: string) {
+  return authorizedProjectAccess(projectId, userId, ["board_admin", "editor"])
+}
+
+export function canAssignTasks(projectId: string, userId: string) {
   return sql`EXISTS (
-    SELECT 1 FROM "project_members" AS "membership"
-    WHERE "membership"."project_id" = ${projectId}
-      AND "membership"."user_id" = ${userId}
-      AND "membership"."role" IN ('owner', 'admin', 'member')
+    SELECT 1
+    FROM "projects" AS "authorized_project"
+    INNER JOIN "project_settings" AS "settings" ON "settings"."project_id" = "authorized_project"."id"
+    INNER JOIN "workspaces" AS "authorized_workspace"
+      ON "authorized_workspace"."id" = "authorized_project"."workspace_id"
+      AND "authorized_workspace"."status" = 'active'
+    INNER JOIN "workspace_members" AS "actor_workspace_member"
+      ON "actor_workspace_member"."workspace_id" = "authorized_project"."workspace_id"
+      AND "actor_workspace_member"."user_id" = ${userId}
+      AND "actor_workspace_member"."removed_at" IS NULL
+    LEFT JOIN "project_members" AS "actor_project_member"
+      ON "actor_project_member"."project_id" = "authorized_project"."id"
+      AND "actor_project_member"."workspace_member_id" = "actor_workspace_member"."id"
+      AND "actor_project_member"."removed_at" IS NULL
+    WHERE "authorized_project"."id" = ${projectId}
+      AND (
+        "authorized_workspace"."owner_workspace_member_id" = "actor_workspace_member"."id"
+        OR "actor_project_member"."role" = 'board_admin'
+        OR ("actor_project_member"."role" = 'editor' AND "settings"."editors_can_assign_tasks")
+      )
   )`
 }
 
 export function validAssignee(projectId: string, assigneeId: string | null | undefined) {
   if (!assigneeId) return sql`TRUE`
   return sql`EXISTS (
-    SELECT 1 FROM "project_members" AS "assignee_membership"
-    WHERE "assignee_membership"."project_id" = ${projectId}
-      AND "assignee_membership"."user_id" = ${assigneeId}
+    SELECT 1
+    FROM "project_members" AS "assignee_project_member"
+    INNER JOIN "workspace_members" AS "assignee_workspace_member"
+      ON "assignee_workspace_member"."id" = "assignee_project_member"."workspace_member_id"
+      AND "assignee_workspace_member"."removed_at" IS NULL
+    WHERE "assignee_project_member"."project_id" = ${projectId}
+      AND "assignee_project_member"."removed_at" IS NULL
+      AND "assignee_workspace_member"."user_id" = ${assigneeId}
   )`
 }
 

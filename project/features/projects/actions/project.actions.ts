@@ -18,6 +18,7 @@ function messageFor(error: unknown) {
 
 function projectInput(formData: FormData) {
   return {
+    workspaceId: formData.get("workspaceId"),
     name: formData.get("name"),
     description: formData.get("description"),
     dueDate: formData.get("dueDate"),

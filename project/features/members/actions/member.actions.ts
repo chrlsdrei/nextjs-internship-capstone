@@ -6,7 +6,6 @@ import { publishProjectEvent } from "@/features/board/server/project-event.servi
 import {
   addProjectMember,
   removeProjectMember,
-  transferProjectOwnership,
   updateProjectMemberRole,
 } from "@/features/members/server/member.service"
 import { ProjectAccessError } from "@/features/projects/server/project-access.service"
@@ -57,17 +56,6 @@ export async function removeProjectMemberAction(_: ActionState, formData: FormDa
     await removeProjectMember(projectId, String(formData.get("memberId") ?? ""))
     refreshMembershipViews(projectId)
     return actionSuccess(undefined, "Member removed.")
-  } catch (error) {
-    return actionError(messageFor(error))
-  }
-}
-
-export async function transferProjectOwnershipAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  try {
-    const projectId = String(formData.get("projectId") ?? "")
-    await transferProjectOwnership(projectId, { memberId: formData.get("memberId") })
-    refreshMembershipViews(projectId)
-    return actionSuccess(undefined, "Ownership transferred.")
   } catch (error) {
     return actionError(messageFor(error))
   }

@@ -18,6 +18,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:test:migrate": "drizzle-kit migrate --config drizzle.test.config.ts",
+    "db:test:reset-projects": "tsx scripts/reset-test-project-data.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:check": "tsx scripts/check-db.ts",

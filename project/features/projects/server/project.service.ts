@@ -9,27 +9,34 @@ import {
 } from "@/features/projects/project.schema"
 import type { DashboardSummaryDto, ProjectDto, ProjectSummaryDto } from "@/features/projects/project.types"
 import {
-  deleteProjectAsOwner,
+  deleteProjectAsManager,
   findProjectById,
   getProjectCounts,
-  insertProjectWithOwner,
+  insertProject,
   listAccessibleProjects,
   listProjectMemberUserIds,
   updateProjectAsManager,
 } from "@/features/projects/server/project.repository"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
+import { findActiveWorkspaceAccess } from "@/features/workspaces/server/workspace.repository"
+import { resolveWorkspaceRole } from "@/features/workspaces/workspace.policy"
 
 function projectDto(project: {
   id: string
-  name: string
+  workspaceId: string
+  title: string
   description: string | null
   dueDate: Date | null
-  ownerId: string
+  createdByWorkspaceMemberId: string
   createdAt: Date
   updatedAt: Date
 }): ProjectDto {
   return {
-    ...project,
+    id: project.id,
+    workspaceId: project.workspaceId,
+    name: project.title,
+    description: project.description,
+    createdByWorkspaceMemberId: project.createdByWorkspaceMemberId,
     dueDate: project.dueDate?.toISOString() ?? null,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
@@ -46,7 +53,6 @@ export async function getAccessibleProjectSummaries(limit?: number): Promise<Pro
   return Promise.all(
     memberships.map(async (project) => ({
       ...project,
-      workspaceId: null,
       dueDate: project.dueDate?.toISOString() ?? null,
       updatedAt: project.updatedAt.toISOString(),
       ...(await getProjectCounts(project.id)),
@@ -77,8 +83,23 @@ export async function getProjectById(projectId: string): Promise<ProjectDto> {
 export async function createProject(input: unknown): Promise<ProjectDto> {
   const parsedValues = projectSchema.parse(input)
   const values = { ...parsedValues, ...(parsedValues.description === "" ? { description: null } : {}) }
-  const owner = await getCurrentDatabaseUser()
-  const project = await insertProjectWithOwner(owner.id, values)
+  const creator = await getCurrentDatabaseUser()
+  const workspaceAccess = await findActiveWorkspaceAccess(values.workspaceId, creator.id)
+  if (workspaceAccess?.status !== "active") {
+    throw new ProjectAccessError("Workspace not found or you cannot create projects there", 404)
+  }
+  const workspaceRole = resolveWorkspaceRole(workspaceAccess.ownerWorkspaceMemberId, {
+    id: workspaceAccess.membershipId,
+    role: workspaceAccess.membershipRole,
+    removedAt: workspaceAccess.membershipRemovedAt,
+  })
+  const mayCreate =
+    workspaceRole === "owner" ||
+    workspaceRole === "admin" ||
+    (workspaceRole === "member" && workspaceAccess.membersCanCreateProjects)
+  if (!mayCreate) throw new ProjectAccessError("You cannot create projects in this workspace", 403)
+
+  const project = await insertProject(workspaceAccess.membershipId, workspaceRole === "owner", values)
   if (!project) throw new Error("Unable to create the project")
   return projectDto(project)
 }
@@ -99,7 +120,7 @@ export async function updateProject(projectId: string, input: unknown): Promise<
 export async function deleteProject(projectId: string) {
   const id = projectIdSchema.parse(projectId)
   const currentUser = await getCurrentDatabaseUser()
-  const project = await deleteProjectAsOwner(id, currentUser.id)
+  const project = await deleteProjectAsManager(id, currentUser.id)
   if (!project) {
     throw new ProjectAccessError("Project not found or you do not have permission to delete it", 404)
   }

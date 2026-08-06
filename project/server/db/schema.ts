@@ -24,7 +24,7 @@ const timestamps = {
 }
 
 export const taskPriority = pgEnum("task_priority", ["low", "medium", "high"])
-export const projectMemberRole = pgEnum("project_member_role", ["owner", "admin", "member"])
+export const boardRole = pgEnum("board_role", ["board_admin", "editor", "viewer"])
 export const systemRole = pgEnum("system_role", ["user", "super_admin"])
 export const accountStatus = pgEnum("account_status", ["active", "suspended", "deleted"])
 export const workspaceStatus = pgEnum("workspace_status", ["active", "suspended", "deleted"])
@@ -109,35 +109,65 @@ export const projects = pgTable(
   "projects",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    name: text("name").notNull(),
-    description: text("description"),
-    ownerId: uuid("owner_id")
+    workspaceId: uuid("workspace_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    createdByWorkspaceMemberId: uuid("created_by_workspace_member_id").notNull(),
     dueDate: timestamp("due_date", { withTimezone: true }),
     ...timestamps,
   },
-  (table) => [index("projects_owner_id_idx").on(table.ownerId)],
+  (table) => [
+    unique("projects_id_workspace_unique").on(table.id, table.workspaceId),
+    foreignKey({
+      columns: [table.createdByWorkspaceMemberId, table.workspaceId],
+      foreignColumns: [workspaceMembers.id, workspaceMembers.workspaceId],
+      name: "projects_creator_workspace_member_fk",
+    }).onDelete("restrict"),
+    index("projects_workspace_id_idx").on(table.workspaceId),
+    index("projects_created_by_workspace_member_id_idx").on(table.createdByWorkspaceMemberId),
+  ],
 )
+
+export const projectSettings = pgTable("project_settings", {
+  projectId: uuid("project_id")
+    .primaryKey()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  editorsCanAssignTasks: boolean("editors_can_assign_tasks").default(true).notNull(),
+  ...timestamps,
+})
 
 export const projectMembers = pgTable(
   "project_members",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    role: projectMemberRole("role").default("member").notNull(),
+    workspaceId: uuid("workspace_id").notNull(),
+    projectId: uuid("project_id").notNull(),
+    workspaceMemberId: uuid("workspace_member_id").notNull(),
+    role: boardRole("role").default("viewer").notNull(),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("project_members_project_user_unique").on(table.projectId, table.userId),
-    uniqueIndex("project_members_one_owner_per_project").on(table.projectId).where(sql`${table.role} = 'owner'`),
+    unique("project_members_id_project_unique").on(table.id, table.projectId),
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [projects.id, projects.workspaceId],
+      name: "project_members_project_workspace_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceMemberId, table.workspaceId],
+      foreignColumns: [workspaceMembers.id, workspaceMembers.workspaceId],
+      name: "project_members_workspace_member_fk",
+    }).onDelete("cascade"),
+    uniqueIndex("project_members_active_workspace_member_unique")
+      .on(table.projectId, table.workspaceMemberId)
+      .where(sql`${table.removedAt} is null`),
     index("project_members_project_id_idx").on(table.projectId),
-    index("project_members_user_id_idx").on(table.userId),
+    index("project_members_workspace_member_id_idx").on(table.workspaceMemberId),
+    index("project_members_workspace_id_idx").on(table.workspaceId),
   ],
 )
 
@@ -153,6 +183,7 @@ export const lists = pgTable(
     ...timestamps,
   },
   (table) => [
+    unique("lists_id_project_unique").on(table.id, table.projectId),
     index("lists_project_position_idx").on(table.projectId, table.position),
     check("lists_position_nonnegative", sql`${table.position} >= 0`),
   ],
@@ -164,9 +195,8 @@ export const tasks = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     title: text("title").notNull(),
     description: text("description"),
-    listId: uuid("list_id")
-      .notNull()
-      .references(() => lists.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").notNull(),
+    listId: uuid("list_id").notNull(),
     assigneeId: uuid("assignee_id").references(() => users.id, { onDelete: "set null" }),
     priority: taskPriority("priority").default("medium").notNull(),
     dueDate: timestamp("due_date", { withTimezone: true }),
@@ -174,6 +204,12 @@ export const tasks = pgTable(
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      columns: [table.listId, table.projectId],
+      foreignColumns: [lists.id, lists.projectId],
+      name: "tasks_list_project_fk",
+    }).onDelete("cascade"),
+    index("tasks_project_id_idx").on(table.projectId),
     index("tasks_list_position_idx").on(table.listId, table.position),
     index("tasks_assignee_id_idx").on(table.assigneeId),
     check("tasks_position_nonnegative", sql`${table.position} >= 0`),
@@ -200,8 +236,6 @@ export const comments = pgTable(
 )
 
 export const usersRelations = relations(users, ({ many }) => ({
-  projects: many(projects),
-  projectMemberships: many(projectMembers),
   workspaceMemberships: many(workspaceMembers),
   assignedTasks: many(tasks, { relationName: "taskAssignee" }),
   comments: many(comments),
@@ -215,9 +249,10 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
     relationName: "workspaceOwnerMembership",
   }),
   settings: one(workspaceSettings),
+  projects: many(projects),
 }))
 
-export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
+export const workspaceMembersRelations = relations(workspaceMembers, ({ many, one }) => ({
   user: one(users, {
     fields: [workspaceMembers.userId],
     references: [users.id],
@@ -227,6 +262,8 @@ export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) =
     references: [workspaces.id],
     relationName: "workspaceMemberships",
   }),
+  createdProjects: many(projects, { relationName: "projectCreator" }),
+  projectMemberships: many(projectMembers),
 }))
 
 export const workspaceSettingsRelations = relations(workspaceSettings, ({ one }) => ({
@@ -237,12 +274,25 @@ export const workspaceSettingsRelations = relations(workspaceSettings, ({ one })
 }))
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [projects.ownerId],
-    references: [users.id],
+  workspace: one(workspaces, {
+    fields: [projects.workspaceId],
+    references: [workspaces.id],
   }),
+  creator: one(workspaceMembers, {
+    fields: [projects.createdByWorkspaceMemberId],
+    references: [workspaceMembers.id],
+    relationName: "projectCreator",
+  }),
+  settings: one(projectSettings),
   lists: many(lists),
   members: many(projectMembers),
+}))
+
+export const projectSettingsRelations = relations(projectSettings, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectSettings.projectId],
+    references: [projects.id],
+  }),
 }))
 
 export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
@@ -250,9 +300,9 @@ export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
     fields: [projectMembers.projectId],
     references: [projects.id],
   }),
-  user: one(users, {
-    fields: [projectMembers.userId],
-    references: [users.id],
+  workspaceMember: one(workspaceMembers, {
+    fields: [projectMembers.workspaceMemberId],
+    references: [workspaceMembers.id],
   }),
 }))
 
@@ -298,6 +348,8 @@ export type WorkspaceSettings = typeof workspaceSettings.$inferSelect
 export type NewWorkspaceSettings = typeof workspaceSettings.$inferInsert
 export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
+export type ProjectSettings = typeof projectSettings.$inferSelect
+export type NewProjectSettings = typeof projectSettings.$inferInsert
 export type ProjectMember = typeof projectMembers.$inferSelect
 export type NewProjectMember = typeof projectMembers.$inferInsert
 export type List = typeof lists.$inferSelect
@@ -307,7 +359,7 @@ export type NewTask = typeof tasks.$inferInsert
 export type Comment = typeof comments.$inferSelect
 export type NewComment = typeof comments.$inferInsert
 export type TaskPriority = (typeof taskPriority.enumValues)[number]
-export type ProjectMemberRole = (typeof projectMemberRole.enumValues)[number]
+export type BoardRole = (typeof boardRole.enumValues)[number]
 export type SystemRole = (typeof systemRole.enumValues)[number]
 export type AccountStatus = (typeof accountStatus.enumValues)[number]
 export type WorkspaceStatus = (typeof workspaceStatus.enumValues)[number]

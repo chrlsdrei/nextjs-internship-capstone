@@ -36,7 +36,7 @@ export function groupProjectsByWorkspace(
     .filter((group) => includeEmptyWorkspaces || group.projects.length > 0)
 
   if (unassignedProjects.length > 0) {
-    groups.push({ key: "unassigned", name: "Unassigned projects", workspace: null, projects: unassignedProjects })
+    groups.push({ key: "unassigned", name: "Unavailable workspace", workspace: null, projects: unassignedProjects })
   }
 
   return groups

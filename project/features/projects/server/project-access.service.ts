@@ -2,9 +2,9 @@ import "server-only"
 
 import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
 import { findProjectAccess } from "@/features/members/server/member.repository"
-import type { ProjectRole } from "@/features/projects/project.types"
+import type { BoardRole } from "@/features/projects/project.types"
 
-export type ProjectPermission = "view" | "manage" | "delete" | "transfer"
+export type ProjectPermission = "view" | "manage" | "delete"
 
 export class ProjectAccessError extends Error {
   constructor(
@@ -16,10 +16,10 @@ export class ProjectAccessError extends Error {
   }
 }
 
-const permissions: Record<ProjectRole, readonly ProjectPermission[]> = {
-  owner: ["view", "manage", "delete", "transfer"],
-  admin: ["view", "manage"],
-  member: ["view"],
+const permissions: Record<BoardRole, readonly ProjectPermission[]> = {
+  board_admin: ["view", "manage", "delete"],
+  editor: ["view"],
+  viewer: ["view"],
 }
 
 export async function getCurrentProjectAccess(projectId: string) {

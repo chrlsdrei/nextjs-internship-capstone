@@ -1,4 +1,4 @@
-import type { ProjectRole } from "@/features/projects/project.types"
+import type { BoardRole } from "@/features/projects/project.types"
 
 export type BoardMemberDto = { id: string; name: string; email: string }
 
@@ -22,7 +22,7 @@ export type BoardListDto = {
 export type ProjectBoardDto = {
   lists: BoardListDto[]
   members: BoardMemberDto[]
-  role: ProjectRole
+  role: BoardRole
 }
 
 export type MoveTaskCommand = {

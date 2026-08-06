@@ -4,16 +4,15 @@ import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
 import {
   projectMemberIdSchema,
   projectMemberSchema,
-  transferProjectOwnershipSchema,
   updateProjectMemberRoleSchema,
 } from "@/features/members/member.schema"
 import type { ProjectManagementDto, ProjectMemberDto } from "@/features/members/member.types"
 import {
-  deleteMemberAndUnassignTasks,
-  findUserByEmail,
+  findWorkspaceMemberByEmail,
+  findWorkspaceOwnerForProject,
   insertProjectMember,
   listProjectMembers,
-  transferOwnership,
+  softRemoveMemberAndUnassignTasks,
   updateMemberRole,
 } from "@/features/members/server/member.repository"
 import { projectIdSchema } from "@/features/projects/project.schema"
@@ -30,8 +29,13 @@ export async function getProjectMembers(projectId: string): Promise<ProjectMembe
 export async function getProjectManagementData(projectId: string): Promise<ProjectManagementDto> {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "manage")
-  const [project, members] = await Promise.all([getProjectById(id), getProjectMembers(id)])
-  return { project, members, role: access.role }
+  const [project, members, workspaceOwner] = await Promise.all([
+    getProjectById(id),
+    getProjectMembers(id),
+    findWorkspaceOwnerForProject(id),
+  ])
+  if (!workspaceOwner) throw new ProjectAccessError("Workspace owner not found", 404)
+  return { project, members, workspaceOwner, role: access.role }
 }
 
 export async function addProjectMember(projectId: string, input: unknown) {
@@ -39,10 +43,12 @@ export async function addProjectMember(projectId: string, input: unknown) {
   const values = projectMemberSchema.parse(input)
   const currentUser = await getCurrentDatabaseUser()
   await requireProjectPermission(id, "manage")
-  const user = await findUserByEmail(values.email)
-  if (!user) throw new ProjectAccessError("No synchronized user exists for that email address", 422)
+  const workspaceMember = await findWorkspaceMemberByEmail(id, values.email)
+  if (!workspaceMember) {
+    throw new ProjectAccessError("That user must be an active member of this project's workspace", 422)
+  }
 
-  const member = await insertProjectMember(id, currentUser.id, user.id, values)
+  const member = await insertProjectMember(id, currentUser.id, workspaceMember, values)
   if (!member) {
     throw new ProjectAccessError("That user is already a project member or you cannot manage this project", 409)
   }
@@ -63,14 +69,6 @@ export async function removeProjectMember(projectId: string, memberId: string) {
   const id = projectIdSchema.parse(projectId)
   const parsedMemberId = projectMemberIdSchema.parse(memberId)
   const currentUser = await getCurrentDatabaseUser()
-  const member = await deleteMemberAndUnassignTasks(id, currentUser.id, parsedMemberId)
+  const member = await softRemoveMemberAndUnassignTasks(id, currentUser.id, parsedMemberId)
   if (!member) throw new ProjectAccessError("Project member not found or cannot be removed", 404)
-}
-
-export async function transferProjectOwnership(projectId: string, input: unknown) {
-  const id = projectIdSchema.parse(projectId)
-  const values = transferProjectOwnershipSchema.parse(input)
-  const currentUser = await getCurrentDatabaseUser()
-  const project = await transferOwnership(id, currentUser.id, values)
-  if (!project) throw new ProjectAccessError("The project owner or new owner could not be verified", 403)
 }

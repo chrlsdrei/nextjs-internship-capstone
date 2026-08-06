@@ -1,9 +1,9 @@
 import "server-only"
 
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/server/db/client"
-import { lists, projectMembers, tasks, users } from "@/server/db/schema"
+import { lists, projectMembers, tasks, users, workspaceMembers } from "@/server/db/schema"
 
 export async function readProjectBoard(projectId: string) {
   const [listRows, memberRows, taskRows] = await Promise.all([
@@ -11,8 +11,9 @@ export async function readProjectBoard(projectId: string) {
     db
       .select({ id: users.id, name: users.name, email: users.email })
       .from(projectMembers)
-      .innerJoin(users, eq(projectMembers.userId, users.id))
-      .where(eq(projectMembers.projectId, projectId))
+      .innerJoin(workspaceMembers, eq(projectMembers.workspaceMemberId, workspaceMembers.id))
+      .innerJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(and(eq(projectMembers.projectId, projectId), isNull(projectMembers.removedAt)))
       .orderBy(asc(users.name)),
     db
       .select({
@@ -28,9 +29,8 @@ export async function readProjectBoard(projectId: string) {
         assigneeEmail: users.email,
       })
       .from(tasks)
-      .innerJoin(lists, eq(tasks.listId, lists.id))
       .leftJoin(users, eq(tasks.assigneeId, users.id))
-      .where(eq(lists.projectId, projectId))
+      .where(eq(tasks.projectId, projectId))
       .orderBy(asc(tasks.position), asc(tasks.createdAt)),
   ])
 

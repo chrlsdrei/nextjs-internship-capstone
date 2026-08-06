@@ -29,6 +29,27 @@
       "when": 1785898453833,
       "tag": "0003_workspace_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786003268219,
+      "tag": "0004_project_workspace_cutover",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786003334100,
+      "tag": "0005_violet_ricochet",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786004021471,
+      "tag": "0006_clever_millenium_guard",
+      "breakpoints": true
     }
   ]
 }
