@@ -13,6 +13,7 @@ type TaskDialogControllerProps = {
   members: BoardMemberDto[]
   task?: BoardTaskDto
   onClose: () => void
+  canAssignTasks: boolean
 }
 
 export function TaskDialogController(props: TaskDialogControllerProps) {

@@ -7,11 +7,12 @@ import { afterEach, describe, expect, it } from "vitest"
 import { insertList } from "../../features/board/server/list.repository"
 import { insertTask } from "../../features/board/server/task.repository"
 import { findProjectAccess, softRemoveMemberAndUnassignTasks } from "../../features/members/server/member.repository"
-import { insertProject } from "../../features/projects/server/project.repository"
+import { insertProject, updateProjectSettingsAsManager } from "../../features/projects/server/project.repository"
 import * as schema from "../../server/db/schema"
 import {
   lists,
   projectMembers,
+  projectSettings,
   tasks,
   users,
   workspaceMembers,
@@ -64,7 +65,7 @@ async function createProjectFor(
 ) {
   const project = await insertProject(creatorWorkspaceMemberId, creatorIsWorkspaceOwner, {
     workspaceId,
-    name: `Project ${label}`,
+    title: `Project ${label}`,
   })
   if (!project) throw new Error("Expected project creation to succeed")
   return project
@@ -237,6 +238,56 @@ describe("project workspace governance", () => {
         position: 1,
       }),
     ).toBeNull()
+  })
+
+  it("lets board administrators configure editor assignment without granting editors settings access", async () => {
+    const owner = await createUser("rules-owner")
+    const editor = await createUser("rules-editor")
+    const assignee = await createUser("rules-assignee")
+    const workspace = await createWorkspace(owner.id, "rules")
+    const editorWorkspaceMember = await addWorkspaceMember(workspace.workspaceId, editor.id)
+    const assigneeWorkspaceMember = await addWorkspaceMember(workspace.workspaceId, assignee.id)
+    const project = await createProjectFor(workspace.workspaceId, workspace.ownerMembershipId, true, "rules")
+    await database.insert(projectMembers).values([
+      {
+        projectId: project.id,
+        workspaceId: workspace.workspaceId,
+        workspaceMemberId: editorWorkspaceMember.id,
+        role: "editor",
+      },
+      {
+        projectId: project.id,
+        workspaceId: workspace.workspaceId,
+        workspaceMemberId: assigneeWorkspaceMember.id,
+        role: "viewer",
+      },
+    ])
+    const [list] = await database.insert(lists).values({ projectId: project.id, name: "To do" }).returning()
+
+    expect(await updateProjectSettingsAsManager(project.id, owner.id, { editorsCanAssignTasks: false })).toEqual({
+      editorsCanAssignTasks: false,
+    })
+    expect(await updateProjectSettingsAsManager(project.id, editor.id, { editorsCanAssignTasks: true })).toBeNull()
+    expect(
+      await insertTask(project.id, editor.id, {
+        title: "Assignment denied",
+        listId: list.id,
+        assigneeId: assignee.id,
+        priority: "medium",
+        position: 0,
+      }),
+    ).toBeNull()
+    expect(
+      await insertTask(project.id, editor.id, {
+        title: "Unassigned allowed",
+        listId: list.id,
+        priority: "medium",
+        position: 0,
+      }),
+    ).not.toBeNull()
+
+    const [settings] = await database.select().from(projectSettings).where(eq(projectSettings.projectId, project.id))
+    expect(settings.editorsCanAssignTasks).toBe(false)
   })
 
   it("soft-removes board access and unassigns legacy task assignments", async () => {

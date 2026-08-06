@@ -55,9 +55,9 @@ export function CreateProjectDialog({ action, isPending, onClose, state, workspa
             </select>
           </label>
           <label className="block font-medium text-sm text-outer-space-500 dark:text-platinum-500">
-            Project name
+            Project title
             <input
-              name="name"
+              name="title"
               required
               maxLength={100}
               className="mt-2 w-full rounded-lg border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"

@@ -2,6 +2,7 @@ import { ProjectDirectory } from "@/features/projects/components/project-directo
 import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
 import { getAccessibleProjectSummaries } from "@/features/projects/server/project.service"
 import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
+import { canCreateProjectInWorkspace } from "@/features/workspaces/workspace.policy"
 
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ workspace?: string }> }) {
   const [{ workspace }, projects, workspaces] = await Promise.all([
@@ -17,7 +18,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">Projects</h1>
           <p className="mt-2 text-paynes-gray-500 dark:text-french-gray-500">Projects you own or collaborate on.</p>
         </div>
-        <CreateProjectController workspaces={workspaces} />
+        <CreateProjectController workspaces={workspaces.filter(canCreateProjectInWorkspace)} />
       </div>
       <ProjectDirectory initialWorkspaceId={workspace} projects={projects} workspaces={workspaces} />
     </div>

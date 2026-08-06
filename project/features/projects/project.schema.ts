@@ -15,7 +15,11 @@ export const projectWorkspaceIdSchema = z.uuid("Select a valid workspace")
 
 export const projectSchema = z.object({
   workspaceId: projectWorkspaceIdSchema,
-  name: z.string().trim().min(1, "Project name is required").max(100, "Project name must be 100 characters or fewer"),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Project title is required")
+    .max(100, "Project title must be 100 characters or fewer"),
   description: z.string().trim().max(500, "Description must be 500 characters or fewer").nullable().optional(),
   dueDate: optionalDate,
 })
@@ -25,5 +29,10 @@ export const updateProjectSchema = projectSchema
   .partial()
   .extend({ dueDate: optionalNullableDate })
 
+export const updateProjectSettingsSchema = z.object({
+  editorsCanAssignTasks: z.boolean(),
+})
+
 export type CreateProjectInput = z.infer<typeof projectSchema>
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>
+export type UpdateProjectSettingsInput = z.infer<typeof updateProjectSettingsSchema>

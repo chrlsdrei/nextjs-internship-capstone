@@ -4,6 +4,7 @@ import { CreateProjectController } from "@/features/projects/controllers/create-
 import { getDashboardSummary } from "@/features/projects/server/project.service"
 import { WorkspaceDashboardPanel } from "@/features/workspaces/components/workspace-dashboard-panel"
 import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
+import { canCreateProjectInWorkspace } from "@/features/workspaces/workspace.policy"
 
 export default async function DashboardPage() {
   const [summary, workspaces] = await Promise.all([getDashboardSummary(), listWorkspaces()])
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
             An overview of the projects you can access.
           </p>
         </div>
-        <CreateProjectController workspaces={workspaces} />
+        <CreateProjectController workspaces={workspaces.filter(canCreateProjectInWorkspace)} />
       </div>
       <DashboardStats
         projectCount={summary.projectCount}

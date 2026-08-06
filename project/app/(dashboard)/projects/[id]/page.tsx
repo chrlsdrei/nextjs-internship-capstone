@@ -31,7 +31,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               <ArrowLeft size={20} />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">{project.name}</h1>
+              <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">{project.title}</h1>
               <p className="mt-1 max-w-3xl text-paynes-gray-500 dark:text-french-gray-400">
                 {project.description || "Plan and track this project’s work."}
               </p>

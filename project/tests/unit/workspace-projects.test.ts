@@ -22,7 +22,7 @@ function project(id: string, workspaceId: string): ProjectSummaryDto {
   return {
     id,
     workspaceId,
-    name: `Project ${id}`,
+    title: `Project ${id}`,
     description: null,
     dueDate: null,
     updatedAt: "2026-08-06T00:00:00.000Z",

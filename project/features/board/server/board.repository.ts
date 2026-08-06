@@ -3,10 +3,10 @@ import "server-only"
 import { and, asc, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/server/db/client"
-import { lists, projectMembers, tasks, users, workspaceMembers } from "@/server/db/schema"
+import { lists, projectMembers, projectSettings, tasks, users, workspaceMembers } from "@/server/db/schema"
 
 export async function readProjectBoard(projectId: string) {
-  const [listRows, memberRows, taskRows] = await Promise.all([
+  const [listRows, memberRows, taskRows, settingsRows] = await Promise.all([
     db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.position), asc(lists.createdAt)),
     db
       .select({ id: users.id, name: users.name, email: users.email })
@@ -32,7 +32,12 @@ export async function readProjectBoard(projectId: string) {
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .where(eq(tasks.projectId, projectId))
       .orderBy(asc(tasks.position), asc(tasks.createdAt)),
+    db
+      .select({ editorsCanAssignTasks: projectSettings.editorsCanAssignTasks })
+      .from(projectSettings)
+      .where(eq(projectSettings.projectId, projectId))
+      .limit(1),
   ])
 
-  return { listRows, memberRows, taskRows }
+  return { listRows, memberRows, taskRows, settings: settingsRows[0] ?? null }
 }

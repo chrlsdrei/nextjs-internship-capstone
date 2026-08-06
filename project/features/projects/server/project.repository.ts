@@ -4,7 +4,11 @@ import { randomUUID } from "node:crypto"
 
 import { and, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm"
 
-import type { CreateProjectInput, UpdateProjectInput } from "@/features/projects/project.schema"
+import type {
+  CreateProjectInput,
+  UpdateProjectInput,
+  UpdateProjectSettingsInput,
+} from "@/features/projects/project.schema"
 import type { BoardRole } from "@/features/projects/project.types"
 import { db } from "@/server/db/client"
 import { projectMembers, projectSettings, projects, tasks, workspaceMembers, workspaces } from "@/server/db/schema"
@@ -41,7 +45,7 @@ export async function listAccessibleProjects(userId: string, limit?: number) {
     .select({
       id: projects.id,
       workspaceId: projects.workspaceId,
-      name: projects.title,
+      title: projects.title,
       description: projects.description,
       dueDate: projects.dueDate,
       updatedAt: projects.updatedAt,
@@ -138,7 +142,7 @@ export async function insertProject(
   const projectValues = {
     id: projectId,
     workspaceId: values.workspaceId,
-    title: values.name,
+    title: values.title,
     description: values.description,
     dueDate: values.dueDate,
     createdByWorkspaceMemberId: creatorWorkspaceMemberId,
@@ -172,7 +176,7 @@ export async function updateProjectAsManager(projectId: string, userId: string, 
   const [project] = await db
     .update(projects)
     .set({
-      ...(values.name === undefined ? {} : { title: values.name }),
+      ...(values.title === undefined ? {} : { title: values.title }),
       ...(values.description === undefined ? {} : { description: values.description }),
       ...(values.dueDate === undefined ? {} : { dueDate: values.dueDate }),
       updatedAt: new Date(),
@@ -180,6 +184,28 @@ export async function updateProjectAsManager(projectId: string, userId: string, 
     .where(and(eq(projects.id, projectId), canManageProject(projectId, userId)))
     .returning()
   return project ?? null
+}
+
+export async function findProjectSettings(projectId: string) {
+  const [settings] = await db
+    .select({ editorsCanAssignTasks: projectSettings.editorsCanAssignTasks })
+    .from(projectSettings)
+    .where(eq(projectSettings.projectId, projectId))
+    .limit(1)
+  return settings ?? null
+}
+
+export async function updateProjectSettingsAsManager(
+  projectId: string,
+  userId: string,
+  values: UpdateProjectSettingsInput,
+) {
+  const [settings] = await db
+    .update(projectSettings)
+    .set({ ...values, updatedAt: new Date() })
+    .where(and(eq(projectSettings.projectId, projectId), canManageProject(projectId, userId)))
+    .returning({ editorsCanAssignTasks: projectSettings.editorsCanAssignTasks })
+  return settings ?? null
 }
 
 export async function deleteProjectAsManager(projectId: string, userId: string) {

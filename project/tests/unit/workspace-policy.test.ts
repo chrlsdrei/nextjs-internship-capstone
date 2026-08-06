@@ -2,11 +2,29 @@ import { describe, expect, it } from "vitest"
 
 import {
   canChangeWorkspaceMemberRole,
+  canCreateProjectInWorkspace,
   canRemoveWorkspaceMember,
   canTransferWorkspaceOwnership,
   resolveWorkspaceRole,
   workspaceCapabilities,
 } from "../../features/workspaces/workspace.policy"
+
+describe("workspace project creation", () => {
+  it("allows active owners and administrators to create projects", () => {
+    expect(canCreateProjectInWorkspace({ role: "owner", membersCanCreateProjects: false, status: "active" })).toBe(true)
+    expect(canCreateProjectInWorkspace({ role: "admin", membersCanCreateProjects: false, status: "active" })).toBe(true)
+  })
+
+  it("shows regular members only when the workspace rule allows creation", () => {
+    expect(canCreateProjectInWorkspace({ role: "member", membersCanCreateProjects: false, status: "active" })).toBe(
+      false,
+    )
+    expect(canCreateProjectInWorkspace({ role: "member", membersCanCreateProjects: true, status: "active" })).toBe(true)
+    expect(canCreateProjectInWorkspace({ role: "owner", membersCanCreateProjects: true, status: "suspended" })).toBe(
+      false,
+    )
+  })
+})
 
 describe("workspace role resolution", () => {
   it("derives ownership from the workspace owner pointer", () => {

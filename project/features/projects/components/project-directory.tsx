@@ -28,7 +28,7 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
       (project) =>
         (workspaceId === "all" || project.workspaceId === workspaceId) &&
         (role === "all" || project.role === role) &&
-        (!term || project.name.toLowerCase().includes(term) || project.description?.toLowerCase().includes(term)),
+        (!term || project.title.toLowerCase().includes(term) || project.description?.toLowerCase().includes(term)),
     )
   }, [projects, role, search, workspaceId])
   const groups = groupProjectsByWorkspace(workspaces, visibleProjects, workspaceId !== "all").filter(

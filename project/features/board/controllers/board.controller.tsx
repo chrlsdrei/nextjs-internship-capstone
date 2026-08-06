@@ -137,8 +137,8 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
 
   useEffect(() => setBoard(projectId, serverBoard), [projectId, serverBoard, setBoard])
 
-  const canManage = board.role === "board_admin"
-  const canEdit = board.role === "board_admin" || board.role === "editor"
+  const canManage = board.capabilities.canManageLists
+  const canEdit = board.capabilities.canEditTasks
   const listIds = board.lists.map((list) => list.id)
   const visibleLists = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -227,6 +227,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           projectId={projectId}
           listId={createListId}
           members={board.members}
+          canAssignTasks={board.capabilities.canAssignTasks}
           onClose={() => setCreateListId(null)}
         />
       )}
@@ -234,6 +235,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
         <TaskDialogController
           projectId={projectId}
           members={board.members}
+          canAssignTasks={board.capabilities.canAssignTasks}
           task={editingTask}
           onClose={() => setEditingTask(null)}
         />

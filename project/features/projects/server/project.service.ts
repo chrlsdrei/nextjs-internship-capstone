@@ -6,16 +6,19 @@ import {
   projectSchema,
   type UpdateProjectInput,
   updateProjectSchema,
+  updateProjectSettingsSchema,
 } from "@/features/projects/project.schema"
 import type { DashboardSummaryDto, ProjectDto, ProjectSummaryDto } from "@/features/projects/project.types"
 import {
   deleteProjectAsManager,
   findProjectById,
+  findProjectSettings,
   getProjectCounts,
   insertProject,
   listAccessibleProjects,
   listProjectMemberUserIds,
   updateProjectAsManager,
+  updateProjectSettingsAsManager,
 } from "@/features/projects/server/project.repository"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
 import { findActiveWorkspaceAccess } from "@/features/workspaces/server/workspace.repository"
@@ -34,7 +37,7 @@ function projectDto(project: {
   return {
     id: project.id,
     workspaceId: project.workspaceId,
-    name: project.title,
+    title: project.title,
     description: project.description,
     createdByWorkspaceMemberId: project.createdByWorkspaceMemberId,
     dueDate: project.dueDate?.toISOString() ?? null,
@@ -124,4 +127,23 @@ export async function deleteProject(projectId: string) {
   if (!project) {
     throw new ProjectAccessError("Project not found or you do not have permission to delete it", 404)
   }
+}
+
+export async function getProjectSettings(projectId: string) {
+  const id = projectIdSchema.parse(projectId)
+  await requireProjectPermission(id, "view")
+  const settings = await findProjectSettings(id)
+  if (!settings) throw new ProjectAccessError("Project settings not found", 404)
+  return settings
+}
+
+export async function updateProjectSettings(projectId: string, input: unknown) {
+  const id = projectIdSchema.parse(projectId)
+  const values = updateProjectSettingsSchema.parse(input)
+  const currentUser = await getCurrentDatabaseUser()
+  const settings = await updateProjectSettingsAsManager(id, currentUser.id, values)
+  if (!settings) {
+    throw new ProjectAccessError("Project settings not found or you cannot manage them", 404)
+  }
+  return settings
 }

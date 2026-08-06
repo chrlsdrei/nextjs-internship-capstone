@@ -31,6 +31,10 @@ function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "")
 }
 
+function optionalValue(formData: FormData, key: string) {
+  return formData.has(key) ? formData.get(key) : undefined
+}
+
 function complete(projectId: string): ActionState {
   publishProjectEvent(projectId, "board.updated")
   revalidatePath(`/projects/${projectId}`)
@@ -78,7 +82,7 @@ export async function createTaskAction(_: ActionState, formData: FormData) {
       title: formData.get("title"),
       description: formData.get("description"),
       listId: formData.get("listId"),
-      assigneeId: formData.get("assigneeId"),
+      assigneeId: optionalValue(formData, "assigneeId"),
       priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
     }),
@@ -91,7 +95,7 @@ export async function updateTaskAction(_: ActionState, formData: FormData) {
     updateTask(projectId, value(formData, "taskId"), {
       title: formData.get("title"),
       description: formData.get("description"),
-      assigneeId: formData.get("assigneeId"),
+      assigneeId: optionalValue(formData, "assigneeId"),
       priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
     }),

@@ -37,7 +37,7 @@ export function RecentProjects({
                     href={`/projects/${project.id}`}
                     className="block rounded-lg border border-french-gray-300 p-4 hover:bg-platinum-800 dark:border-paynes-gray-400 dark:hover:bg-outer-space-400"
                   >
-                    <h4 className="font-medium text-outer-space-500 dark:text-platinum-500">{project.name}</h4>
+                    <h4 className="font-medium text-outer-space-500 dark:text-platinum-500">{project.title}</h4>
                     <p className="mt-1 line-clamp-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
                       {project.description || "No description yet."}
                     </p>

@@ -12,6 +12,7 @@ type TaskDialogProps = {
   formAction: (payload: FormData) => void
   state: ActionState
   isPending: boolean
+  canAssignTasks: boolean
 }
 
 export function TaskDialog({
@@ -23,6 +24,7 @@ export function TaskDialog({
   formAction,
   state,
   isPending,
+  canAssignTasks,
 }: TaskDialogProps) {
   const isEditing = Boolean(task)
 
@@ -87,21 +89,33 @@ export function TaskDialog({
                 <option value="high">High</option>
               </select>
             </label>
-            <label className="text-sm font-medium">
-              Assignee
-              <select
-                name="assigneeId"
-                defaultValue={task?.assignee?.id ?? ""}
-                className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
-              >
-                <option value="">Unassigned</option>
-                {members.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {canAssignTasks ? (
+              <label className="text-sm font-medium">
+                Assignee
+                <select
+                  name="assigneeId"
+                  defaultValue={task?.assignee?.id ?? ""}
+                  className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
+                >
+                  <option value="">Unassigned</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <div className="text-sm">
+                <p className="font-medium">Assignee</p>
+                <p className="mt-1 rounded border border-french-gray-300 bg-platinum-700 px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400">
+                  {task?.assignee?.name ?? "Unassigned"}
+                </p>
+                <p className="mt-1 text-paynes-gray-500 text-xs dark:text-french-gray-400">
+                  A board administrator must change task assignments.
+                </p>
+              </div>
+            )}
           </div>
           <label className="block text-sm font-medium">
             Due date

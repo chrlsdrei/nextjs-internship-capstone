@@ -19,10 +19,18 @@ export type BoardListDto = {
   tasks: BoardTaskDto[]
 }
 
+export type BoardCapabilitiesDto = {
+  canManageLists: boolean
+  canEditTasks: boolean
+  canAssignTasks: boolean
+  canDeleteTasks: boolean
+}
+
 export type ProjectBoardDto = {
   lists: BoardListDto[]
   members: BoardMemberDto[]
   role: BoardRole
+  capabilities: BoardCapabilitiesDto
 }
 
 export type MoveTaskCommand = {

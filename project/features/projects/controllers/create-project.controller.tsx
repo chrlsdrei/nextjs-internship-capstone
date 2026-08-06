@@ -21,7 +21,9 @@ export function CreateProjectController({ workspaces }: { workspaces: WorkspaceS
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center rounded-lg bg-blue-munsell-500 px-4 py-2 text-white transition-colors hover:bg-blue-munsell-600"
+        disabled={workspaces.length === 0}
+        title={workspaces.length === 0 ? "You need permission to create projects in an active workspace" : undefined}
+        className="inline-flex items-center rounded-lg bg-blue-munsell-500 px-4 py-2 text-white transition-colors hover:bg-blue-munsell-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Plus size={20} className="mr-2" />
         New Project

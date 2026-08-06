@@ -1,6 +1,7 @@
 import "server-only"
 
 import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
+import { boardCapabilities } from "@/features/board/board.policy"
 import {
   listIdSchema,
   listSchema,
@@ -33,7 +34,8 @@ import { ProjectAccessError, requireProjectPermission } from "@/features/project
 export async function getProjectBoard(projectId: string): Promise<ProjectBoardDto> {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "view")
-  const { listRows, memberRows, taskRows } = await readProjectBoard(id)
+  const { listRows, memberRows, taskRows, settings } = await readProjectBoard(id)
+  if (!settings) throw new ProjectAccessError("Project settings not found", 404)
   const tasksByList = new Map<string, BoardTaskDto[]>()
 
   for (const task of taskRows) {
@@ -54,6 +56,7 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
 
   return {
     role: access.role,
+    capabilities: boardCapabilities(access.role, settings.editorsCanAssignTasks),
     members: memberRows,
     lists: listRows.map((list) => ({
       id: list.id,

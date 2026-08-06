@@ -15,8 +15,9 @@ import {
   softRemoveMemberAndUnassignTasks,
   updateMemberRole,
 } from "@/features/members/server/member.repository"
+import { projectManagementCapabilities } from "@/features/projects/project.policy"
 import { projectIdSchema } from "@/features/projects/project.schema"
-import { getProjectById } from "@/features/projects/server/project.service"
+import { getProjectById, getProjectSettings } from "@/features/projects/server/project.service"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
 
 export async function getProjectMembers(projectId: string): Promise<ProjectMemberDto[]> {
@@ -29,13 +30,29 @@ export async function getProjectMembers(projectId: string): Promise<ProjectMembe
 export async function getProjectManagementData(projectId: string): Promise<ProjectManagementDto> {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "manage")
-  const [project, members, workspaceOwner] = await Promise.all([
+  const [project, members, workspaceOwner, settings] = await Promise.all([
     getProjectById(id),
     getProjectMembers(id),
     findWorkspaceOwnerForProject(id),
+    getProjectSettings(id),
   ])
   if (!workspaceOwner) throw new ProjectAccessError("Workspace owner not found", 404)
-  return { project, members, workspaceOwner, role: access.role }
+  return {
+    project,
+    workspace: { id: workspaceOwner.workspaceId, name: workspaceOwner.workspaceName },
+    members,
+    workspaceOwner: {
+      userId: workspaceOwner.userId,
+      workspaceMemberId: workspaceOwner.workspaceMemberId,
+      email: workspaceOwner.email,
+      name: workspaceOwner.name,
+      explicitProjectMemberId: workspaceOwner.explicitProjectMemberId,
+      explicitRole: workspaceOwner.explicitRole,
+    },
+    settings,
+    capabilities: projectManagementCapabilities(access.role),
+    role: access.role,
+  }
 }
 
 export async function addProjectMember(projectId: string, input: unknown) {

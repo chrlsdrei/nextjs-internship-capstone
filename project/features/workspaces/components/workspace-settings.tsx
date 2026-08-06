@@ -92,7 +92,7 @@ export function WorkspaceSettings({ workspace, details, rules }: WorkspaceSettin
             <span>
               <span className="block font-medium text-sm">Allow members to create projects</span>
               <span className="mt-1 block text-paynes-gray-500 text-sm dark:text-french-gray-400">
-                This setting will be enforced when projects are connected to workspaces.
+                Members may select this workspace when creating a project. Administrators and the owner always may.
               </span>
             </span>
           </label>

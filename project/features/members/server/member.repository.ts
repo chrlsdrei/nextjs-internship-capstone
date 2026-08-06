@@ -97,11 +97,23 @@ export async function findWorkspaceOwnerForProject(projectId: string) {
       userId: users.id,
       email: users.email,
       name: users.name,
+      workspaceId: workspaces.id,
+      workspaceName: workspaces.name,
+      explicitProjectMemberId: projectMembers.id,
+      explicitRole: projectMembers.role,
     })
     .from(projects)
     .innerJoin(workspaces, eq(workspaces.id, projects.workspaceId))
     .innerJoin(workspaceMembers, eq(workspaceMembers.id, workspaces.ownerWorkspaceMemberId))
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
+    .leftJoin(
+      projectMembers,
+      and(
+        eq(projectMembers.projectId, projects.id),
+        eq(projectMembers.workspaceMemberId, workspaceMembers.id),
+        isNull(projectMembers.removedAt),
+      ),
+    )
     .where(eq(projects.id, projectId))
     .limit(1)
   return owner ?? null

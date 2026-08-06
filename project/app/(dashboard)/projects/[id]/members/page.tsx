@@ -13,7 +13,7 @@ export default async function ProjectMembersPage({ params }: { params: Promise<{
   if (!parsedProjectId.success) redirect("/projects")
 
   try {
-    const { project, members, workspaceOwner, role } = await getProjectManagementData(parsedProjectId.data)
+    const data = await getProjectManagementData(parsedProjectId.data)
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -25,16 +25,13 @@ export default async function ProjectMembersPage({ params }: { params: Promise<{
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">Manage {project.name}</h1>
+            <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">
+              Manage {data.project.title}
+            </h1>
             <p className="mt-1 text-paynes-gray-500 dark:text-french-gray-500">Project settings and team membership.</p>
           </div>
         </div>
-        <ProjectMemberManagerController
-          project={project}
-          members={members}
-          workspaceOwner={workspaceOwner}
-          role={role}
-        />
+        <ProjectMemberManagerController {...data} />
       </div>
     )
   } catch (error) {

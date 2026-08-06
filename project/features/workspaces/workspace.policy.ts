@@ -1,4 +1,16 @@
-import type { StoredWorkspaceRole, WorkspaceCapabilitiesDto, WorkspaceRole } from "./workspace.types"
+import type {
+  StoredWorkspaceRole,
+  WorkspaceCapabilitiesDto,
+  WorkspaceRole,
+  WorkspaceSummaryDto,
+} from "./workspace.types"
+
+export function canCreateProjectInWorkspace(
+  workspace: Pick<WorkspaceSummaryDto, "role" | "membersCanCreateProjects" | "status">,
+) {
+  if (workspace.status !== "active") return false
+  return workspace.role === "owner" || workspace.role === "admin" || workspace.membersCanCreateProjects
+}
 
 export function resolveWorkspaceRole(
   ownerWorkspaceMemberId: string,

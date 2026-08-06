@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { ZodError } from "zod"
 import { publishProjectEvent } from "@/features/board/server/project-event.service"
-import { createProject, deleteProject, updateProject } from "@/features/projects/server/project.service"
+import {
+  createProject,
+  deleteProject,
+  updateProject,
+  updateProjectSettings,
+} from "@/features/projects/server/project.service"
 import { ProjectAccessError } from "@/features/projects/server/project-access.service"
 import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
@@ -16,10 +21,18 @@ function messageFor(error: unknown) {
   return "Something went wrong. Please try again."
 }
 
-function projectInput(formData: FormData) {
+function createProjectInput(formData: FormData) {
   return {
     workspaceId: formData.get("workspaceId"),
-    name: formData.get("name"),
+    title: formData.get("title"),
+    description: formData.get("description"),
+    dueDate: formData.get("dueDate"),
+  }
+}
+
+function updateProjectInput(formData: FormData) {
+  return {
+    title: formData.get("title"),
     description: formData.get("description"),
     dueDate: formData.get("dueDate"),
   }
@@ -27,7 +40,7 @@ function projectInput(formData: FormData) {
 
 export async function createProjectAction(_: ActionState, formData: FormData): Promise<ActionState> {
   try {
-    const project = await createProject(projectInput(formData))
+    const project = await createProject(createProjectInput(formData))
     publishProjectEvent(project.id, "project.updated")
     revalidatePath("/projects")
     revalidatePath("/dashboard")
@@ -40,12 +53,27 @@ export async function createProjectAction(_: ActionState, formData: FormData): P
 export async function updateProjectAction(_: ActionState, formData: FormData): Promise<ActionState> {
   try {
     const projectId = String(formData.get("projectId") ?? "")
-    await updateProject(projectId, projectInput(formData))
+    await updateProject(projectId, updateProjectInput(formData))
     publishProjectEvent(projectId, "project.updated")
     revalidatePath("/projects")
     revalidatePath(`/projects/${projectId}/members`)
     revalidatePath("/dashboard")
     return actionSuccess(undefined, "Saved.")
+  } catch (error) {
+    return actionError(messageFor(error))
+  }
+}
+
+export async function updateProjectSettingsAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const projectId = String(formData.get("projectId") ?? "")
+    await updateProjectSettings(projectId, {
+      editorsCanAssignTasks: formData.get("editorsCanAssignTasks") === "true",
+    })
+    publishProjectEvent(projectId, "project.updated")
+    revalidatePath(`/projects/${projectId}`)
+    revalidatePath(`/projects/${projectId}/members`)
+    return actionSuccess(undefined, "Board rule saved.")
   } catch (error) {
     return actionError(messageFor(error))
   }
