@@ -17,7 +17,7 @@ export default async function DashboardPage() {
             An overview of the projects you can access.
           </p>
         </div>
-        <CreateProjectController />
+        <CreateProjectController workspaces={workspaces} />
       </div>
       <DashboardStats
         projectCount={summary.projectCount}

@@ -18,7 +18,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       getProjectById(parsedProjectId.data),
       getProjectBoard(parsedProjectId.data),
     ])
-    const canManage = board.role === "owner" || board.role === "admin"
+    const canManage = board.role === "board_admin"
     return (
       <div className="space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

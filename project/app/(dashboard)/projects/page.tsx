@@ -17,7 +17,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
           <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">Projects</h1>
           <p className="mt-2 text-paynes-gray-500 dark:text-french-gray-500">Projects you own or collaborate on.</p>
         </div>
-        <CreateProjectController />
+        <CreateProjectController workspaces={workspaces} />
       </div>
       <ProjectDirectory initialWorkspaceId={workspace} projects={projects} workspaces={workspaces} />
     </div>

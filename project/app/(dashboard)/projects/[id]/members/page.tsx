@@ -13,7 +13,7 @@ export default async function ProjectMembersPage({ params }: { params: Promise<{
   if (!parsedProjectId.success) redirect("/projects")
 
   try {
-    const { project, members, role } = await getProjectManagementData(parsedProjectId.data)
+    const { project, members, workspaceOwner, role } = await getProjectManagementData(parsedProjectId.data)
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -29,7 +29,12 @@ export default async function ProjectMembersPage({ params }: { params: Promise<{
             <p className="mt-1 text-paynes-gray-500 dark:text-french-gray-500">Project settings and team membership.</p>
           </div>
         </div>
-        <ProjectMemberManagerController project={project} members={members} role={role} />
+        <ProjectMemberManagerController
+          project={project}
+          members={members}
+          workspaceOwner={workspaceOwner}
+          role={role}
+        />
       </div>
     )
   } catch (error) {
