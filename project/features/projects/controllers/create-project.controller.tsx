@@ -5,9 +5,10 @@ import { useActionState, useEffect, useState } from "react"
 
 import { createProjectAction } from "@/features/projects/actions/project.actions"
 import { CreateProjectDialog } from "@/features/projects/components/create-project-dialog"
+import type { WorkspaceSummaryDto } from "@/features/workspaces/workspace.types"
 import { initialActionState } from "@/lib/action-state"
 
-export function CreateProjectController() {
+export function CreateProjectController({ workspaces }: { workspaces: WorkspaceSummaryDto[] }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(createProjectAction, initialActionState)
 
@@ -26,7 +27,13 @@ export function CreateProjectController() {
         New Project
       </button>
       {isOpen && (
-        <CreateProjectDialog action={formAction} isPending={isPending} onClose={() => setIsOpen(false)} state={state} />
+        <CreateProjectDialog
+          action={formAction}
+          isPending={isPending}
+          onClose={() => setIsOpen(false)}
+          state={state}
+          workspaces={workspaces}
+        />
       )}
     </>
   )

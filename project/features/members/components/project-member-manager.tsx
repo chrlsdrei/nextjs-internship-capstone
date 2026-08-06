@@ -12,20 +12,19 @@ type FormController = {
 type ProjectMemberManagerProps = ProjectManagementDto & {
   addMember: FormController
   deleteProject: FormController
-  transferOwnership: FormController
   updateProject: FormController
 }
 
 export function ProjectMemberManager({
   project,
   members,
+  workspaceOwner,
   role,
   addMember,
   deleteProject,
-  transferOwnership,
   updateProject,
 }: ProjectMemberManagerProps) {
-  const isOwner = role === "owner"
+  const canDelete = role === "board_admin"
   const dateValue = project.dueDate?.slice(0, 10) ?? ""
 
   return (
@@ -78,9 +77,16 @@ export function ProjectMemberManager({
       <section className="rounded-lg border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
         <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Members</h2>
         <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
-          Add an already-synchronized Clerk user by email. Removing a member unassigns their tasks without deleting
-          them.
+          Add an active member of this workspace by email. Removing board access unassigns their tasks without deleting
+          their workspace membership.
         </p>
+        <div className="mt-4 rounded-lg border border-blue-munsell-200 bg-blue-munsell-50 p-4 dark:border-blue-munsell-800 dark:bg-blue-munsell-900/20">
+          <p className="font-medium text-sm">{workspaceOwner.name}</p>
+          <p className="text-paynes-gray-500 text-sm dark:text-french-gray-400">{workspaceOwner.email}</p>
+          <p className="mt-1 text-blue-munsell-700 text-xs dark:text-blue-munsell-300">
+            Workspace owner · implicit board administrator access
+          </p>
+        </div>
         <form action={addMember.action} className="mt-4 flex flex-col gap-3 sm:flex-row">
           <input type="hidden" name="projectId" value={project.id} />
           <input
@@ -95,8 +101,9 @@ export function ProjectMemberManager({
             defaultValue="member"
             className="rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
           >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
+            <option value="viewer">Viewer</option>
+            <option value="editor">Editor</option>
+            <option value="board_admin">Board administrator</option>
           </select>
           <button
             type="submit"
@@ -114,35 +121,10 @@ export function ProjectMemberManager({
         </div>
       </section>
 
-      {isOwner && (
+      {canDelete && (
         <section className="rounded-lg border border-yellow-300 bg-yellow-50 p-6 dark:border-yellow-800 dark:bg-yellow-900/20">
-          <h2 className="font-semibold text-lg text-yellow-900 dark:text-yellow-100">Owner controls</h2>
-          <form action={transferOwnership.action} className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <input type="hidden" name="projectId" value={project.id} />
-            <select
-              name="memberId"
-              required
-              className="min-w-0 flex-1 rounded border border-yellow-300 bg-white px-3 py-2 dark:border-yellow-800 dark:bg-outer-space-400"
-            >
-              <option value="">Transfer ownership to…</option>
-              {members
-                .filter((member) => member.role !== "owner")
-                .map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name} ({member.email})
-                  </option>
-                ))}
-            </select>
-            <button
-              type="submit"
-              disabled={transferOwnership.pending || members.length < 2}
-              className="rounded bg-yellow-700 px-4 py-2 text-white disabled:opacity-60"
-            >
-              {transferOwnership.pending ? "Transferring…" : "Transfer ownership"}
-            </button>
-          </form>
-          <ActionFeedback state={transferOwnership.state} />
-          <form action={deleteProject.action} className="mt-6 border-yellow-300 border-t pt-5 dark:border-yellow-800">
+          <h2 className="font-semibold text-lg text-yellow-900 dark:text-yellow-100">Project controls</h2>
+          <form action={deleteProject.action} className="mt-4">
             <input type="hidden" name="projectId" value={project.id} />
             <button
               type="submit"

@@ -31,8 +31,7 @@ export function WorkspaceOverview({ workspace }: { workspace: WorkspaceDetailDto
           <div>
             <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Workspace projects</h2>
             <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
-              Projects assigned to this workspace will appear here. Existing independent projects remain available in
-              the project directory.
+              Projects assigned to this workspace are available in the project directory, grouped by workspace.
             </p>
             <Link
               href={`/projects?workspace=${workspace.id}`}

@@ -14,9 +14,9 @@ export function ProjectCard({ project }: { project: ProjectSummaryDto }) {
     <article className="bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between gap-4 mb-4">
         <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-munsell-100 text-blue-munsell-700 dark:bg-blue-munsell-900 dark:text-blue-munsell-300 capitalize">
-          {project.role}
+          {project.role.replace("_", " ")}
         </span>
-        {project.role !== "member" && (
+        {project.role === "board_admin" && (
           <Link
             href={`/projects/${project.id}/members`}
             className="p-1 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400 rounded"

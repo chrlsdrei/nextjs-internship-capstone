@@ -16,6 +16,7 @@ type TaskCardControllerProps = {
   taskIds: string[]
   index: number
   canDelete: boolean
+  canEdit: boolean
   onEdit: () => void
   dragHandle?: ReactNode
 }

@@ -11,6 +11,7 @@ type TaskCardProps = {
   taskIds: string[]
   index: number
   canDelete: boolean
+  canEdit: boolean
   onEdit: () => void
   dragHandle?: ReactNode
   moveAction: (payload: FormData) => void
@@ -31,6 +32,7 @@ export function TaskCard({
   taskIds,
   index,
   canDelete,
+  canEdit,
   onEdit,
   dragHandle,
   moveAction,
@@ -59,7 +61,8 @@ export function TaskCard({
         <button
           type="button"
           onClick={onEdit}
-          className="min-w-0 flex-1 text-left focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
+          disabled={!canEdit}
+          className="min-w-0 flex-1 text-left focus:outline-none focus:ring-2 focus:ring-blue-munsell-500 disabled:cursor-default"
         >
           <h4 className="font-medium text-outer-space-500 dark:text-platinum-500">{task.title}</h4>
           {task.description && (
@@ -83,76 +86,82 @@ export function TaskCard({
           </span>
         )}
       </div>
-      <div className="mt-3 flex items-center gap-2 border-french-gray-300 border-t pt-3 dark:border-paynes-gray-400">
-        <form action={reorderAction}>
-          <input type="hidden" name="projectId" value={projectId} />
-          <input type="hidden" name="listId" value={listId} />
-          <input type="hidden" name="taskIds" value={index > 0 ? orderAfterSwap(index - 1) : JSON.stringify(taskIds)} />
-          <button
-            type="submit"
-            disabled={index === 0 || reordering}
-            className="rounded p-1 hover:bg-platinum-500 disabled:opacity-40"
-            aria-label="Move task up"
-          >
-            <ChevronUp size={16} />
-          </button>
-        </form>
-        <form action={reorderAction}>
-          <input type="hidden" name="projectId" value={projectId} />
-          <input type="hidden" name="listId" value={listId} />
-          <input
-            type="hidden"
-            name="taskIds"
-            value={index < taskIds.length - 1 ? orderAfterSwap(index + 1) : JSON.stringify(taskIds)}
-          />
-          <button
-            type="submit"
-            disabled={index === taskIds.length - 1 || reordering}
-            className="rounded p-1 hover:bg-platinum-500 disabled:opacity-40"
-            aria-label="Move task down"
-          >
-            <ChevronDown size={16} />
-          </button>
-        </form>
-        <form action={moveAction} className="ml-auto flex items-center gap-1">
-          <input type="hidden" name="projectId" value={projectId} />
-          <input type="hidden" name="taskId" value={task.id} />
-          <select
-            name="listId"
-            defaultValue=""
-            aria-label="Move task to another list"
-            className="max-w-28 rounded border border-french-gray-300 bg-white px-1 py-1 text-xs dark:border-paynes-gray-400 dark:bg-outer-space-400"
-          >
-            <option value="" disabled>
-              Move to…
-            </option>
-            {lists
-              .filter((list) => list.id !== listId)
-              .map((list) => (
-                <option key={list.id} value={list.id}>
-                  {list.name}
-                </option>
-              ))}
-          </select>
-          <button type="submit" disabled={moving} className="text-blue-munsell-600 text-xs disabled:opacity-50">
-            Move
-          </button>
-        </form>
-        {canDelete && (
-          <form action={deleteAction}>
+      {canEdit && (
+        <div className="mt-3 flex items-center gap-2 border-french-gray-300 border-t pt-3 dark:border-paynes-gray-400">
+          <form action={reorderAction}>
             <input type="hidden" name="projectId" value={projectId} />
-            <input type="hidden" name="taskId" value={task.id} />
+            <input type="hidden" name="listId" value={listId} />
+            <input
+              type="hidden"
+              name="taskIds"
+              value={index > 0 ? orderAfterSwap(index - 1) : JSON.stringify(taskIds)}
+            />
             <button
               type="submit"
-              disabled={deleting}
-              className="rounded p-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
-              aria-label="Delete task"
+              disabled={index === 0 || reordering}
+              className="rounded p-1 hover:bg-platinum-500 disabled:opacity-40"
+              aria-label="Move task up"
             >
-              <Trash2 size={16} />
+              <ChevronUp size={16} />
             </button>
           </form>
-        )}
-      </div>
+          <form action={reorderAction}>
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="listId" value={listId} />
+            <input
+              type="hidden"
+              name="taskIds"
+              value={index < taskIds.length - 1 ? orderAfterSwap(index + 1) : JSON.stringify(taskIds)}
+            />
+            <button
+              type="submit"
+              disabled={index === taskIds.length - 1 || reordering}
+              className="rounded p-1 hover:bg-platinum-500 disabled:opacity-40"
+              aria-label="Move task down"
+            >
+              <ChevronDown size={16} />
+            </button>
+          </form>
+          <form action={moveAction} className="ml-auto flex items-center gap-1">
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="taskId" value={task.id} />
+            <select
+              name="listId"
+              defaultValue=""
+              aria-label="Move task to another list"
+              className="max-w-28 rounded border border-french-gray-300 bg-white px-1 py-1 text-xs dark:border-paynes-gray-400 dark:bg-outer-space-400"
+            >
+              <option value="" disabled>
+                Move to…
+              </option>
+              {lists
+                .filter((list) => list.id !== listId)
+                .map((list) => (
+                  <option key={list.id} value={list.id}>
+                    {list.name}
+                  </option>
+                ))}
+            </select>
+            <button type="submit" disabled={moving} className="text-blue-munsell-600 text-xs disabled:opacity-50">
+              Move
+            </button>
+          </form>
+          {canDelete && (
+            <form action={deleteAction}>
+              <input type="hidden" name="projectId" value={projectId} />
+              <input type="hidden" name="taskId" value={task.id} />
+              <button
+                type="submit"
+                disabled={deleting}
+                className="rounded p-1 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                aria-label="Delete task"
+              >
+                <Trash2 size={16} />
+              </button>
+            </form>
+          )}
+        </div>
+      )}
       {error && (
         <p role="alert" className="mt-2 text-red-600 text-xs">
           {error}

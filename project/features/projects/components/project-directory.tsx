@@ -20,16 +20,13 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
   const [role, setRole] = useState<"all" | ProjectSummaryDto["role"]>("all")
   const validInitialWorkspace = workspaces.some((workspace) => workspace.id === initialWorkspaceId)
     ? initialWorkspaceId
-    : initialWorkspaceId === "unassigned"
-      ? "unassigned"
-      : "all"
+    : "all"
   const [workspaceId, setWorkspaceId] = useState(validInitialWorkspace)
   const visibleProjects = useMemo(() => {
     const term = search.trim().toLowerCase()
     return projects.filter(
       (project) =>
-        (workspaceId === "all" ||
-          (workspaceId === "unassigned" ? project.workspaceId === null : project.workspaceId === workspaceId)) &&
+        (workspaceId === "all" || project.workspaceId === workspaceId) &&
         (role === "all" || project.role === role) &&
         (!term || project.name.toLowerCase().includes(term) || project.description?.toLowerCase().includes(term)),
     )
@@ -64,9 +61,9 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
             className="bg-transparent focus:outline-none"
           >
             <option value="all">All roles</option>
-            <option value="owner">Owner</option>
-            <option value="admin">Admin</option>
-            <option value="member">Member</option>
+            <option value="board_admin">Board administrator</option>
+            <option value="editor">Editor</option>
+            <option value="viewer">Viewer</option>
           </select>
         </label>
         <label className="inline-flex items-center gap-2 rounded-lg border border-french-gray-300 px-3 py-2 text-outer-space-500 dark:border-paynes-gray-400 dark:text-platinum-500">
@@ -82,7 +79,6 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
                 {workspace.name}
               </option>
             ))}
-            <option value="unassigned">Unassigned projects</option>
           </select>
         </label>
       </div>
@@ -110,7 +106,7 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
                   </h2>
                   <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
                     {group.workspace
-                      ? `${group.workspace.role} access · ${group.projects.length} projects`
+                      ? `${group.workspace.role.replace("_", " ")} access · ${group.projects.length} projects`
                       : "Projects created before workspace assignment"}
                   </p>
                 </div>

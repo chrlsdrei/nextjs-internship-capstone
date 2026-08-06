@@ -38,15 +38,17 @@ function SortableTask({
         {...props}
         task={task}
         dragHandle={
-          <button
-            type="button"
-            className="rounded p-1 text-paynes-gray-500 hover:bg-platinum-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-munsell-500"
-            aria-label={`Drag ${task.title}`}
-            {...sortable.attributes}
-            {...sortable.listeners}
-          >
-            <GripVertical size={16} />
-          </button>
+          props.canEdit ? (
+            <button
+              type="button"
+              className="rounded p-1 text-paynes-gray-500 hover:bg-platinum-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-munsell-500"
+              aria-label={`Drag ${task.title}`}
+              {...sortable.attributes}
+              {...sortable.listeners}
+            >
+              <GripVertical size={16} />
+            </button>
+          ) : undefined
         }
       />
     </div>
@@ -60,6 +62,7 @@ function DroppableBoardColumn({
   allLists,
   listIds,
   canManage,
+  canEdit,
   onAddTask,
   onEditTask,
 }: {
@@ -69,6 +72,7 @@ function DroppableBoardColumn({
   allLists: BoardListDto[]
   listIds: string[]
   canManage: boolean
+  canEdit: boolean
   onAddTask: () => void
   onEditTask: (task: BoardTaskDto) => void
 }) {
@@ -78,7 +82,7 @@ function DroppableBoardColumn({
     <BoardColumn
       list={list}
       totalTasks={originalList.tasks.length}
-      addTask={onAddTask}
+      addTask={canEdit ? onAddTask : undefined}
       isDropTarget={isOver}
       dropRef={setNodeRef}
       header={
@@ -105,7 +109,8 @@ function DroppableBoardColumn({
             taskIds={originalList.tasks.map((item) => item.id)}
             index={originalList.tasks.findIndex((item) => item.id === task.id)}
             canDelete={canManage}
-            onEdit={() => onEditTask(task)}
+            canEdit={canEdit}
+            onEdit={() => canEdit && onEditTask(task)}
           />
         ))}
       </SortableContext>
@@ -132,7 +137,8 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
 
   useEffect(() => setBoard(projectId, serverBoard), [projectId, serverBoard, setBoard])
 
-  const canManage = board.role === "owner" || board.role === "admin"
+  const canManage = board.role === "board_admin"
+  const canEdit = board.role === "board_admin" || board.role === "editor"
   const listIds = board.lists.map((list) => list.id)
   const visibleLists = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -179,6 +185,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
         <DndContext
           sensors={sensors}
           onDragEnd={({ active, over }) => {
+            if (!canEdit) return
             if (!over || active.id === over.id) return
             const sourceList = board.lists.find((list) => list.tasks.some((task) => task.id === active.id))
             if (!sourceList) return
@@ -205,6 +212,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
                   allLists={board.lists}
                   listIds={listIds}
                   canManage={canManage}
+                  canEdit={canEdit}
                   onAddTask={() => setCreateListId(list.id)}
                   onEditTask={setEditingTask}
                 />
@@ -214,7 +222,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           </div>
         </DndContext>
       )}
-      {createListId && (
+      {canEdit && createListId && (
         <TaskDialogController
           projectId={projectId}
           listId={createListId}
@@ -222,7 +230,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           onClose={() => setCreateListId(null)}
         />
       )}
-      {editingTask && (
+      {canEdit && editingTask && (
         <TaskDialogController
           projectId={projectId}
           members={board.members}

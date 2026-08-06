@@ -15,7 +15,7 @@ export function BoardColumn({
   totalTasks: number
   header: ReactNode
   children: ReactNode
-  addTask: () => void
+  addTask?: () => void
   isDropTarget: boolean
   dropRef: (element: HTMLDivElement | null) => void
 }) {
@@ -39,13 +39,15 @@ export function BoardColumn({
             Drop a task here.
           </p>
         )}
-        <button
-          type="button"
-          onClick={addTask}
-          className="w-full rounded border-2 border-dashed border-french-gray-300 p-2 text-sm text-paynes-gray-500 hover:border-blue-munsell-500 hover:text-blue-munsell-600 dark:border-paynes-gray-400"
-        >
-          + Add task
-        </button>
+        {addTask && (
+          <button
+            type="button"
+            onClick={addTask}
+            className="w-full rounded border-2 border-dashed border-french-gray-300 p-2 text-sm text-paynes-gray-500 hover:border-blue-munsell-500 hover:text-blue-munsell-600 dark:border-paynes-gray-400"
+          >
+            + Add task
+          </button>
+        )}
       </div>
     </section>
   )

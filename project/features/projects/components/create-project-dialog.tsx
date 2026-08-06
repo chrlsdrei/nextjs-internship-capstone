@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react"
 import { ActionFeedback } from "@/components/ui/action-feedback"
+import type { WorkspaceSummaryDto } from "@/features/workspaces/workspace.types"
 import type { ActionState } from "@/lib/action-state"
 
 type CreateProjectDialogProps = {
@@ -9,9 +10,10 @@ type CreateProjectDialogProps = {
   isPending: boolean
   onClose: () => void
   state: ActionState
+  workspaces: WorkspaceSummaryDto[]
 }
 
-export function CreateProjectDialog({ action, isPending, onClose, state }: CreateProjectDialogProps) {
+export function CreateProjectDialog({ action, isPending, onClose, state, workspaces }: CreateProjectDialogProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -34,6 +36,24 @@ export function CreateProjectDialog({ action, isPending, onClose, state }: Creat
           </button>
         </div>
         <form action={action} className="space-y-4">
+          <label className="block font-medium text-sm text-outer-space-500 dark:text-platinum-500">
+            Workspace
+            <select
+              name="workspaceId"
+              required
+              defaultValue={workspaces.length === 1 ? workspaces[0]?.id : ""}
+              className="mt-2 w-full rounded-lg border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
+            >
+              <option value="" disabled>
+                Select a workspace
+              </option>
+              {workspaces.map((workspace) => (
+                <option key={workspace.id} value={workspace.id}>
+                  {workspace.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block font-medium text-sm text-outer-space-500 dark:text-platinum-500">
             Project name
             <input
@@ -71,7 +91,7 @@ export function CreateProjectDialog({ action, isPending, onClose, state }: Creat
             </button>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || workspaces.length === 0}
               className="rounded-lg bg-blue-munsell-500 px-4 py-2 text-white hover:bg-blue-munsell-600 disabled:opacity-60"
             >
               {isPending ? "Creating…" : "Create project"}
