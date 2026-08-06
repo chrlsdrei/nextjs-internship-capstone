@@ -1,6 +1,5 @@
 import "server-only"
 
-import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
 import {
   projectMemberIdSchema,
   projectMemberSchema,
@@ -19,6 +18,7 @@ import { projectManagementCapabilities } from "@/features/projects/project.polic
 import { projectIdSchema } from "@/features/projects/project.schema"
 import { getProjectById, getProjectSettings } from "@/features/projects/server/project.service"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
+import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
 
 export async function getProjectMembers(projectId: string): Promise<ProjectMemberDto[]> {
   const id = projectIdSchema.parse(projectId)
@@ -58,14 +58,14 @@ export async function getProjectManagementData(projectId: string): Promise<Proje
 export async function addProjectMember(projectId: string, input: unknown) {
   const id = projectIdSchema.parse(projectId)
   const values = projectMemberSchema.parse(input)
-  const currentUser = await getCurrentDatabaseUser()
-  await requireProjectPermission(id, "manage")
+  const access = await requireProjectPermission(id, "manage")
   const workspaceMember = await findWorkspaceMemberByEmail(id, values.email)
   if (!workspaceMember) {
     throw new ProjectAccessError("That user must be an active member of this project's workspace", 422)
   }
+  await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
 
-  const member = await insertProjectMember(id, currentUser.id, workspaceMember, values)
+  const member = await insertProjectMember(id, access.user.id, workspaceMember, values)
   if (!member) {
     throw new ProjectAccessError("That user is already a project member or you cannot manage this project", 409)
   }
@@ -76,8 +76,9 @@ export async function updateProjectMemberRole(projectId: string, memberId: strin
   const id = projectIdSchema.parse(projectId)
   const parsedMemberId = projectMemberIdSchema.parse(memberId)
   const values = updateProjectMemberRoleSchema.parse(input)
-  const currentUser = await getCurrentDatabaseUser()
-  const member = await updateMemberRole(id, currentUser.id, parsedMemberId, values)
+  const access = await requireProjectPermission(id, "manage")
+  await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
+  const member = await updateMemberRole(id, access.user.id, parsedMemberId, values)
   if (!member) throw new ProjectAccessError("Project member not found or cannot be changed", 404)
   return member
 }
@@ -85,7 +86,8 @@ export async function updateProjectMemberRole(projectId: string, memberId: strin
 export async function removeProjectMember(projectId: string, memberId: string) {
   const id = projectIdSchema.parse(projectId)
   const parsedMemberId = projectMemberIdSchema.parse(memberId)
-  const currentUser = await getCurrentDatabaseUser()
-  const member = await softRemoveMemberAndUnassignTasks(id, currentUser.id, parsedMemberId)
+  const access = await requireProjectPermission(id, "manage")
+  await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
+  const member = await softRemoveMemberAndUnassignTasks(id, access.user.id, parsedMemberId)
   if (!member) throw new ProjectAccessError("Project member not found or cannot be removed", 404)
 }

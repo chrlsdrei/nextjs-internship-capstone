@@ -29,6 +29,7 @@ export const systemRole = pgEnum("system_role", ["user", "super_admin"])
 export const accountStatus = pgEnum("account_status", ["active", "suspended", "deleted"])
 export const workspaceStatus = pgEnum("workspace_status", ["active", "suspended", "deleted"])
 export const workspaceMemberRole = pgEnum("workspace_member_role", ["admin", "member"])
+export const rateLimitScope = pgEnum("rate_limit_scope", ["actor", "workspace"])
 
 export const users = pgTable(
   "users",
@@ -235,10 +236,79 @@ export const comments = pgTable(
   ],
 )
 
+export const rateLimitBuckets = pgTable(
+  "rate_limit_buckets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    scope: rateLimitScope("scope").notNull(),
+    scopeKey: uuid("scope_key").notNull(),
+    actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
+    action: text("action").notNull(),
+    windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    requestCount: integer("request_count").default(1).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    unique("rate_limit_buckets_scope_window_unique").on(
+      table.scope,
+      table.scopeKey,
+      table.action,
+      table.windowStartedAt,
+    ),
+    index("rate_limit_buckets_actor_action_idx").on(table.actorUserId, table.action),
+    index("rate_limit_buckets_workspace_action_idx").on(table.workspaceId, table.action),
+    index("rate_limit_buckets_expires_at_idx").on(table.expiresAt),
+    check("rate_limit_buckets_count_positive", sql`${table.requestCount} > 0`),
+    check("rate_limit_buckets_window_valid", sql`${table.expiresAt} > ${table.windowStartedAt}`),
+    check(
+      "rate_limit_buckets_scope_reference_valid",
+      sql`(
+        (${table.scope} = 'actor' AND ${table.actorUserId} = ${table.scopeKey} AND ${table.workspaceId} IS NULL)
+        OR
+        (${table.scope} = 'workspace' AND ${table.workspaceId} = ${table.scopeKey} AND ${table.actorUserId} IS NULL)
+      )`,
+    ),
+  ],
+)
+
+export const aiUsageLogs = pgTable(
+  "ai_usage_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    projectId: uuid("project_id"),
+    quotaKey: text("quota_key").notNull(),
+    action: text("action").notNull(),
+    model: text("model"),
+    tokensUsed: integer("tokens_used").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [projects.id, projects.workspaceId],
+      name: "ai_usage_logs_project_workspace_fk",
+    }).onDelete("cascade"),
+    index("ai_usage_logs_workspace_quota_created_idx").on(table.workspaceId, table.quotaKey, table.createdAt),
+    index("ai_usage_logs_user_created_idx").on(table.userId, table.createdAt),
+    index("ai_usage_logs_project_created_idx").on(table.projectId, table.createdAt),
+    check("ai_usage_logs_tokens_nonnegative", sql`${table.tokensUsed} >= 0`),
+  ],
+)
+
 export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
   assignedTasks: many(tasks, { relationName: "taskAssignee" }),
   comments: many(comments),
+  rateLimitBuckets: many(rateLimitBuckets),
+  aiUsageLogs: many(aiUsageLogs),
 }))
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
@@ -250,6 +320,8 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   }),
   settings: one(workspaceSettings),
   projects: many(projects),
+  rateLimitBuckets: many(rateLimitBuckets),
+  aiUsageLogs: many(aiUsageLogs),
 }))
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ many, one }) => ({
@@ -286,6 +358,33 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   settings: one(projectSettings),
   lists: many(lists),
   members: many(projectMembers),
+  aiUsageLogs: many(aiUsageLogs),
+}))
+
+export const rateLimitBucketsRelations = relations(rateLimitBuckets, ({ one }) => ({
+  actor: one(users, {
+    fields: [rateLimitBuckets.actorUserId],
+    references: [users.id],
+  }),
+  workspace: one(workspaces, {
+    fields: [rateLimitBuckets.workspaceId],
+    references: [workspaces.id],
+  }),
+}))
+
+export const aiUsageLogsRelations = relations(aiUsageLogs, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [aiUsageLogs.workspaceId],
+    references: [workspaces.id],
+  }),
+  user: one(users, {
+    fields: [aiUsageLogs.userId],
+    references: [users.id],
+  }),
+  project: one(projects, {
+    fields: [aiUsageLogs.projectId],
+    references: [projects.id],
+  }),
 }))
 
 export const projectSettingsRelations = relations(projectSettings, ({ one }) => ({
@@ -358,9 +457,14 @@ export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
 export type Comment = typeof comments.$inferSelect
 export type NewComment = typeof comments.$inferInsert
+export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect
+export type NewRateLimitBucket = typeof rateLimitBuckets.$inferInsert
+export type AiUsageLog = typeof aiUsageLogs.$inferSelect
+export type NewAiUsageLog = typeof aiUsageLogs.$inferInsert
 export type TaskPriority = (typeof taskPriority.enumValues)[number]
 export type BoardRole = (typeof boardRole.enumValues)[number]
 export type SystemRole = (typeof systemRole.enumValues)[number]
 export type AccountStatus = (typeof accountStatus.enumValues)[number]
 export type WorkspaceStatus = (typeof workspaceStatus.enumValues)[number]
 export type WorkspaceMemberRole = (typeof workspaceMemberRole.enumValues)[number]
+export type RateLimitScope = (typeof rateLimitScope.enumValues)[number]

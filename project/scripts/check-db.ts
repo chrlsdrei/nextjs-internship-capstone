@@ -4,11 +4,13 @@ import { config } from "dotenv"
 config({ path: ".env.local" })
 
 const expectedTables = [
+  "ai_usage_logs",
   "comments",
   "lists",
   "project_members",
   "project_settings",
   "projects",
+  "rate_limit_buckets",
   "tasks",
   "users",
   "workspace_members",
@@ -30,7 +32,8 @@ async function main() {
     from information_schema.tables
     where table_schema = 'public'
       and table_name in (
-        'comments', 'lists', 'project_members', 'project_settings', 'projects', 'tasks', 'users',
+        'ai_usage_logs', 'comments', 'lists', 'project_members', 'project_settings', 'projects',
+        'rate_limit_buckets', 'tasks', 'users',
         'workspace_members', 'workspace_settings', 'workspaces'
       )
     order by table_name

@@ -9,14 +9,21 @@ import {
   updateProjectMemberRole,
 } from "@/features/members/server/member.service"
 import { ProjectAccessError } from "@/features/projects/server/project-access.service"
+import { RateLimitError } from "@/features/rate-limits/rate-limit.error"
 import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
 
-function messageFor(error: unknown) {
-  if (error instanceof ProjectAccessError) return error.message
-  if (error instanceof ZodError) return error.issues[0]?.message ?? "Please check the form and try again"
+function errorState(error: unknown): ActionState {
+  if (error instanceof RateLimitError) {
+    return actionError(error.message, undefined, {
+      code: error.code,
+      retryAfterSeconds: error.retryAfterSeconds,
+    })
+  }
+  if (error instanceof ProjectAccessError) return actionError(error.message)
+  if (error instanceof ZodError) return actionError(error.issues[0]?.message ?? "Please check the form and try again")
   console.error("Member action failed", error)
-  return "Something went wrong. Please try again."
+  return actionError("Something went wrong. Please try again.")
 }
 
 function refreshMembershipViews(projectId: string) {
@@ -33,7 +40,7 @@ export async function addProjectMemberAction(_: ActionState, formData: FormData)
     refreshMembershipViews(projectId)
     return actionSuccess(undefined, "Member added.")
   } catch (error) {
-    return actionError(messageFor(error))
+    return errorState(error)
   }
 }
 
@@ -46,7 +53,7 @@ export async function updateProjectMemberRoleAction(_: ActionState, formData: Fo
     refreshMembershipViews(projectId)
     return actionSuccess(undefined, "Saved.")
   } catch (error) {
-    return actionError(messageFor(error))
+    return errorState(error)
   }
 }
 
@@ -57,6 +64,6 @@ export async function removeProjectMemberAction(_: ActionState, formData: FormDa
     refreshMembershipViews(projectId)
     return actionSuccess(undefined, "Member removed.")
   } catch (error) {
-    return actionError(messageFor(error))
+    return errorState(error)
   }
 }

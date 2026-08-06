@@ -17,14 +17,21 @@ import {
 } from "@/features/board/server/board.service"
 import { publishProjectEvent } from "@/features/board/server/project-event.service"
 import { ProjectAccessError } from "@/features/projects/server/project-access.service"
+import { RateLimitError } from "@/features/rate-limits/rate-limit.error"
 import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
 
-function messageFor(error: unknown) {
-  if (error instanceof ProjectAccessError) return error.message
-  if (error instanceof ZodError) return error.issues[0]?.message ?? "Please check the form"
+function errorState(error: unknown): ActionState {
+  if (error instanceof RateLimitError) {
+    return actionError(error.message, undefined, {
+      code: error.code,
+      retryAfterSeconds: error.retryAfterSeconds,
+    })
+  }
+  if (error instanceof ProjectAccessError) return actionError(error.message)
+  if (error instanceof ZodError) return actionError(error.issues[0]?.message ?? "Please check the form")
   console.error("Board action failed", error)
-  return "Something went wrong. Please try again."
+  return actionError("Something went wrong. Please try again.")
 }
 
 function value(formData: FormData, key: string) {
@@ -48,7 +55,7 @@ async function run(projectId: string, callback: () => Promise<unknown>): Promise
     await callback()
     return complete(projectId)
   } catch (error) {
-    return actionError(messageFor(error))
+    return errorState(error)
   }
 }
 

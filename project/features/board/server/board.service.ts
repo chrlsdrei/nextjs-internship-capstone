@@ -1,6 +1,5 @@
 import "server-only"
 
-import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
 import { boardCapabilities } from "@/features/board/board.policy"
 import {
   listIdSchema,
@@ -29,7 +28,16 @@ import {
   updateTaskRecord,
 } from "@/features/board/server/task.repository"
 import { projectIdSchema } from "@/features/projects/project.schema"
+import type { ProjectPermission } from "@/features/projects/server/project-access.service"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
+import type { RateLimitAction } from "@/features/rate-limits/rate-limit.types"
+import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
+
+async function requireRateLimitedBoardWrite(projectId: string, permission: ProjectPermission, action: RateLimitAction) {
+  const access = await requireProjectPermission(projectId, permission)
+  await enforceRateLimit({ action, actorUserId: access.user.id, workspaceId: access.workspaceId })
+  return access
+}
 
 export async function getProjectBoard(projectId: string): Promise<ProjectBoardDto> {
   const id = projectIdSchema.parse(projectId)
@@ -70,8 +78,8 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
 export async function createList(projectId: string, input: unknown) {
   const id = projectIdSchema.parse(projectId)
   const values = listSchema.parse(input)
-  const actor = await getCurrentDatabaseUser()
-  const list = await insertList(id, actor.id, values)
+  const access = await requireRateLimitedBoardWrite(id, "manage", "board.list.write")
+  const list = await insertList(id, access.user.id, values)
   if (!list) throw new ProjectAccessError("Project not found or you cannot manage its lists", 404)
   return list
 }
@@ -81,8 +89,8 @@ export async function renameList(projectId: string, listId: string, input: unkno
   const parsedListId = listIdSchema.parse(listId)
   const values = updateListSchema.parse(input)
   if (!values.name) throw new ProjectAccessError("A list name is required", 422)
-  const actor = await getCurrentDatabaseUser()
-  if (!(await updateListName(id, actor.id, parsedListId, values))) {
+  const access = await requireRateLimitedBoardWrite(id, "manage", "board.list.write")
+  if (!(await updateListName(id, access.user.id, parsedListId, values))) {
     throw new ProjectAccessError("List not found or you cannot manage it", 404)
   }
 }
@@ -90,8 +98,8 @@ export async function renameList(projectId: string, listId: string, input: unkno
 export async function deleteList(projectId: string, listId: string) {
   const id = projectIdSchema.parse(projectId)
   const parsedListId = listIdSchema.parse(listId)
-  const actor = await getCurrentDatabaseUser()
-  if (!(await deleteListAndCompact(id, actor.id, parsedListId))) {
+  const access = await requireRateLimitedBoardWrite(id, "manage", "board.list.write")
+  if (!(await deleteListAndCompact(id, access.user.id, parsedListId))) {
     throw new ProjectAccessError("List not found or you cannot manage it", 404)
   }
 }
@@ -99,8 +107,8 @@ export async function deleteList(projectId: string, listId: string) {
 export async function reorderLists(projectId: string, input: unknown) {
   const id = projectIdSchema.parse(projectId)
   const values = reorderListsSchema.parse(input)
-  const actor = await getCurrentDatabaseUser()
-  if ((await updateListOrder(id, actor.id, values)) !== values.listIds.length) {
+  const access = await requireRateLimitedBoardWrite(id, "manage", "board.drag")
+  if ((await updateListOrder(id, access.user.id, values)) !== values.listIds.length) {
     throw new ProjectAccessError("Lists changed or you cannot reorder them", 409)
   }
 }
@@ -108,8 +116,8 @@ export async function reorderLists(projectId: string, input: unknown) {
 export async function createTask(projectId: string, input: unknown) {
   const id = projectIdSchema.parse(projectId)
   const values = taskSchema.parse(input)
-  const actor = await getCurrentDatabaseUser()
-  const task = await insertTask(id, actor.id, values)
+  const access = await requireRateLimitedBoardWrite(id, "edit", "board.task.write")
+  const task = await insertTask(id, access.user.id, values)
   if (!task) {
     throw new ProjectAccessError("List not found, assignee is not a member, or you cannot create tasks", 404)
   }
@@ -120,8 +128,8 @@ export async function updateTask(projectId: string, taskId: string, input: unkno
   const id = projectIdSchema.parse(projectId)
   const parsedTaskId = taskIdSchema.parse(taskId)
   const values = updateTaskSchema.parse(input)
-  const actor = await getCurrentDatabaseUser()
-  if (!(await updateTaskRecord(id, actor.id, parsedTaskId, values))) {
+  const access = await requireRateLimitedBoardWrite(id, "edit", "board.task.write")
+  if (!(await updateTaskRecord(id, access.user.id, parsedTaskId, values))) {
     throw new ProjectAccessError("Task not found, assignee is not a member, or you cannot edit it", 404)
   }
 }
@@ -130,8 +138,8 @@ export async function moveTask(projectId: string, taskId: string, input: unknown
   const id = projectIdSchema.parse(projectId)
   const parsedTaskId = taskIdSchema.parse(taskId)
   const values = moveTaskSchema.parse(input)
-  const actor = await getCurrentDatabaseUser()
-  if (!(await moveTaskRecord(id, actor.id, parsedTaskId, values))) {
+  const access = await requireRateLimitedBoardWrite(id, "edit", "board.drag")
+  if (!(await moveTaskRecord(id, access.user.id, parsedTaskId, values))) {
     throw new ProjectAccessError("Task, destination list, or target position is invalid, or you cannot move it", 409)
   }
 }
@@ -139,8 +147,8 @@ export async function moveTask(projectId: string, taskId: string, input: unknown
 export async function deleteTask(projectId: string, taskId: string) {
   const id = projectIdSchema.parse(projectId)
   const parsedTaskId = taskIdSchema.parse(taskId)
-  const actor = await getCurrentDatabaseUser()
-  if (!(await deleteTaskAndCompact(id, actor.id, parsedTaskId))) {
+  const access = await requireRateLimitedBoardWrite(id, "manage", "board.task.write")
+  if (!(await deleteTaskAndCompact(id, access.user.id, parsedTaskId))) {
     throw new ProjectAccessError("Task not found or you cannot delete it", 404)
   }
 }
@@ -149,8 +157,8 @@ export async function reorderTasks(projectId: string, listId: string, input: unk
   const id = projectIdSchema.parse(projectId)
   const parsedListId = listIdSchema.parse(listId)
   const values = reorderTasksSchema.parse(input)
-  const actor = await getCurrentDatabaseUser()
-  if ((await updateTaskOrder(id, actor.id, parsedListId, values)) !== values.taskIds.length) {
+  const access = await requireRateLimitedBoardWrite(id, "edit", "board.drag")
+  if ((await updateTaskOrder(id, access.user.id, parsedListId, values)) !== values.taskIds.length) {
     throw new ProjectAccessError("Tasks changed or you cannot reorder them", 409)
   }
 }

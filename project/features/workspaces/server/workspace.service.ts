@@ -1,6 +1,7 @@
 import "server-only"
 
 import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
+import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
 import {
   countActiveWorkspaceMembers,
   createWorkspaceWithOwner,
@@ -120,6 +121,7 @@ export async function getWorkspaceDetails(workspaceId: string): Promise<Workspac
 export async function createWorkspace(input: unknown): Promise<WorkspaceSummaryDto> {
   const values = createWorkspaceSchema.parse(input)
   const user = await getCurrentDatabaseUser()
+  await enforceRateLimit({ action: "workspace.create", actorUserId: user.id })
   const workspace = await createWorkspaceWithOwner(user.id, values)
   if (!workspace) throw new Error("Unable to create the workspace")
   const access = await findActiveWorkspaceAccess(workspace.id, user.id)
@@ -129,9 +131,10 @@ export async function createWorkspace(input: unknown): Promise<WorkspaceSummaryD
 
 export async function updateWorkspaceDetails(workspaceId: string, input: unknown) {
   const values = updateWorkspaceDetailsSchema.parse(input)
-  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
   if (role !== "owner") throw new WorkspaceAccessError("Only the workspace owner can update its details", 403)
+  await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const workspace = await updateWorkspaceDetailsById(access.id, values)
   if (!workspace) throw new WorkspaceAccessError("Workspace not found", 404)
   return getWorkspaceDetails(access.id)
@@ -139,9 +142,10 @@ export async function updateWorkspaceDetails(workspaceId: string, input: unknown
 
 export async function updateWorkspaceSettings(workspaceId: string, input: unknown) {
   const values = updateWorkspaceSettingsSchema.parse(input)
-  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
   if (role !== "owner") throw new WorkspaceAccessError("Only the workspace owner can update settings", 403)
+  await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const settings = await updateWorkspaceSettingsById(access.id, values)
   if (!settings) throw new WorkspaceAccessError("Workspace settings not found", 404)
   return getWorkspaceDetails(access.id)
@@ -149,7 +153,7 @@ export async function updateWorkspaceSettings(workspaceId: string, input: unknow
 
 export async function updateWorkspaceMemberRole(workspaceId: string, input: unknown) {
   const values = updateWorkspaceMemberRoleSchema.parse(input)
-  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
   const target = await findActiveWorkspaceMember(access.id, values.memberId)
   if (!target) throw new WorkspaceAccessError("Workspace member not found", 404)
@@ -157,6 +161,7 @@ export async function updateWorkspaceMemberRole(workspaceId: string, input: unkn
   if (!canChangeWorkspaceMemberRole(role, targetRole)) {
     throw new WorkspaceAccessError("Only the owner can change non-owner member roles", 403)
   }
+  await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const member = await updateWorkspaceMemberRoleById(target.id, values.role)
   if (!member) throw new WorkspaceAccessError("Workspace member not found", 404)
   return getWorkspaceDetails(access.id)
@@ -172,6 +177,7 @@ export async function removeWorkspaceMember(workspaceId: string, input: unknown)
   if (!canRemoveWorkspaceMember(role, targetRole, target.userId === user.id)) {
     throw new WorkspaceAccessError("You cannot remove this workspace member", 403)
   }
+  await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const member = await softRemoveWorkspaceMemberById(target.id)
   if (!member) throw new WorkspaceAccessError("Workspace member not found", 404)
   return { workspaceId: access.id, removedMemberId: member.id }
@@ -179,7 +185,7 @@ export async function removeWorkspaceMember(workspaceId: string, input: unknown)
 
 export async function transferWorkspaceOwnershipTo(workspaceId: string, input: unknown) {
   const values = transferWorkspaceOwnershipSchema.parse(input)
-  const { access, role } = await requireWorkspaceAccess(workspaceId)
+  const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
   if (!canTransferWorkspaceOwnership(role)) {
     throw new WorkspaceAccessError("Only the owner can transfer workspace ownership", 403)
@@ -189,6 +195,7 @@ export async function transferWorkspaceOwnershipTo(workspaceId: string, input: u
   }
   const target = await findActiveWorkspaceMember(access.id, values.newOwnerMemberId)
   if (!target) throw new WorkspaceAccessError("The new owner must be an active workspace member", 400)
+  await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const workspace = await transferWorkspaceOwnership(access.id, access.ownerWorkspaceMemberId, target.id)
   if (!workspace) throw new WorkspaceAccessError("Workspace ownership changed; refresh and try again", 409)
   return getWorkspaceDetails(access.id)
