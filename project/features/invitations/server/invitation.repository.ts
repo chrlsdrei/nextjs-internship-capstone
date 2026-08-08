@@ -169,7 +169,12 @@ export async function hasActiveProjectMembership(projectId: string, workspaceMem
   return Boolean(member)
 }
 
-export async function acceptInvitationRecord(tokenHash: string, userId: string, normalizedEmail: string) {
+export async function acceptInvitationRecord(
+  tokenHash: string,
+  userId: string,
+  normalizedEmail: string,
+  actorName = "Workspace member",
+) {
   const result = await db.execute<{
     invitationId: string
     workspaceId: string
@@ -227,9 +232,34 @@ export async function acceptInvitationRecord(tokenHash: string, userId: string, 
       WHERE invitation."id" = candidate."id"
         AND EXISTS (SELECT 1 FROM selected_workspace_member)
       RETURNING invitation."id", invitation."workspace_id", invitation."project_id"
+    ),
+    activity_insert AS (
+      INSERT INTO "activity_logs" (
+        "workspace_id", "project_id", "actor_workspace_member_id", "action", "schema_version", "metadata"
+      )
+      SELECT
+        accepted."workspace_id",
+        accepted."project_id",
+        selected_workspace_member."id",
+        'invitation.accepted',
+        1,
+        jsonb_build_object(
+          'actorName', ${actorName}::text,
+          'workspaceName', workspace."name",
+          'invitedEmail', candidate."normalized_email",
+          'invitationKind', candidate."kind",
+          'projectTitle', project."title"
+        )
+      FROM accepted
+      INNER JOIN candidate ON candidate."id" = accepted."id"
+      INNER JOIN selected_workspace_member ON selected_workspace_member."workspace_id" = accepted."workspace_id"
+      INNER JOIN "workspaces" AS workspace ON workspace."id" = accepted."workspace_id"
+      LEFT JOIN "projects" AS project ON project."id" = accepted."project_id"
+      RETURNING "id"
     )
     SELECT "id" AS "invitationId", "workspace_id" AS "workspaceId", "project_id" AS "projectId"
     FROM accepted
+    WHERE EXISTS (SELECT 1 FROM activity_insert)
   `)
   return result.rows[0] ?? null
 }

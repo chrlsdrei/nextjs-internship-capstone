@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import { neon } from "@neondatabase/serverless"
-import { eq, inArray } from "drizzle-orm"
+import { eq, inArray, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 
@@ -89,6 +89,7 @@ async function createInvitationFixture(input: {
 }
 
 afterEach(async () => {
+  await database.execute(sql`TRUNCATE TABLE "activity_logs"`)
   if (createdWorkspaceIds.size)
     await database.delete(workspaces).where(inArray(workspaces.id, [...createdWorkspaceIds]))
   if (createdUserIds.size) await database.delete(users).where(inArray(users.id, [...createdUserIds]))

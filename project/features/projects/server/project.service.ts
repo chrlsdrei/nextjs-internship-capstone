@@ -1,5 +1,6 @@
 import "server-only"
 
+import { recordActivity } from "@/features/activity/server/activity.service"
 import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
 import {
   projectIdSchema,
@@ -106,6 +107,15 @@ export async function createProject(input: unknown): Promise<ProjectDto> {
 
   const project = await insertProject(workspaceAccess.membershipId, workspaceRole === "owner", values)
   if (!project) throw new Error("Unable to create the project")
+  await recordActivity({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    actorWorkspaceMemberId: workspaceAccess.membershipId,
+    event: {
+      action: "project.created",
+      metadata: { actorName: creator.name, workspaceName: workspaceAccess.name, projectTitle: project.title },
+    },
+  })
   return projectDto(project)
 }
 
@@ -120,17 +130,44 @@ export async function updateProject(projectId: string, input: unknown): Promise<
   if (!project) {
     throw new ProjectAccessError("Project not found or you do not have permission to manage it", 404)
   }
+  const workspaceAccess = await findActiveWorkspaceAccess(access.workspaceId, access.user.id)
+  if (!workspaceAccess) throw new ProjectAccessError("Workspace access not found", 404)
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: project.id,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.updated",
+      metadata: { actorName: access.user.name, workspaceName: workspaceAccess.name, projectTitle: project.title },
+    },
+  })
   return projectDto(project)
 }
 
 export async function deleteProject(projectId: string) {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "delete")
+  const projectSnapshot = await findProjectById(id)
+  const workspaceAccess = await findActiveWorkspaceAccess(access.workspaceId, access.user.id)
+  if (!projectSnapshot || !workspaceAccess) throw new ProjectAccessError("Project not found", 404)
   await enforceRateLimit({ action: "project.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
   const project = await deleteProjectAsManager(id, access.user.id)
   if (!project) {
     throw new ProjectAccessError("Project not found or you do not have permission to delete it", 404)
   }
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: null,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.deleted",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: workspaceAccess.name,
+        projectTitle: projectSnapshot.title,
+      },
+    },
+  })
 }
 
 export async function getProjectSettings(projectId: string) {
@@ -150,5 +187,22 @@ export async function updateProjectSettings(projectId: string, input: unknown) {
   if (!settings) {
     throw new ProjectAccessError("Project settings not found or you cannot manage them", 404)
   }
+  const project = await findProjectById(id)
+  const workspaceAccess = await findActiveWorkspaceAccess(access.workspaceId, access.user.id)
+  if (!project || !workspaceAccess) throw new ProjectAccessError("Project not found", 404)
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: id,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.settings_updated",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: workspaceAccess.name,
+        projectTitle: project.title,
+        editorsCanAssignTasks: settings.editorsCanAssignTasks,
+      },
+    },
+  })
   return settings
 }

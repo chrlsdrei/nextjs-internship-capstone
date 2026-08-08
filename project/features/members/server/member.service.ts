@@ -1,5 +1,6 @@
 import "server-only"
 
+import { recordActivity } from "@/features/activity/server/activity.service"
 import { listProjectInvitations } from "@/features/invitations/server/invitation.service"
 import {
   projectMemberIdSchema,
@@ -101,6 +102,28 @@ export async function addProjectMember(projectId: string, input: unknown) {
   if (!member) {
     throw new ProjectAccessError("That user is already a project member or you cannot manage this project", 409)
   }
+  const [project, workspaceOwner, addedMember] = await Promise.all([
+    getProjectById(id),
+    findWorkspaceOwnerForProject(id),
+    listProjectMembers(id).then((members) => members.find((candidate) => candidate.id === member.id)),
+  ])
+  if (!workspaceOwner || !addedMember) throw new ProjectAccessError("Project member information is unavailable", 409)
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: id,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.member_added",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: workspaceOwner.workspaceName,
+        projectTitle: project.title,
+        memberName: addedMember.name,
+        memberEmail: addedMember.email,
+        role: addedMember.role,
+      },
+    },
+  })
   return member
 }
 
@@ -109,9 +132,29 @@ export async function updateProjectMemberRole(projectId: string, memberId: strin
   const parsedMemberId = projectMemberIdSchema.parse(memberId)
   const values = updateProjectMemberRoleSchema.parse(input)
   const access = await requireProjectPermission(id, "manage")
+  const currentMember = (await listProjectMembers(id)).find((member) => member.id === parsedMemberId)
+  if (!currentMember) throw new ProjectAccessError("Project member not found", 404)
   await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
   const member = await updateMemberRole(id, access.user.id, parsedMemberId, values)
   if (!member) throw new ProjectAccessError("Project member not found or cannot be changed", 404)
+  const [project, workspaceOwner] = await Promise.all([getProjectById(id), findWorkspaceOwnerForProject(id)])
+  if (!workspaceOwner) throw new ProjectAccessError("Workspace information is unavailable", 409)
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: id,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.member_role_updated",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: workspaceOwner.workspaceName,
+        projectTitle: project.title,
+        memberName: currentMember.name,
+        memberEmail: currentMember.email,
+        role: values.role,
+      },
+    },
+  })
   return member
 }
 
@@ -119,7 +162,27 @@ export async function removeProjectMember(projectId: string, memberId: string) {
   const id = projectIdSchema.parse(projectId)
   const parsedMemberId = projectMemberIdSchema.parse(memberId)
   const access = await requireProjectPermission(id, "manage")
+  const currentMember = (await listProjectMembers(id)).find((member) => member.id === parsedMemberId)
+  if (!currentMember) throw new ProjectAccessError("Project member not found", 404)
   await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
   const member = await softRemoveMemberAndUnassignTasks(id, access.user.id, parsedMemberId)
   if (!member) throw new ProjectAccessError("Project member not found or cannot be removed", 404)
+  const [project, workspaceOwner] = await Promise.all([getProjectById(id), findWorkspaceOwnerForProject(id)])
+  if (!workspaceOwner) throw new ProjectAccessError("Workspace information is unavailable", 409)
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: id,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.member_removed",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: workspaceOwner.workspaceName,
+        projectTitle: project.title,
+        memberName: currentMember.name,
+        memberEmail: currentMember.email,
+        role: currentMember.role,
+      },
+    },
+  })
 }

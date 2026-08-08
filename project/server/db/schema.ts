@@ -6,6 +6,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -383,6 +384,33 @@ export const workspaceInvitations = pgTable(
   ],
 )
 
+export const activityLogs = pgTable(
+  "activity_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
+    actorWorkspaceMemberId: uuid("actor_workspace_member_id").references(() => workspaceMembers.id, {
+      onDelete: "set null",
+    }),
+    action: text("action").notNull(),
+    schemaVersion: integer("schema_version").default(1).notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("activity_logs_workspace_created_idx").on(table.workspaceId, table.createdAt, table.id),
+    index("activity_logs_project_created_idx").on(table.projectId, table.createdAt, table.id),
+    index("activity_logs_task_created_idx").on(table.taskId, table.createdAt, table.id),
+    index("activity_logs_actor_created_idx").on(table.actorWorkspaceMemberId, table.createdAt),
+    check("activity_logs_action_nonempty", sql`length(trim(${table.action})) > 0`),
+    check("activity_logs_schema_version_positive", sql`${table.schemaVersion} > 0`),
+  ],
+)
+
 export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
   assignedTasks: many(tasks, { relationName: "taskAssignee" }),
@@ -405,6 +433,7 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
   invitations: many(workspaceInvitations),
+  activityLogs: many(activityLogs),
 }))
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ many, one }) => ({
@@ -420,6 +449,7 @@ export const workspaceMembersRelations = relations(workspaceMembers, ({ many, on
   createdProjects: many(projects, { relationName: "projectCreator" }),
   projectMemberships: many(projectMembers),
   sentInvitations: many(workspaceInvitations),
+  activityLogs: many(activityLogs),
 }))
 
 export const workspaceSettingsRelations = relations(workspaceSettings, ({ one }) => ({
@@ -444,6 +474,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   members: many(projectMembers),
   aiUsageLogs: many(aiUsageLogs),
   invitations: many(workspaceInvitations),
+  activityLogs: many(activityLogs),
 }))
 
 export const rateLimitBucketsRelations = relations(rateLimitBuckets, ({ one }) => ({
@@ -497,6 +528,25 @@ export const workspaceInvitationsRelations = relations(workspaceInvitations, ({ 
   }),
 }))
 
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [activityLogs.workspaceId],
+    references: [workspaces.id],
+  }),
+  project: one(projects, {
+    fields: [activityLogs.projectId],
+    references: [projects.id],
+  }),
+  task: one(tasks, {
+    fields: [activityLogs.taskId],
+    references: [tasks.id],
+  }),
+  actorWorkspaceMember: one(workspaceMembers, {
+    fields: [activityLogs.actorWorkspaceMemberId],
+    references: [workspaceMembers.id],
+  }),
+}))
+
 export const projectSettingsRelations = relations(projectSettings, ({ one }) => ({
   project: one(projects, {
     fields: [projectSettings.projectId],
@@ -534,6 +584,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     relationName: "taskAssignee",
   }),
   comments: many(comments),
+  activityLogs: many(activityLogs),
 }))
 
 export const commentsRelations = relations(comments, ({ one }) => ({
@@ -573,6 +624,8 @@ export type AiUsageLog = typeof aiUsageLogs.$inferSelect
 export type NewAiUsageLog = typeof aiUsageLogs.$inferInsert
 export type WorkspaceInvitation = typeof workspaceInvitations.$inferSelect
 export type NewWorkspaceInvitation = typeof workspaceInvitations.$inferInsert
+export type ActivityLog = typeof activityLogs.$inferSelect
+export type NewActivityLog = typeof activityLogs.$inferInsert
 export type TaskPriority = (typeof taskPriority.enumValues)[number]
 export type BoardRole = (typeof boardRole.enumValues)[number]
 export type SystemRole = (typeof systemRole.enumValues)[number]

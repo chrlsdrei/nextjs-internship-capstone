@@ -1,5 +1,6 @@
 import "server-only"
 
+import { recordActivity } from "@/features/activity/server/activity.service"
 import { getCurrentDatabaseUser, getVerifiedPrimaryEmail } from "@/features/auth/server/session.service"
 import { InvitationError } from "@/features/invitations/invitation.error"
 import {
@@ -108,10 +109,14 @@ async function requireInvitationManagement(invitationId: string) {
   if (!invitation) throw new InvitationError("Invitation not found", "INVITATION_INVALID", 404)
   if (invitation.kind === "project" && invitation.projectId) {
     const access = await requireProjectPermission(invitation.projectId, "manage")
-    return { invitation, user: access.user }
+    return { invitation, user: access.user, actorWorkspaceMemberId: access.workspaceMemberId }
   }
   const authority = await requireWorkspaceInvitationAuthority(invitation.workspaceId)
-  return { invitation, user: authority.user }
+  return {
+    invitation,
+    user: authority.user,
+    actorWorkspaceMemberId: authority.access.membershipId,
+  }
 }
 
 export async function createWorkspaceInvitation(input: unknown): Promise<InvitationDto> {
@@ -150,6 +155,21 @@ export async function createWorkspaceInvitation(input: unknown): Promise<Invitat
     throw error
   }
   if (!invitation) throw new Error("Unable to create invitation")
+  await recordActivity({
+    workspaceId: access.id,
+    projectId: invitation.projectId,
+    actorWorkspaceMemberId: access.membershipId,
+    event: {
+      action: "invitation.created",
+      metadata: {
+        actorName: user.name,
+        workspaceName: invitation.workspaceName,
+        invitedEmail: invitation.normalizedEmail,
+        invitationKind: invitation.kind,
+        projectTitle: invitation.projectTitle,
+      },
+    },
+  })
   await deliver(invitation, token)
   return toDto({ ...invitation, deliveryStatus: "sent" })
 }
@@ -191,6 +211,21 @@ export async function createProjectInvitation(input: unknown): Promise<Invitatio
     throw error
   }
   if (!invitation) throw new Error("Unable to create invitation")
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: invitation.projectId,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "invitation.created",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: invitation.workspaceName,
+        invitedEmail: invitation.normalizedEmail,
+        invitationKind: invitation.kind,
+        projectTitle: invitation.projectTitle,
+      },
+    },
+  })
   await deliver(invitation, token)
   return toDto({ ...invitation, deliveryStatus: "sent" })
 }
@@ -247,20 +282,50 @@ export async function getInvitationPreview(token: string): Promise<InvitationPre
 }
 
 export async function resendInvitation(invitationId: string): Promise<InvitationDto> {
-  const { invitation, user } = await requireInvitationManagement(invitationId)
+  const { actorWorkspaceMemberId, invitation, user } = await requireInvitationManagement(invitationId)
   await enforceRateLimit({ action: "invitation.resend", actorUserId: user.id, workspaceId: invitation.workspaceId })
   const token = createInvitationToken()
   const rotated = await rotateInvitationToken(invitation.id, hashInvitationToken(token), invitationExpiry())
   if (!rotated) throw new InvitationError("Only active invitations can be resent", "INVITATION_INVALID", 409)
+  await recordActivity({
+    workspaceId: invitation.workspaceId,
+    projectId: invitation.projectId,
+    actorWorkspaceMemberId,
+    event: {
+      action: "invitation.resent",
+      metadata: {
+        actorName: user.name,
+        workspaceName: invitation.workspaceName,
+        invitedEmail: invitation.normalizedEmail,
+        invitationKind: invitation.kind,
+        projectTitle: invitation.projectTitle,
+      },
+    },
+  })
   await deliver(rotated, token)
   return toDto({ ...rotated, deliveryStatus: "sent" })
 }
 
 export async function revokeInvitation(invitationId: string): Promise<InvitationDto> {
-  const { invitation, user } = await requireInvitationManagement(invitationId)
+  const { actorWorkspaceMemberId, invitation, user } = await requireInvitationManagement(invitationId)
   await enforceRateLimit({ action: "invitation.revoke", actorUserId: user.id, workspaceId: invitation.workspaceId })
   const revoked = await revokeInvitationRecord(invitation.id, user.id)
   if (!revoked) throw new InvitationError("Only active invitations can be revoked", "INVITATION_INVALID", 409)
+  await recordActivity({
+    workspaceId: invitation.workspaceId,
+    projectId: invitation.projectId,
+    actorWorkspaceMemberId,
+    event: {
+      action: "invitation.revoked",
+      metadata: {
+        actorName: user.name,
+        workspaceName: invitation.workspaceName,
+        invitedEmail: invitation.normalizedEmail,
+        invitationKind: invitation.kind,
+        projectTitle: invitation.projectTitle,
+      },
+    },
+  })
   return toDto(revoked)
 }
 
@@ -279,7 +344,7 @@ export async function acceptInvitation(input: unknown) {
     )
   }
   const tokenHash = hashInvitationToken(values.token)
-  const accepted = await acceptInvitationRecord(tokenHash, user.id, normalizedEmail)
+  const accepted = await acceptInvitationRecord(tokenHash, user.id, normalizedEmail, user.name)
   if (accepted) return accepted
 
   const invitation = await findInvitationByTokenHash(tokenHash)
