@@ -12,6 +12,7 @@ import { GripVertical } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import type { BoardListDto, BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
+import { taskMatchesBoardFilters, toggleLabelFilter } from "@/features/board/board-filtering"
 import { BoardColumn } from "@/features/board/components/board-column"
 import { BoardFilters } from "@/features/board/components/board-filters"
 import { CreateListController } from "@/features/board/controllers/create-list.controller"
@@ -20,6 +21,7 @@ import { TaskCardController } from "@/features/board/controllers/task-card.contr
 import { TaskDialogController } from "@/features/board/controllers/task-dialog.controller"
 import { useTaskDrag } from "@/features/board/controllers/use-task-drag"
 import { useBoardStore } from "@/features/board/stores/board.store"
+import { LabelPaletteController } from "@/features/labels/controllers/label-palette.controller"
 
 function SortableTask({
   task,
@@ -121,6 +123,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
   const [search, setSearch] = useState("")
   const [priority, setPriority] = useState<"all" | BoardTaskDto["priority"]>("all")
   const [assigneeId, setAssigneeId] = useState("all")
+  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [createListId, setCreateListId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<BoardTaskDto | null>(null)
   const storedProjectId = useBoardStore((state) => state.projectId)
@@ -134,33 +137,38 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
   )
 
   useEffect(() => setBoard(projectId, serverBoard), [projectId, serverBoard, setBoard])
+  useEffect(() => {
+    const availableIds = new Set(board.labels.map((label) => label.id))
+    setSelectedLabelIds((current) => current.filter((id) => availableIds.has(id)))
+  }, [board.labels])
 
   const canManage = board.capabilities.canManageLists
   const canEdit = board.capabilities.canEditTasks
   const listIds = board.lists.map((list) => list.id)
   const visibleLists = useMemo(() => {
-    const term = search.trim().toLowerCase()
     return board.lists.map((list) => ({
       ...list,
-      tasks: list.tasks.filter(
-        (task) =>
-          (!term || task.title.toLowerCase().includes(term) || task.description?.toLowerCase().includes(term)) &&
-          (priority === "all" || task.priority === priority) &&
-          (assigneeId === "all" || (assigneeId === "unassigned" ? !task.assignee : task.assignee?.id === assigneeId)),
+      tasks: list.tasks.filter((task) =>
+        taskMatchesBoardFilters(task, { search, priority, assigneeId, labelIds: selectedLabelIds }),
       ),
     }))
-  }, [assigneeId, board.lists, priority, search])
+  }, [assigneeId, board.lists, priority, search, selectedLabelIds])
 
   return (
     <section aria-label="Project board" className="space-y-4">
+      {canManage && <LabelPaletteController projectId={projectId} labels={board.labels} />}
       <BoardFilters
         search={search}
         priority={priority}
         assigneeId={assigneeId}
+        selectedLabelIds={selectedLabelIds}
         members={board.members}
+        labels={board.labels}
         onSearchChange={setSearch}
         onPriorityChange={setPriority}
         onAssigneeChange={setAssigneeId}
+        onLabelToggle={(labelId) => setSelectedLabelIds((current) => toggleLabelFilter(current, labelId))}
+        onClearLabels={() => setSelectedLabelIds([])}
       />
       <p className="sr-only" role="status" aria-live="polite">
         {isSaving ? "Saving task movement" : (error ?? "")}
@@ -225,6 +233,8 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           projectId={projectId}
           listId={createListId}
           members={board.members}
+          labels={board.labels}
+          board={board}
           canAssignTasks={board.capabilities.canAssignTasks}
           onClose={() => setCreateListId(null)}
         />
@@ -233,6 +243,8 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
         <TaskDialogController
           projectId={projectId}
           members={board.members}
+          labels={board.labels}
+          board={board}
           canAssignTasks={board.capabilities.canAssignTasks}
           task={editingTask}
           onClose={() => setEditingTask(null)}

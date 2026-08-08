@@ -1,23 +1,33 @@
-import { Filter, Search } from "lucide-react"
+import { Check, Filter, Search } from "lucide-react"
 
 import type { BoardMemberDto, BoardTaskDto } from "@/features/board/board.types"
+import type { LabelDto } from "@/features/labels/label.types"
+import { labelColorStyle } from "@/features/labels/label-color"
 
 export function BoardFilters({
   search,
   priority,
   assigneeId,
+  selectedLabelIds,
   members,
+  labels,
   onSearchChange,
   onPriorityChange,
   onAssigneeChange,
+  onLabelToggle,
+  onClearLabels,
 }: {
   search: string
   priority: "all" | BoardTaskDto["priority"]
   assigneeId: string
+  selectedLabelIds: string[]
   members: BoardMemberDto[]
+  labels: LabelDto[]
   onSearchChange: (value: string) => void
   onPriorityChange: (value: "all" | BoardTaskDto["priority"]) => void
   onAssigneeChange: (value: string) => void
+  onLabelToggle: (labelId: string) => void
+  onClearLabels: () => void
 }) {
   return (
     <div className="grid gap-3 rounded-lg border border-french-gray-300 bg-white p-4 sm:grid-cols-3 dark:border-paynes-gray-400 dark:bg-outer-space-500">
@@ -62,6 +72,43 @@ export function BoardFilters({
           ))}
         </select>
       </label>
+      {labels.length > 0 && (
+        <fieldset className="sm:col-span-3">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <legend className="text-sm font-medium">Filter by labels</legend>
+            {selectedLabelIds.length > 0 && (
+              <button type="button" onClick={onClearLabels} className="text-blue-munsell-600 text-xs hover:underline">
+                Clear labels
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {labels.map((label) => {
+              const selected = selectedLabelIds.includes(label.id)
+              return (
+                <button
+                  key={label.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => onLabelToggle(label.id)}
+                  className={`inline-flex max-w-full items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-munsell-500 ${
+                    selected
+                      ? "ring-2 ring-blue-munsell-500 ring-offset-2 dark:ring-offset-outer-space-500"
+                      : "opacity-75"
+                  }`}
+                  style={labelColorStyle(label.color)}
+                >
+                  {selected && <Check aria-hidden="true" size={12} />}
+                  <span className="truncate">{label.name}</span>
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-2 text-paynes-gray-500 text-xs dark:text-french-gray-400">
+            Selecting multiple labels shows tasks matching any selected label.
+          </p>
+        </fieldset>
+      )}
     </div>
   )
 }

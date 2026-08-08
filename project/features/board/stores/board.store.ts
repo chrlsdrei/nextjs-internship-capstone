@@ -3,6 +3,7 @@
 import { create } from "zustand"
 
 import type { ProjectBoardDto } from "@/features/board/board.types"
+import type { LabelDto } from "@/features/labels/label.types"
 
 type BoardState = {
   projectId: string | null
@@ -18,6 +19,12 @@ type BoardState = {
     targetListId: string,
     targetIndex: number,
   ) => void
+  setTaskLabelsOptimistically: (
+    projectId: string,
+    fallbackBoard: ProjectBoardDto,
+    taskId: string,
+    labels: LabelDto[],
+  ) => ProjectBoardDto
   setSaving: (isSaving: boolean) => void
   setError: (error: string | null) => void
 }
@@ -50,6 +57,16 @@ export function moveTaskOptimistically(
   }
 }
 
+export function updateTaskLabelsOptimistically(board: ProjectBoardDto, taskId: string, labels: LabelDto[]) {
+  return {
+    ...board,
+    lists: board.lists.map((list) => ({
+      ...list,
+      tasks: list.tasks.map((task) => (task.id === taskId ? { ...task, labels } : task)),
+    })),
+  }
+}
+
 export const useBoardStore = create<BoardState>((set) => ({
   projectId: null,
   board: null,
@@ -63,6 +80,14 @@ export const useBoardStore = create<BoardState>((set) => ({
       const board = state.projectId === projectId && state.board ? state.board : fallbackBoard
       return { projectId, board: moveTaskOptimistically(board, taskId, targetListId, targetIndex) }
     }),
+  setTaskLabelsOptimistically: (projectId, fallbackBoard, taskId, labels) => {
+    let previousBoard = fallbackBoard
+    set((state) => {
+      previousBoard = state.projectId === projectId && state.board ? state.board : fallbackBoard
+      return { projectId, board: updateTaskLabelsOptimistically(previousBoard, taskId, labels) }
+    })
+    return previousBoard
+  },
   setSaving: (isSaving) => set({ isSaving }),
   setError: (error) => set({ error }),
 }))

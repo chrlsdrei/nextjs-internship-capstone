@@ -1,6 +1,8 @@
 import { X } from "lucide-react"
 
 import type { BoardMemberDto, BoardTaskDto } from "@/features/board/board.types"
+import { LabelBadge } from "@/features/labels/components/label-badge"
+import type { LabelDto } from "@/features/labels/label.types"
 import type { ActionState } from "@/lib/action-state"
 
 type TaskDialogProps = {
@@ -10,9 +12,13 @@ type TaskDialogProps = {
   task?: BoardTaskDto
   onClose: () => void
   formAction: (payload: FormData) => void
+  onSubmit: () => void
   state: ActionState
   isPending: boolean
   canAssignTasks: boolean
+  labels: LabelDto[]
+  selectedLabelIds: string[]
+  onLabelToggle: (labelId: string) => void
 }
 
 export function TaskDialog({
@@ -22,9 +28,13 @@ export function TaskDialog({
   task,
   onClose,
   formAction,
+  onSubmit,
   state,
   isPending,
   canAssignTasks,
+  labels,
+  selectedLabelIds,
+  onLabelToggle,
 }: TaskDialogProps) {
   const isEditing = Boolean(task)
 
@@ -49,7 +59,7 @@ export function TaskDialog({
             <X size={20} />
           </button>
         </div>
-        <form action={formAction} className="mt-5 space-y-4">
+        <form action={formAction} onSubmit={onSubmit} className="mt-5 space-y-4">
           <input type="hidden" name="projectId" value={projectId} />
           {task ? (
             <input type="hidden" name="taskId" value={task.id} />
@@ -126,6 +136,35 @@ export function TaskDialog({
               className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
             />
           </label>
+          <fieldset>
+            <legend className="text-sm font-medium">Labels</legend>
+            <input type="hidden" name="labelIds" value={JSON.stringify(selectedLabelIds)} />
+            {labels.length === 0 ? (
+              <p className="mt-2 rounded border border-dashed border-french-gray-300 p-3 text-paynes-gray-500 text-sm dark:border-paynes-gray-400 dark:text-french-gray-400">
+                No labels are available. A board administrator can create the project’s label palette.
+              </p>
+            ) : (
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {labels.map((label) => {
+                  const selected = selectedLabelIds.includes(label.id)
+                  return (
+                    <label
+                      key={label.id}
+                      className="flex cursor-pointer items-center gap-2 rounded border border-french-gray-300 p-2 dark:border-paynes-gray-400"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => onLabelToggle(label.id)}
+                        className="size-4 accent-blue-munsell-500"
+                      />
+                      <LabelBadge label={label} className="min-w-0" />
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </fieldset>
           {state.status === "error" && (
             <p role="alert" className="text-sm text-red-600">
               {state.message}

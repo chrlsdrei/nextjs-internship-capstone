@@ -2,6 +2,7 @@ import { Calendar, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 
 import type { BoardListDto, BoardTaskDto } from "@/features/board/board.types"
+import { LabelBadge } from "@/features/labels/components/label-badge"
 import type { ActionState } from "@/lib/action-state"
 
 type TaskCardProps = {
@@ -72,6 +73,15 @@ export function TaskCard({
           )}
         </button>
       </div>
+      {task.labels.length > 0 && (
+        <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Task labels">
+          {task.labels.map((label) => (
+            <li key={label.id}>
+              <LabelBadge label={label} />
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
         <span className={`rounded-full px-2 py-1 font-medium capitalize ${priorityClass}`}>{task.priority}</span>
         {task.dueDate && (
