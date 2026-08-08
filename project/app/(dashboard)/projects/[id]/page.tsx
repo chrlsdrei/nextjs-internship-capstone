@@ -2,7 +2,10 @@ import { ArrowLeft, Settings } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
+import { ActivityHistoryController } from "@/features/activity/controllers/activity-history.controller"
+import { listProjectActivity } from "@/features/activity/server/activity.service"
 import { BoardController } from "@/features/board/controllers/board.controller"
+import { ProjectEventsController } from "@/features/board/controllers/project-events.controller"
 import { getProjectBoard } from "@/features/board/server/board.service"
 import { projectIdSchema } from "@/features/projects/project.schema"
 import { getProjectById } from "@/features/projects/server/project.service"
@@ -19,6 +22,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       getProjectBoard(parsedProjectId.data),
     ])
     const canManage = board.role === "board_admin"
+    const activity = canManage ? await listProjectActivity({ projectId: project.id, limit: 30 }) : null
     return (
       <div className="space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -46,7 +50,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             </Link>
           )}
         </header>
-        <BoardController projectId={project.id} serverBoard={board} />
+        <ProjectEventsController projectId={project.id}>
+          <div className="space-y-6">
+            <BoardController projectId={project.id} serverBoard={board} />
+            {activity && <ActivityHistoryController projectId={project.id} initialPage={activity} />}
+          </div>
+        </ProjectEventsController>
       </div>
     )
   } catch (error) {

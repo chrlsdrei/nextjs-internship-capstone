@@ -18,7 +18,6 @@ import { CreateListController } from "@/features/board/controllers/create-list.c
 import { ListControlsController } from "@/features/board/controllers/list-controls.controller"
 import { TaskCardController } from "@/features/board/controllers/task-card.controller"
 import { TaskDialogController } from "@/features/board/controllers/task-dialog.controller"
-import { useProjectEvents } from "@/features/board/controllers/use-project-events"
 import { useTaskDrag } from "@/features/board/controllers/use-task-drag"
 import { useBoardStore } from "@/features/board/stores/board.store"
 
@@ -129,7 +128,6 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
   const board = storedProjectId === projectId && storedBoard ? storedBoard : serverBoard
   const setBoard = useBoardStore((state) => state.setBoard)
   const { moveTask, isSaving, error } = useTaskDrag(projectId, board)
-  useProjectEvents(projectId)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),

@@ -20,17 +20,26 @@ export async function listProjectActivity(input: unknown): Promise<ActivityPageD
   const pageRows = hasNextPage ? rows.slice(0, values.limit) : rows
   const last = pageRows.at(-1)
   return {
-    items: pageRows.map((row) => ({
-      id: row.id,
-      workspaceId: row.workspaceId,
-      projectId: row.projectId,
-      taskId: row.taskId,
-      actorWorkspaceMemberId: row.actorWorkspaceMemberId,
-      action: activityEventSchema.parse({ action: row.action, metadata: row.metadata }).action,
-      schemaVersion: 1,
-      metadata: activityEventSchema.parse({ action: row.action, metadata: row.metadata }).metadata,
-      createdAt: row.createdAt.toISOString(),
-    })),
+    items: pageRows.map((row) => {
+      const event =
+        row.schemaVersion === 1 ? activityEventSchema.safeParse({ action: row.action, metadata: row.metadata }) : null
+      const base = {
+        id: row.id,
+        workspaceId: row.workspaceId,
+        projectId: row.projectId,
+        taskId: row.taskId,
+        actorWorkspaceMemberId: row.actorWorkspaceMemberId,
+        createdAt: row.createdAt.toISOString(),
+      }
+      return event?.success
+        ? ({ ...base, kind: "known", schemaVersion: 1, event: event.data } as const)
+        : ({
+            ...base,
+            kind: "unknown",
+            schemaVersion: row.schemaVersion,
+            event: { action: row.action, metadata: row.metadata },
+          } as const)
+    }),
     nextCursor: hasNextPage && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null,
   }
 }

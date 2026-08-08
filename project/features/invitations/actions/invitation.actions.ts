@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { ZodError } from "zod"
 
+import { publishProjectEvent } from "@/features/board/server/project-event.service"
 import { InvitationError } from "@/features/invitations/invitation.error"
 import type { InvitationAcceptanceDto } from "@/features/invitations/invitation.types"
 import {
@@ -34,7 +35,10 @@ function refreshInvitationPaths(workspaceId?: string, projectId?: string | null)
   revalidatePath("/projects")
   revalidatePath("/dashboard")
   if (workspaceId) revalidatePath(`/workspaces/${workspaceId}`)
-  if (projectId) revalidatePath(`/projects/${projectId}`)
+  if (projectId) {
+    publishProjectEvent(projectId, "activity.updated")
+    revalidatePath(`/projects/${projectId}`)
+  }
 }
 
 export async function createWorkspaceInvitationAction(_: ActionState, formData: FormData): Promise<ActionState> {

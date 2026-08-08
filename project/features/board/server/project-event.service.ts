@@ -4,6 +4,7 @@ export type ProjectEventType =
   | "board.sync"
   | "board.updated"
   | "members.updated"
+  | "activity.updated"
   | "project.updated"
   | "project.deleted"
 

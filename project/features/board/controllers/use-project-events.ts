@@ -29,7 +29,14 @@ export function useProjectEvents(projectId: string) {
       }
     }
 
-    for (const eventName of ["board.sync", "board.updated", "members.updated", "project.updated", "project.deleted"])
+    for (const eventName of [
+      "board.sync",
+      "board.updated",
+      "members.updated",
+      "activity.updated",
+      "project.updated",
+      "project.deleted",
+    ])
       eventSource.addEventListener(eventName, onProjectEvent)
 
     return () => eventSource.close()
