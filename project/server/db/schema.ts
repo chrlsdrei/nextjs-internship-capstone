@@ -9,6 +9,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
@@ -208,6 +209,7 @@ export const tasks = pgTable(
     ...timestamps,
   },
   (table) => [
+    unique("tasks_id_project_unique").on(table.id, table.projectId),
     foreignKey({
       columns: [table.listId, table.projectId],
       foreignColumns: [lists.id, lists.projectId],
@@ -217,6 +219,63 @@ export const tasks = pgTable(
     index("tasks_list_position_idx").on(table.listId, table.position),
     index("tasks_assignee_id_idx").on(table.assigneeId),
     check("tasks_position_nonnegative", sql`${table.position} >= 0`),
+  ],
+)
+
+export const labels = pgTable(
+  "labels",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    color: text("color").notNull(),
+    createdByWorkspaceMemberId: uuid("created_by_workspace_member_id").references(() => workspaceMembers.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    unique("labels_id_project_unique").on(table.id, table.projectId),
+    uniqueIndex("labels_project_normalized_name_unique").on(table.projectId, table.normalizedName),
+    index("labels_project_name_idx").on(table.projectId, table.name),
+    index("labels_creator_workspace_member_idx").on(table.createdByWorkspaceMemberId),
+    check("labels_name_nonempty", sql`length(btrim(${table.name})) > 0`),
+    check(
+      "labels_normalized_name_valid",
+      sql`${table.normalizedName} = lower(regexp_replace(btrim(${table.name}), '\\s+', ' ', 'g'))`,
+    ),
+    check("labels_color_hex", sql`${table.color} ~ '^#[0-9A-Fa-f]{6}$'`),
+  ],
+)
+
+export const taskLabels = pgTable(
+  "task_labels",
+  {
+    projectId: uuid("project_id").notNull(),
+    taskId: uuid("task_id").notNull(),
+    labelId: uuid("label_id").notNull(),
+    addedByWorkspaceMemberId: uuid("added_by_workspace_member_id").references(() => workspaceMembers.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.labelId], name: "task_labels_task_label_pk" }),
+    foreignKey({
+      columns: [table.taskId, table.projectId],
+      foreignColumns: [tasks.id, tasks.projectId],
+      name: "task_labels_task_project_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.labelId, table.projectId],
+      foreignColumns: [labels.id, labels.projectId],
+      name: "task_labels_label_project_fk",
+    }).onDelete("cascade"),
+    index("task_labels_project_label_idx").on(table.projectId, table.labelId),
+    index("task_labels_actor_idx").on(table.addedByWorkspaceMemberId),
   ],
 )
 
@@ -447,6 +506,8 @@ export const workspaceMembersRelations = relations(workspaceMembers, ({ many, on
     relationName: "workspaceMemberships",
   }),
   createdProjects: many(projects, { relationName: "projectCreator" }),
+  createdLabels: many(labels, { relationName: "labelCreator" }),
+  addedTaskLabels: many(taskLabels, { relationName: "taskLabelActor" }),
   projectMemberships: many(projectMembers),
   sentInvitations: many(workspaceInvitations),
   activityLogs: many(activityLogs),
@@ -471,6 +532,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   settings: one(projectSettings),
   lists: many(lists),
+  labels: many(labels),
   members: many(projectMembers),
   aiUsageLogs: many(aiUsageLogs),
   invitations: many(workspaceInvitations),
@@ -584,7 +646,37 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     relationName: "taskAssignee",
   }),
   comments: many(comments),
+  labels: many(taskLabels),
   activityLogs: many(activityLogs),
+}))
+
+export const labelsRelations = relations(labels, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [labels.projectId],
+    references: [projects.id],
+  }),
+  creator: one(workspaceMembers, {
+    fields: [labels.createdByWorkspaceMemberId],
+    references: [workspaceMembers.id],
+    relationName: "labelCreator",
+  }),
+  tasks: many(taskLabels),
+}))
+
+export const taskLabelsRelations = relations(taskLabels, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskLabels.taskId],
+    references: [tasks.id],
+  }),
+  label: one(labels, {
+    fields: [taskLabels.labelId],
+    references: [labels.id],
+  }),
+  actor: one(workspaceMembers, {
+    fields: [taskLabels.addedByWorkspaceMemberId],
+    references: [workspaceMembers.id],
+    relationName: "taskLabelActor",
+  }),
 }))
 
 export const commentsRelations = relations(comments, ({ one }) => ({
@@ -616,6 +708,10 @@ export type List = typeof lists.$inferSelect
 export type NewList = typeof lists.$inferInsert
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
+export type Label = typeof labels.$inferSelect
+export type NewLabel = typeof labels.$inferInsert
+export type TaskLabel = typeof taskLabels.$inferSelect
+export type NewTaskLabel = typeof taskLabels.$inferInsert
 export type Comment = typeof comments.$inferSelect
 export type NewComment = typeof comments.$inferInsert
 export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect

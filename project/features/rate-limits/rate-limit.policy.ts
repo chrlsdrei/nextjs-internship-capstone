@@ -33,6 +33,14 @@ export const rateLimitPolicies = {
     actor: { maxRequests: 240, windowSeconds: minute },
     workspace: { maxRequests: 1_200, windowSeconds: minute },
   },
+  "label.admin": {
+    actor: { maxRequests: 60, windowSeconds: 5 * minute },
+    workspace: { maxRequests: 240, windowSeconds: 5 * minute },
+  },
+  "label.assign": {
+    actor: { maxRequests: 120, windowSeconds: minute },
+    workspace: { maxRequests: 600, windowSeconds: minute },
+  },
   "invitation.create": {
     actor: { maxRequests: 10, windowSeconds: hour },
     workspace: { maxRequests: 50, windowSeconds: hour },

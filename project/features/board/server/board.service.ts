@@ -28,6 +28,8 @@ import {
   updateTaskOrder,
   updateTaskRecord,
 } from "@/features/board/server/task.repository"
+import type { LabelDto } from "@/features/labels/label.types"
+import { findTaskLabelContext } from "@/features/labels/server/label.repository"
 import { projectIdSchema } from "@/features/projects/project.schema"
 import { findProjectById } from "@/features/projects/server/project.repository"
 import type { ProjectPermission } from "@/features/projects/server/project-access.service"
@@ -76,9 +78,23 @@ async function requireRateLimitedBoardWrite(projectId: string, permission: Proje
 export async function getProjectBoard(projectId: string): Promise<ProjectBoardDto> {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "view")
-  const { listRows, memberRows, taskRows, settings } = await readProjectBoard(id)
+  const { listRows, memberRows, taskRows, labelRows, taskLabelRows, settings } = await readProjectBoard(id)
   if (!settings) throw new ProjectAccessError("Project settings not found", 404)
   const tasksByList = new Map<string, BoardTaskDto[]>()
+  const labelsByTask = new Map<string, LabelDto[]>()
+
+  for (const label of taskLabelRows) {
+    const current = labelsByTask.get(label.taskId) ?? []
+    current.push({
+      id: label.id,
+      projectId: label.projectId,
+      name: label.name,
+      color: label.color,
+      createdAt: label.createdAt.toISOString(),
+      updatedAt: label.updatedAt.toISOString(),
+    })
+    labelsByTask.set(label.taskId, current)
+  }
 
   for (const task of taskRows) {
     const current = tasksByList.get(task.listId) ?? []
@@ -92,6 +108,7 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
       assignee: task.assigneeId
         ? { id: task.assigneeId, name: task.assigneeName ?? "Unknown", email: task.assigneeEmail ?? "" }
         : null,
+      labels: labelsByTask.get(task.id) ?? [],
     })
     tasksByList.set(task.listId, current)
   }
@@ -100,6 +117,14 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
     role: access.role,
     capabilities: boardCapabilities(access.role, settings.editorsCanAssignTasks),
     members: memberRows,
+    labels: labelRows.map((label) => ({
+      id: label.id,
+      projectId: label.projectId,
+      name: label.name,
+      color: label.color,
+      createdAt: label.createdAt.toISOString(),
+      updatedAt: label.updatedAt.toISOString(),
+    })),
     lists: listRows.map((list) => ({
       id: list.id,
       name: list.name,
@@ -187,6 +212,21 @@ export async function createTask(projectId: string, input: unknown) {
     taskId: task.id,
     event: { action: "task.created", metadata: { ...activityMetadata(context), taskTitle: values.title } },
   })
+  if (values.labelIds.length) {
+    const labelContext = await findTaskLabelContext(id, task.id, values.labelIds)
+    await recordActivity({
+      ...context,
+      taskId: task.id,
+      event: {
+        action: "task.labels_updated",
+        metadata: {
+          ...activityMetadata(context),
+          taskTitle: values.title,
+          labelNames: labelContext.labels.map((label) => label.name),
+        },
+      },
+    })
+  }
   return task
 }
 
@@ -210,6 +250,21 @@ export async function updateTask(projectId: string, taskId: string, input: unkno
       metadata: { ...activityMetadata(context), taskTitle: values.title ?? taskSnapshot.title },
     },
   })
+  if (values.labelIds !== undefined) {
+    const labelContext = await findTaskLabelContext(id, parsedTaskId, values.labelIds)
+    await recordActivity({
+      ...context,
+      taskId: parsedTaskId,
+      event: {
+        action: "task.labels_updated",
+        metadata: {
+          ...activityMetadata(context),
+          taskTitle: values.title ?? taskSnapshot.title,
+          labelNames: labelContext.labels.map((label) => label.name),
+        },
+      },
+    })
+  }
 }
 
 export async function moveTask(projectId: string, taskId: string, input: unknown) {

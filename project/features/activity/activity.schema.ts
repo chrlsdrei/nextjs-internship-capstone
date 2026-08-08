@@ -3,6 +3,7 @@ import { z } from "zod"
 const snapshotName = z.string().trim().min(1).max(200)
 const emailSnapshot = z.string().trim().email().max(320)
 const role = z.string().trim().min(1).max(50)
+const labelColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 
 const actorSnapshot = z.strictObject({ actorName: snapshotName })
 const workspaceSnapshot = actorSnapshot.extend({ workspaceName: snapshotName })
@@ -56,6 +57,10 @@ export const activityEventSchema = z.discriminatedUnion("action", [
     metadata: projectSnapshot.extend({ listCount: z.number().int().nonnegative() }),
   }),
   z.object({
+    action: z.enum(["label.created", "label.updated", "label.deleted"]),
+    metadata: projectSnapshot.extend({ labelName: snapshotName, color: labelColor }),
+  }),
+  z.object({
     action: z.enum(["task.created", "task.updated", "task.deleted"]),
     metadata: taskSnapshot,
   }),
@@ -66,6 +71,10 @@ export const activityEventSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("task.reordered"),
     metadata: projectSnapshot.extend({ listName: snapshotName, taskCount: z.number().int().nonnegative() }),
+  }),
+  z.object({
+    action: z.literal("task.labels_updated"),
+    metadata: taskSnapshot.extend({ labelNames: z.array(snapshotName).max(50) }),
   }),
 ])
 

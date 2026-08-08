@@ -74,6 +74,12 @@ function knownActivityDescription(activity: Extract<ActivityDto, { kind: "known"
       return { title: `${actor} deleted a list`, detail: event.metadata.listName }
     case "list.reordered":
       return { title: `${actor} reordered the board’s lists` }
+    case "label.created":
+      return { title: `${actor} created a label`, detail: event.metadata.labelName }
+    case "label.updated":
+      return { title: `${actor} updated a label`, detail: event.metadata.labelName }
+    case "label.deleted":
+      return { title: `${actor} deleted a label`, detail: event.metadata.labelName }
     case "task.created":
       return { title: `${actor} created a task`, detail: event.metadata.taskTitle }
     case "task.updated":
@@ -87,6 +93,11 @@ function knownActivityDescription(activity: Extract<ActivityDto, { kind: "known"
       }
     case "task.reordered":
       return { title: `${actor} reordered tasks`, detail: event.metadata.listName }
+    case "task.labels_updated":
+      return {
+        title: `${actor} updated labels on ${event.metadata.taskTitle}`,
+        detail: event.metadata.labelNames.length ? event.metadata.labelNames.join(", ") : "All labels removed",
+      }
   }
 }
 

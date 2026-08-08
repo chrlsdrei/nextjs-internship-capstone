@@ -7,6 +7,8 @@ export type RateLimitAction =
   | "board.list.write"
   | "board.task.write"
   | "board.drag"
+  | "label.admin"
+  | "label.assign"
   | "invitation.create"
   | "invitation.resend"
   | "invitation.revoke"

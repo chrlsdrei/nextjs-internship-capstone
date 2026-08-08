@@ -10,6 +10,8 @@ describe("rate-limit policy", () => {
     expect(getRateLimitPolicy("project.admin").workspace).toBeDefined()
     expect(getRateLimitPolicy("board.task.write").actor.maxRequests).toBeGreaterThan(0)
     expect(getRateLimitPolicy("board.drag").workspace?.maxRequests).toBeGreaterThan(0)
+    expect(getRateLimitPolicy("label.admin").workspace).toBeDefined()
+    expect(getRateLimitPolicy("label.assign").actor.maxRequests).toBeGreaterThan(0)
     expect(getRateLimitPolicy("invitation.create").workspace).toBeDefined()
     expect(getRateLimitPolicy("invitation.resend").workspace).toBeDefined()
     expect(getRateLimitPolicy("invitation.revoke").workspace).toBeDefined()

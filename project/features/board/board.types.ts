@@ -1,3 +1,4 @@
+import type { LabelDto } from "@/features/labels/label.types"
 import type { BoardRole } from "@/features/projects/project.types"
 
 export type BoardMemberDto = { id: string; name: string; email: string }
@@ -10,6 +11,7 @@ export type BoardTaskDto = {
   dueDate: string | null
   position: number
   assignee: BoardMemberDto | null
+  labels: LabelDto[]
 }
 
 export type BoardListDto = {
@@ -29,6 +31,7 @@ export type BoardCapabilitiesDto = {
 export type ProjectBoardDto = {
   lists: BoardListDto[]
   members: BoardMemberDto[]
+  labels: LabelDto[]
   role: BoardRole
   capabilities: BoardCapabilitiesDto
 }

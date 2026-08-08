@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { labelIdSchema } from "@/features/labels/label.schema"
 
 const requiredText = (field: string, maximum: number) =>
   z.string().trim().min(1, `${field} is required`).max(maximum, `${field} must be ${maximum} characters or fewer`)
@@ -44,12 +45,25 @@ export const taskSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   dueDate: optionalDate,
   position: z.int().min(0, "Position cannot be negative").default(0),
+  labelIds: z
+    .array(labelIdSchema)
+    .max(50, "A task can have at most 50 labels")
+    .refine((ids) => new Set(ids).size === ids.length, "Label IDs cannot contain duplicates")
+    .default([]),
 })
 
-export const updateTaskSchema = taskSchema.omit({ listId: true, dueDate: true }).partial().extend({
-  listId: listIdSchema.optional(),
-  dueDate: optionalNullableDate,
-})
+export const updateTaskSchema = taskSchema
+  .omit({ listId: true, dueDate: true, labelIds: true })
+  .partial()
+  .extend({
+    listId: listIdSchema.optional(),
+    dueDate: optionalNullableDate,
+    labelIds: z
+      .array(labelIdSchema)
+      .max(50, "A task can have at most 50 labels")
+      .refine((ids) => new Set(ids).size === ids.length, "Label IDs cannot contain duplicates")
+      .optional(),
+  })
 
 export const reorderTasksSchema = z.object({
   taskIds: z.array(taskIdSchema).min(1, "At least one task is required").superRefine(uniqueIds("Task IDs")),

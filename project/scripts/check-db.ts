@@ -7,11 +7,13 @@ const expectedTables = [
   "activity_logs",
   "ai_usage_logs",
   "comments",
+  "labels",
   "lists",
   "project_members",
   "project_settings",
   "projects",
   "rate_limit_buckets",
+  "task_labels",
   "tasks",
   "users",
   "workspace_invitations",
@@ -34,8 +36,8 @@ async function main() {
     from information_schema.tables
     where table_schema = 'public'
       and table_name in (
-        'activity_logs', 'ai_usage_logs', 'comments', 'lists', 'project_members', 'project_settings', 'projects',
-        'rate_limit_buckets', 'tasks', 'users', 'workspace_invitations',
+        'activity_logs', 'ai_usage_logs', 'comments', 'labels', 'lists', 'project_members', 'project_settings', 'projects',
+        'rate_limit_buckets', 'task_labels', 'tasks', 'users', 'workspace_invitations',
         'workspace_members', 'workspace_settings', 'workspaces'
       )
     order by table_name

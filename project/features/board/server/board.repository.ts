@@ -3,10 +3,19 @@ import "server-only"
 import { and, asc, eq, isNull } from "drizzle-orm"
 
 import { db } from "@/server/db/client"
-import { lists, projectMembers, projectSettings, tasks, users, workspaceMembers } from "@/server/db/schema"
+import {
+  labels,
+  lists,
+  projectMembers,
+  projectSettings,
+  taskLabels,
+  tasks,
+  users,
+  workspaceMembers,
+} from "@/server/db/schema"
 
 export async function readProjectBoard(projectId: string) {
-  const [listRows, memberRows, taskRows, settingsRows] = await Promise.all([
+  const [listRows, memberRows, taskRows, labelRows, taskLabelRows, settingsRows] = await Promise.all([
     db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.position), asc(lists.createdAt)),
     db
       .select({ id: users.id, name: users.name, email: users.email })
@@ -32,6 +41,21 @@ export async function readProjectBoard(projectId: string) {
       .leftJoin(users, eq(tasks.assigneeId, users.id))
       .where(eq(tasks.projectId, projectId))
       .orderBy(asc(tasks.position), asc(tasks.createdAt)),
+    db.select().from(labels).where(eq(labels.projectId, projectId)).orderBy(asc(labels.name), asc(labels.id)),
+    db
+      .select({
+        taskId: taskLabels.taskId,
+        id: labels.id,
+        projectId: labels.projectId,
+        name: labels.name,
+        color: labels.color,
+        createdAt: labels.createdAt,
+        updatedAt: labels.updatedAt,
+      })
+      .from(taskLabels)
+      .innerJoin(labels, and(eq(taskLabels.labelId, labels.id), eq(taskLabels.projectId, labels.projectId)))
+      .where(eq(taskLabels.projectId, projectId))
+      .orderBy(asc(labels.name), asc(labels.id)),
     db
       .select({ editorsCanAssignTasks: projectSettings.editorsCanAssignTasks })
       .from(projectSettings)
@@ -39,5 +63,5 @@ export async function readProjectBoard(projectId: string) {
       .limit(1),
   ])
 
-  return { listRows, memberRows, taskRows, settings: settingsRows[0] ?? null }
+  return { listRows, memberRows, taskRows, labelRows, taskLabelRows, settings: settingsRows[0] ?? null }
 }
