@@ -55,4 +55,20 @@ describe("activity metadata contracts", () => {
       }).success,
     ).toBe(true)
   })
+
+  it("validates comment activity without storing comment content", () => {
+    expect(
+      activityEventSchema.safeParse({
+        action: "task.comment_deleted",
+        metadata: {
+          actorName: "Administrator",
+          workspaceName: "Product",
+          projectTitle: "MVP",
+          taskTitle: "Build login",
+          commentAuthorName: "Author",
+          moderated: true,
+        },
+      }).success,
+    ).toBe(true)
+  })
 })

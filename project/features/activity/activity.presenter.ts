@@ -103,6 +103,21 @@ function knownActivityDescription(activity: Extract<ActivityDto, { kind: "known"
         title: `${actor} updated assignees on ${event.metadata.taskTitle}`,
         detail: event.metadata.assigneeNames.length ? event.metadata.assigneeNames.join(", ") : "All assignees removed",
       }
+    case "task.comment_created":
+      return {
+        title: `${actor} commented on ${event.metadata.taskTitle}`,
+        detail: event.metadata.commentAuthorName,
+      }
+    case "task.comment_updated":
+      return {
+        title: `${actor} ${event.metadata.moderated ? "moderated" : "updated"} a comment on ${event.metadata.taskTitle}`,
+        detail: event.metadata.commentAuthorName,
+      }
+    case "task.comment_deleted":
+      return {
+        title: `${actor} ${event.metadata.moderated ? "moderated" : "deleted"} a comment on ${event.metadata.taskTitle}`,
+        detail: event.metadata.commentAuthorName,
+      }
   }
 }
 

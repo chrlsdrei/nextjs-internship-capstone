@@ -6,7 +6,6 @@ config({ path: ".env.local" })
 const expectedTables = [
   "activity_logs",
   "ai_usage_logs",
-  "comments",
   "labels",
   "lists",
   "project_members",
@@ -14,6 +13,7 @@ const expectedTables = [
   "projects",
   "rate_limit_buckets",
   "task_assignees",
+  "task_comments",
   "task_labels",
   "tasks",
   "users",
@@ -37,8 +37,8 @@ async function main() {
     from information_schema.tables
     where table_schema = 'public'
       and table_name in (
-        'activity_logs', 'ai_usage_logs', 'comments', 'labels', 'lists', 'project_members', 'project_settings', 'projects',
-        'rate_limit_buckets', 'task_assignees', 'task_labels', 'tasks', 'users', 'workspace_invitations',
+        'activity_logs', 'ai_usage_logs', 'labels', 'lists', 'project_members', 'project_settings', 'projects',
+        'rate_limit_buckets', 'task_assignees', 'task_comments', 'task_labels', 'tasks', 'users', 'workspace_invitations',
         'workspace_members', 'workspace_settings', 'workspaces'
       )
     order by table_name
@@ -50,7 +50,7 @@ async function main() {
     throw new Error(`Database is missing expected tables: ${missingTables.join(", ")}`)
   }
 
-  const [legacyAssigneeColumn, assignmentTrigger] = await Promise.all([
+  const [legacyAssigneeColumn, assignmentTrigger, legacyCommentsTable] = await Promise.all([
     sql`
       select column_name
       from information_schema.columns
@@ -64,9 +64,15 @@ async function main() {
         and trigger_name = 'task_assignees_require_active_membership'
       limit 1
     `,
+    sql`
+      select table_name
+      from information_schema.tables
+      where table_schema = 'public' and table_name = 'comments'
+    `,
   ])
   if (legacyAssigneeColumn.length > 0) throw new Error("Database still contains the legacy tasks.assignee_id column")
   if (assignmentTrigger.length === 0) throw new Error("Database is missing active task-assignee enforcement")
+  if (legacyCommentsTable.length > 0) throw new Error("Database still contains the legacy comments table")
 
   console.log(`Database connection successful. Verified tables: ${actualTables.join(", ")}.`)
 }

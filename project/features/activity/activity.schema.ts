@@ -80,6 +80,10 @@ export const activityEventSchema = z.discriminatedUnion("action", [
     action: z.literal("task.assignees_updated"),
     metadata: taskSnapshot.extend({ assigneeNames: z.array(snapshotName).max(50) }),
   }),
+  z.object({
+    action: z.enum(["task.comment_created", "task.comment_updated", "task.comment_deleted"]),
+    metadata: taskSnapshot.extend({ commentAuthorName: snapshotName, moderated: z.boolean() }),
+  }),
 ])
 
 export const createActivitySchema = z.object({

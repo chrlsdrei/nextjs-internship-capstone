@@ -306,22 +306,40 @@ export const taskLabels = pgTable(
   ],
 )
 
-export const comments = pgTable(
-  "comments",
+export const taskComments = pgTable(
+  "task_comments",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id").notNull(),
+    projectId: uuid("project_id").notNull(),
+    taskId: uuid("task_id").notNull(),
+    authorWorkspaceMemberId: uuid("author_workspace_member_id").references(() => workspaceMembers.id, {
+      onDelete: "set null",
+    }),
+    authorName: text("author_name").notNull(),
+    authorEmail: text("author_email").notNull(),
     content: text("content").notNull(),
-    taskId: uuid("task_id")
-      .notNull()
-      .references(() => tasks.id, { onDelete: "cascade" }),
-    authorId: uuid("author_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedByWorkspaceMemberId: uuid("deleted_by_workspace_member_id").references(() => workspaceMembers.id, {
+      onDelete: "set null",
+    }),
     ...timestamps,
   },
   (table) => [
-    index("comments_task_created_at_idx").on(table.taskId, table.createdAt),
-    index("comments_author_id_idx").on(table.authorId),
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [projects.id, projects.workspaceId],
+      name: "task_comments_project_workspace_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.taskId, table.projectId],
+      foreignColumns: [tasks.id, tasks.projectId],
+      name: "task_comments_task_project_fk",
+    }).onDelete("cascade"),
+    index("task_comments_task_created_idx").on(table.taskId, table.createdAt, table.id),
+    index("task_comments_project_created_idx").on(table.projectId, table.createdAt, table.id),
+    index("task_comments_author_idx").on(table.authorWorkspaceMemberId, table.createdAt),
+    check("task_comments_content_nonempty", sql`length(btrim(${table.content})) > 0`),
   ],
 )
 
@@ -499,8 +517,6 @@ export const activityLogs = pgTable(
 
 export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
-  assignedTasks: many(tasks, { relationName: "taskAssignee" }),
-  comments: many(comments),
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
   acceptedInvitations: many(workspaceInvitations, { relationName: "acceptedInvitationUser" }),
@@ -535,6 +551,8 @@ export const workspaceMembersRelations = relations(workspaceMembers, ({ many, on
   createdProjects: many(projects, { relationName: "projectCreator" }),
   createdLabels: many(labels, { relationName: "labelCreator" }),
   addedTaskLabels: many(taskLabels, { relationName: "taskLabelActor" }),
+  authoredTaskComments: many(taskComments, { relationName: "taskCommentAuthor" }),
+  deletedTaskComments: many(taskComments, { relationName: "taskCommentDeleter" }),
   projectMemberships: many(projectMembers),
   sentInvitations: many(workspaceInvitations),
   activityLogs: many(activityLogs),
@@ -669,7 +687,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     references: [lists.id],
   }),
   assignees: many(taskAssignees),
-  comments: many(comments),
+  comments: many(taskComments),
   labels: many(taskLabels),
   activityLogs: many(activityLogs),
 }))
@@ -719,14 +737,20 @@ export const taskLabelsRelations = relations(taskLabels, ({ one }) => ({
   }),
 }))
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
   task: one(tasks, {
-    fields: [comments.taskId],
+    fields: [taskComments.taskId],
     references: [tasks.id],
   }),
-  author: one(users, {
-    fields: [comments.authorId],
-    references: [users.id],
+  authorWorkspaceMember: one(workspaceMembers, {
+    fields: [taskComments.authorWorkspaceMemberId],
+    references: [workspaceMembers.id],
+    relationName: "taskCommentAuthor",
+  }),
+  deletedByWorkspaceMember: one(workspaceMembers, {
+    fields: [taskComments.deletedByWorkspaceMemberId],
+    references: [workspaceMembers.id],
+    relationName: "taskCommentDeleter",
   }),
 }))
 
@@ -754,8 +778,8 @@ export type Label = typeof labels.$inferSelect
 export type NewLabel = typeof labels.$inferInsert
 export type TaskLabel = typeof taskLabels.$inferSelect
 export type NewTaskLabel = typeof taskLabels.$inferInsert
-export type Comment = typeof comments.$inferSelect
-export type NewComment = typeof comments.$inferInsert
+export type TaskComment = typeof taskComments.$inferSelect
+export type NewTaskComment = typeof taskComments.$inferInsert
 export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect
 export type NewRateLimitBucket = typeof rateLimitBuckets.$inferInsert
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect
