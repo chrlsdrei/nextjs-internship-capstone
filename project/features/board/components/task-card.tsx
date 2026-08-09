@@ -63,8 +63,8 @@ export function TaskCard({
         <button
           type="button"
           onClick={onEdit}
-          disabled={!canEdit}
-          className="min-w-0 flex-1 text-left focus:outline-none focus:ring-2 focus:ring-blue-munsell-500 disabled:cursor-default"
+          className="min-w-0 flex-1 text-left focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
+          aria-label={`Open details for ${task.title}`}
         >
           <h4 className="font-medium text-outer-space-500 dark:text-platinum-500">{task.title}</h4>
           {task.description && (

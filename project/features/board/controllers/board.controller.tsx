@@ -116,7 +116,7 @@ function DroppableBoardColumn({
             index={originalList.tasks.findIndex((item) => item.id === task.id)}
             canDelete={canManage}
             canEdit={canEdit}
-            onEdit={() => canEdit && onEditTask(task)}
+            onEdit={() => onEditTask(task)}
           />
         ))}
       </SortableContext>
@@ -262,16 +262,18 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           members={board.members}
           labels={board.labels}
           board={board}
+          canEditTask={true}
           canAssignTasks={board.capabilities.canAssignTasks}
           onClose={() => setCreateListId(null)}
         />
       )}
-      {canEdit && editingTask && (
+      {editingTask && (
         <TaskDialogController
           projectId={projectId}
           members={board.members}
           labels={board.labels}
           board={board}
+          canEditTask={canEdit}
           canAssignTasks={board.capabilities.canAssignTasks}
           task={editingTask}
           onClose={() => setEditingTask(null)}

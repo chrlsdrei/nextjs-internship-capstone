@@ -9,15 +9,21 @@ import type {
   CreateTaskCommentCommand,
   DeleteTaskCommentCommand,
   TaskCommentDto,
+  TaskCommentPageDto,
   UpdateTaskCommentCommand,
 } from "@/features/comments/comment.types"
-import { createTaskComment, deleteTaskComment, updateTaskComment } from "@/features/comments/server/comment.service"
+import {
+  createTaskComment,
+  deleteTaskComment,
+  listTaskComments,
+  updateTaskComment,
+} from "@/features/comments/server/comment.service"
 import { ProjectAccessError } from "@/features/projects/server/project-access.service"
 import { RateLimitError } from "@/features/rate-limits/rate-limit.error"
 import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
 
-function errorState(error: unknown): ActionState<TaskCommentDto> {
+function errorState<T>(error: unknown): ActionState<T> {
   if (error instanceof RateLimitError) {
     return actionError(error.message, undefined, { code: error.code, retryAfterSeconds: error.retryAfterSeconds })
   }
@@ -26,6 +32,14 @@ function errorState(error: unknown): ActionState<TaskCommentDto> {
   if (error instanceof ZodError) return actionError(error.issues[0]?.message ?? "Please check the comment")
   console.error("Comment action failed", error)
   return actionError("Something went wrong. Please try again.")
+}
+
+export async function listTaskCommentsAction(input: unknown): Promise<ActionState<TaskCommentPageDto>> {
+  try {
+    return actionSuccess(await listTaskComments(input))
+  } catch (error) {
+    return errorState(error)
+  }
 }
 
 async function run(

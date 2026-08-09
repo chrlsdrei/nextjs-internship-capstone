@@ -1,4 +1,5 @@
 import { X } from "lucide-react"
+import type { ReactNode } from "react"
 
 import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
 import { AssigneeMultiSelect } from "@/features/assignments/components/assignee-multi-select"
@@ -17,6 +18,7 @@ type TaskDialogProps = {
   onSubmit: () => void
   state: ActionState
   isPending: boolean
+  canEditTask: boolean
   canAssignTasks: boolean
   labels: LabelDto[]
   selectedLabelIds: string[]
@@ -26,6 +28,7 @@ type TaskDialogProps = {
   onAssigneeSearchChange: (value: string) => void
   onAssigneeToggle: (memberId: string) => void
   onAssigneeClear: () => void
+  comments?: ReactNode
 }
 
 export function TaskDialog({
@@ -38,6 +41,7 @@ export function TaskDialog({
   onSubmit,
   state,
   isPending,
+  canEditTask,
   canAssignTasks,
   labels,
   selectedLabelIds,
@@ -47,6 +51,7 @@ export function TaskDialog({
   onAssigneeSearchChange,
   onAssigneeToggle,
   onAssigneeClear,
+  comments,
 }: TaskDialogProps) {
   const isEditing = Boolean(task)
 
@@ -57,10 +62,10 @@ export function TaskDialog({
       aria-modal="true"
       aria-labelledby="task-dialog-title"
     >
-      <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white p-6 dark:bg-outer-space-500">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 dark:bg-outer-space-500">
         <div className="flex items-center justify-between gap-4">
           <h2 id="task-dialog-title" className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500">
-            {isEditing ? "Edit task" : "Create task"}
+            {isEditing ? (canEditTask ? "Edit task" : "Task details") : "Create task"}
           </h2>
           <button
             type="button"
@@ -85,6 +90,7 @@ export function TaskDialog({
               required
               maxLength={200}
               defaultValue={task?.title}
+              disabled={!canEditTask}
               className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
             />
           </label>
@@ -95,6 +101,7 @@ export function TaskDialog({
               rows={4}
               maxLength={1000}
               defaultValue={task?.description ?? ""}
+              disabled={!canEditTask}
               className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
             />
           </label>
@@ -103,6 +110,7 @@ export function TaskDialog({
             <select
               name="priority"
               defaultValue={task?.priority ?? "medium"}
+              disabled={!canEditTask}
               className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
             >
               <option value="low">Low</option>
@@ -143,6 +151,7 @@ export function TaskDialog({
               name="dueDate"
               type="date"
               defaultValue={task?.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : ""}
+              disabled={!canEditTask}
               className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
             />
           </label>
@@ -165,6 +174,7 @@ export function TaskDialog({
                       <input
                         type="checkbox"
                         checked={selected}
+                        disabled={!canEditTask}
                         onChange={() => onLabelToggle(label.id)}
                         className="size-4 accent-blue-munsell-500"
                       />
@@ -182,17 +192,20 @@ export function TaskDialog({
           )}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="rounded px-4 py-2 hover:bg-platinum-500">
-              Cancel
+              {canEditTask ? "Cancel" : "Close"}
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="rounded bg-blue-munsell-500 px-4 py-2 text-white disabled:opacity-60"
-            >
-              {isPending ? "Saving…" : isEditing ? "Save task" : "Create task"}
-            </button>
+            {canEditTask && (
+              <button
+                type="submit"
+                disabled={isPending}
+                className="rounded bg-blue-munsell-500 px-4 py-2 text-white disabled:opacity-60"
+              >
+                {isPending ? "Saving…" : isEditing ? "Save task" : "Create task"}
+              </button>
+            )}
           </div>
         </form>
+        {comments && <div className="mt-6">{comments}</div>}
       </div>
     </div>
   )

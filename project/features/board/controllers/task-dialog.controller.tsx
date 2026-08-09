@@ -8,6 +8,7 @@ import type { BoardMemberDto, BoardTaskDto, ProjectBoardDto } from "@/features/b
 import { retainActiveMemberSelections, toggleAssigneeFilter, toggleLabelFilter } from "@/features/board/board-filtering"
 import { TaskDialog } from "@/features/board/components/task-dialog"
 import { useBoardStore } from "@/features/board/stores/board.store"
+import { TaskCommentsController } from "@/features/comments/controllers/task-comments.controller"
 import type { LabelDto } from "@/features/labels/label.types"
 import { initialActionState } from "@/lib/action-state"
 
@@ -19,11 +20,12 @@ type TaskDialogControllerProps = {
   board: ProjectBoardDto
   task?: BoardTaskDto
   onClose: () => void
+  canEditTask: boolean
   canAssignTasks: boolean
 }
 
 export function TaskDialogController(props: TaskDialogControllerProps) {
-  const { board, canAssignTasks, labels, members, onClose, projectId, task, ...dialogProps } = props
+  const { board, canAssignTasks, canEditTask, labels, members, onClose, projectId, task, ...dialogProps } = props
   const router = useRouter()
   const action = task ? updateTaskAction : createTaskAction
   const [state, formAction, isPending] = useActionState(action, initialActionState)
@@ -37,7 +39,7 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
   const restoreBoard = useBoardStore((store) => store.restoreBoard)
 
   const beginOptimisticUpdate = () => {
-    if (task) {
+    if (task && canEditTask) {
       const selectedLabels = labels.filter((label) => selectedLabelIds.includes(label.id))
       const selectedAssignees = canAssignTasks
         ? members.filter((member) => selectedAssigneeIds.includes(member.id))
@@ -73,6 +75,7 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
       labels={labels}
       members={members}
       canAssignTasks={canAssignTasks}
+      canEditTask={canEditTask}
       onClose={onClose}
       formAction={formAction}
       onSubmit={beginOptimisticUpdate}
@@ -85,6 +88,9 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
       onAssigneeSearchChange={setAssigneeSearch}
       onAssigneeToggle={(memberId) => setSelectedAssigneeIds((current) => toggleAssigneeFilter(current, memberId))}
       onAssigneeClear={() => setSelectedAssigneeIds([])}
+      comments={
+        task ? <TaskCommentsController projectId={projectId} taskId={task.id} canComment={canEditTask} /> : undefined
+      }
     />
   )
 }
