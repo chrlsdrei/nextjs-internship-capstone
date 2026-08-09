@@ -9,18 +9,24 @@ import {
   canWorkOnTasks,
   executeLockedBoardWrite,
   orderedUuids,
-  validAssignee,
 } from "@/features/board/server/board.repository-helpers"
 
-type CreateTaskRecordInput = Omit<CreateTaskInput, "labelIds"> & { labelIds?: string[] }
+type CreateTaskRecordInput = Omit<CreateTaskInput, "assigneeIds" | "labelIds"> & {
+  assigneeIds?: string[]
+  labelIds?: string[]
+}
 
 export async function insertTask(projectId: string, actorId: string, values: CreateTaskRecordInput) {
-  const assignmentAllowed = values.assigneeId ? canAssignTasks(projectId, actorId) : sql`TRUE`
+  const assignmentAllowed = values.assigneeIds?.length ? canAssignTasks(projectId, actorId) : sql`TRUE`
+  const assigneeIds = JSON.stringify(values.assigneeIds ?? [])
   const labelIds = JSON.stringify(values.labelIds ?? [])
   const rows = await executeLockedBoardWrite<{ id: string }>(
     projectId,
     sql`
-      WITH "requested_labels" AS (
+      WITH "requested_assignees" AS (
+        SELECT DISTINCT "value"::uuid AS "id"
+        FROM jsonb_array_elements_text(${assigneeIds}::jsonb)
+      ), "requested_labels" AS (
         SELECT DISTINCT "value"::uuid AS "id"
         FROM jsonb_array_elements_text(${labelIds}::jsonb)
       ), "authorized_list" AS (
@@ -35,15 +41,23 @@ export async function insertTask(projectId: string, actorId: string, values: Cre
           AND "list"."project_id" = ${projectId}
           AND ${canWorkOnTasks(projectId, actorId)}
           AND ${assignmentAllowed}
-          AND ${validAssignee(projectId, values.assigneeId)}
+          AND (SELECT COUNT(*) FROM "requested_assignees") = (
+            SELECT COUNT(*) FROM "project_members" AS "assignee_project_member"
+            INNER JOIN "workspace_members" AS "assignee_workspace_member"
+              ON "assignee_workspace_member"."id" = "assignee_project_member"."workspace_member_id"
+              AND "assignee_workspace_member"."removed_at" IS NULL
+            INNER JOIN "requested_assignees" ON "requested_assignees"."id" = "assignee_project_member"."id"
+            WHERE "assignee_project_member"."project_id" = ${projectId}
+              AND "assignee_project_member"."removed_at" IS NULL
+          )
           AND (SELECT COUNT(*) FROM "requested_labels") = (
             SELECT COUNT(*) FROM "labels" AS "label"
             INNER JOIN "requested_labels" ON "requested_labels"."id" = "label"."id"
             WHERE "label"."project_id" = ${projectId}
           )
       ), "inserted_task" AS (
-        INSERT INTO "tasks" ("title", "description", "project_id", "list_id", "assignee_id", "priority", "due_date", "position")
-        SELECT ${values.title}, ${values.description ?? null}, ${projectId}, "authorized_list"."id", ${values.assigneeId ?? null},
+        INSERT INTO "tasks" ("title", "description", "project_id", "list_id", "priority", "due_date", "position")
+        SELECT ${values.title}, ${values.description ?? null}, ${projectId}, "authorized_list"."id",
           ${values.priority}, ${values.dueDate ?? null},
           COALESCE((SELECT MAX("position") + 1 FROM "tasks" WHERE "list_id" = "authorized_list"."id"), 0)
         FROM "authorized_list"
@@ -56,8 +70,17 @@ export async function insertTask(projectId: string, actorId: string, values: Cre
         CROSS JOIN "requested_labels"
         CROSS JOIN "authorized_list"
         RETURNING "label_id"
+      ), "inserted_assignees" AS (
+        INSERT INTO "task_assignees" ("project_id", "task_id", "project_member_id", "assigned_by_workspace_member_id")
+        SELECT ${projectId}, "inserted_task"."id", "requested_assignees"."id",
+          "authorized_list"."actor_workspace_member_id"
+        FROM "inserted_task"
+        CROSS JOIN "requested_assignees"
+        CROSS JOIN "authorized_list"
+        RETURNING "project_member_id"
       )
-      SELECT "inserted_task"."id", (SELECT COUNT(*) FROM "inserted_labels") AS "label_count"
+      SELECT "inserted_task"."id", (SELECT COUNT(*) FROM "inserted_labels") AS "label_count",
+        (SELECT COUNT(*) FROM "inserted_assignees") AS "assignee_count"
       FROM "inserted_task"
     `,
   )
@@ -65,22 +88,26 @@ export async function insertTask(projectId: string, actorId: string, values: Cre
 }
 
 export async function updateTaskRecord(projectId: string, actorId: string, taskId: string, values: UpdateTaskInput) {
-  const assignmentAllowed = values.assigneeId === undefined ? sql`TRUE` : canAssignTasks(projectId, actorId)
+  const assignmentAllowed = values.assigneeIds === undefined ? sql`TRUE` : canAssignTasks(projectId, actorId)
   const assignments = [
     values.title === undefined ? null : sql`"title" = ${values.title}`,
     values.description === undefined ? null : sql`"description" = ${values.description}`,
-    values.assigneeId === undefined ? null : sql`"assignee_id" = ${values.assigneeId}`,
     values.priority === undefined ? null : sql`"priority" = ${values.priority}`,
     values.dueDate === undefined ? null : sql`"due_date" = ${values.dueDate}`,
     sql`"updated_at" = NOW()`,
   ].filter((assignment): assignment is ReturnType<typeof sql> => assignment !== null)
   const replaceLabels = values.labelIds !== undefined
+  const replaceAssignees = values.assigneeIds !== undefined
   const labelIds = JSON.stringify(values.labelIds ?? [])
+  const assigneeIds = JSON.stringify(values.assigneeIds ?? [])
 
   const rows = await executeLockedBoardWrite<{ id: string }>(
     projectId,
     sql`
-      WITH "requested_labels" AS (
+      WITH "requested_assignees" AS (
+        SELECT DISTINCT "value"::uuid AS "id"
+        FROM jsonb_array_elements_text(${assigneeIds}::jsonb)
+      ), "requested_labels" AS (
         SELECT DISTINCT "value"::uuid AS "id"
         FROM jsonb_array_elements_text(${labelIds}::jsonb)
       ), "valid_labels" AS (
@@ -88,6 +115,16 @@ export async function updateTaskRecord(projectId: string, actorId: string, taskI
           SELECT COUNT(*) FROM "labels" AS "label"
           INNER JOIN "requested_labels" ON "requested_labels"."id" = "label"."id"
           WHERE "label"."project_id" = ${projectId}
+        ) AS "valid"
+      ), "valid_assignees" AS (
+        SELECT (SELECT COUNT(*) FROM "requested_assignees") = (
+          SELECT COUNT(*) FROM "project_members" AS "assignee_project_member"
+          INNER JOIN "workspace_members" AS "assignee_workspace_member"
+            ON "assignee_workspace_member"."id" = "assignee_project_member"."workspace_member_id"
+            AND "assignee_workspace_member"."removed_at" IS NULL
+          INNER JOIN "requested_assignees" ON "requested_assignees"."id" = "assignee_project_member"."id"
+          WHERE "assignee_project_member"."project_id" = ${projectId}
+            AND "assignee_project_member"."removed_at" IS NULL
         ) AS "valid"
       ), "actor_membership" AS (
         SELECT "workspace_member"."id"
@@ -104,7 +141,7 @@ export async function updateTaskRecord(projectId: string, actorId: string, taskI
           AND "task"."project_id" = ${projectId}
           AND ${canWorkOnTasks(projectId, actorId)}
           AND ${assignmentAllowed}
-          AND ${validAssignee(projectId, values.assigneeId)}
+          AND (NOT ${replaceAssignees} OR (SELECT "valid" FROM "valid_assignees"))
           AND (NOT ${replaceLabels} OR (SELECT "valid" FROM "valid_labels"))
         RETURNING "task"."id" AS "id"
       ), "deleted_labels" AS (
@@ -116,6 +153,16 @@ export async function updateTaskRecord(projectId: string, actorId: string, taskI
             SELECT 1 FROM "requested_labels" WHERE "requested_labels"."id" = "task_label"."label_id"
           )
         RETURNING "task_label"."label_id"
+      ), "deleted_assignees" AS (
+        DELETE FROM "task_assignees" AS "task_assignee"
+        WHERE ${replaceAssignees}
+          AND "task_assignee"."task_id" = (SELECT "id" FROM "updated")
+          AND "task_assignee"."project_id" = ${projectId}
+          AND NOT EXISTS (
+            SELECT 1 FROM "requested_assignees"
+            WHERE "requested_assignees"."id" = "task_assignee"."project_member_id"
+          )
+        RETURNING "task_assignee"."project_member_id"
       ), "inserted_labels" AS (
         INSERT INTO "task_labels" ("project_id", "task_id", "label_id", "added_by_workspace_member_id")
         SELECT ${projectId}, "updated"."id", "requested_labels"."id", "actor_membership"."id"
@@ -125,9 +172,20 @@ export async function updateTaskRecord(projectId: string, actorId: string, taskI
         WHERE ${replaceLabels}
         ON CONFLICT ("task_id", "label_id") DO NOTHING
         RETURNING "label_id"
+      ), "inserted_assignees" AS (
+        INSERT INTO "task_assignees" ("project_id", "task_id", "project_member_id", "assigned_by_workspace_member_id")
+        SELECT ${projectId}, "updated"."id", "requested_assignees"."id", "actor_membership"."id"
+        FROM "updated"
+        CROSS JOIN "requested_assignees"
+        CROSS JOIN "actor_membership"
+        WHERE ${replaceAssignees}
+        ON CONFLICT ("task_id", "project_member_id") DO NOTHING
+        RETURNING "project_member_id"
       )
       SELECT "updated"."id", (SELECT COUNT(*) FROM "deleted_labels") AS "deleted_label_count",
-        (SELECT COUNT(*) FROM "inserted_labels") AS "inserted_label_count"
+        (SELECT COUNT(*) FROM "inserted_labels") AS "inserted_label_count",
+        (SELECT COUNT(*) FROM "deleted_assignees") AS "deleted_assignee_count",
+        (SELECT COUNT(*) FROM "inserted_assignees") AS "inserted_assignee_count"
       FROM "updated"
     `,
   )

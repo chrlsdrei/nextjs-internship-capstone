@@ -30,9 +30,20 @@ const task: BoardTaskDto = {
   position: 0,
   assignee: {
     id: "00000000-0000-4000-8000-000000000030",
+    userId: "00000000-0000-4000-8000-000000000031",
+    workspaceMemberId: "00000000-0000-4000-8000-000000000032",
     name: "Charles",
     email: "charles@example.com",
   },
+  assignees: [
+    {
+      id: "00000000-0000-4000-8000-000000000030",
+      userId: "00000000-0000-4000-8000-000000000031",
+      workspaceMemberId: "00000000-0000-4000-8000-000000000032",
+      name: "Charles",
+      email: "charles@example.com",
+    },
+  ],
   labels: [redLabel],
 }
 

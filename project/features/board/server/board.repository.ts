@@ -8,6 +8,7 @@ import {
   lists,
   projectMembers,
   projectSettings,
+  taskAssignees,
   taskLabels,
   tasks,
   users,
@@ -15,10 +16,16 @@ import {
 } from "@/server/db/schema"
 
 export async function readProjectBoard(projectId: string) {
-  const [listRows, memberRows, taskRows, labelRows, taskLabelRows, settingsRows] = await Promise.all([
+  const [listRows, memberRows, taskRows, labelRows, taskLabelRows, taskAssigneeRows, settingsRows] = await Promise.all([
     db.select().from(lists).where(eq(lists.projectId, projectId)).orderBy(asc(lists.position), asc(lists.createdAt)),
     db
-      .select({ id: users.id, name: users.name, email: users.email })
+      .select({
+        id: projectMembers.id,
+        userId: users.id,
+        workspaceMemberId: workspaceMembers.id,
+        name: users.name,
+        email: users.email,
+      })
       .from(projectMembers)
       .innerJoin(workspaceMembers, eq(projectMembers.workspaceMemberId, workspaceMembers.id))
       .innerJoin(users, eq(workspaceMembers.userId, users.id))
@@ -33,12 +40,8 @@ export async function readProjectBoard(projectId: string) {
         dueDate: tasks.dueDate,
         position: tasks.position,
         listId: tasks.listId,
-        assigneeId: users.id,
-        assigneeName: users.name,
-        assigneeEmail: users.email,
       })
       .from(tasks)
-      .leftJoin(users, eq(tasks.assigneeId, users.id))
       .where(eq(tasks.projectId, projectId))
       .orderBy(asc(tasks.position), asc(tasks.createdAt)),
     db.select().from(labels).where(eq(labels.projectId, projectId)).orderBy(asc(labels.name), asc(labels.id)),
@@ -57,11 +60,34 @@ export async function readProjectBoard(projectId: string) {
       .where(eq(taskLabels.projectId, projectId))
       .orderBy(asc(labels.name), asc(labels.id)),
     db
+      .select({
+        taskId: taskAssignees.taskId,
+        id: projectMembers.id,
+        userId: users.id,
+        workspaceMemberId: workspaceMembers.id,
+        name: users.name,
+        email: users.email,
+      })
+      .from(taskAssignees)
+      .innerJoin(projectMembers, eq(taskAssignees.projectMemberId, projectMembers.id))
+      .innerJoin(workspaceMembers, eq(projectMembers.workspaceMemberId, workspaceMembers.id))
+      .innerJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(eq(taskAssignees.projectId, projectId))
+      .orderBy(asc(taskAssignees.assignedAt), asc(projectMembers.id)),
+    db
       .select({ editorsCanAssignTasks: projectSettings.editorsCanAssignTasks })
       .from(projectSettings)
       .where(eq(projectSettings.projectId, projectId))
       .limit(1),
   ])
 
-  return { listRows, memberRows, taskRows, labelRows, taskLabelRows, settings: settingsRows[0] ?? null }
+  return {
+    listRows,
+    memberRows,
+    taskRows,
+    labelRows,
+    taskLabelRows,
+    taskAssigneeRows,
+    settings: settingsRows[0] ?? null,
+  }
 }

@@ -202,7 +202,6 @@ export const tasks = pgTable(
     description: text("description"),
     projectId: uuid("project_id").notNull(),
     listId: uuid("list_id").notNull(),
-    assigneeId: uuid("assignee_id").references(() => users.id, { onDelete: "set null" }),
     priority: taskPriority("priority").default("medium").notNull(),
     dueDate: timestamp("due_date", { withTimezone: true }),
     position: integer("position").default(0).notNull(),
@@ -217,8 +216,36 @@ export const tasks = pgTable(
     }).onDelete("cascade"),
     index("tasks_project_id_idx").on(table.projectId),
     index("tasks_list_position_idx").on(table.listId, table.position),
-    index("tasks_assignee_id_idx").on(table.assigneeId),
     check("tasks_position_nonnegative", sql`${table.position} >= 0`),
+  ],
+)
+
+export const taskAssignees = pgTable(
+  "task_assignees",
+  {
+    projectId: uuid("project_id").notNull(),
+    taskId: uuid("task_id").notNull(),
+    projectMemberId: uuid("project_member_id").notNull(),
+    assignedByWorkspaceMemberId: uuid("assigned_by_workspace_member_id").references(() => workspaceMembers.id, {
+      onDelete: "set null",
+    }),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.taskId, table.projectMemberId], name: "task_assignees_task_member_pk" }),
+    foreignKey({
+      columns: [table.taskId, table.projectId],
+      foreignColumns: [tasks.id, tasks.projectId],
+      name: "task_assignees_task_project_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.projectMemberId, table.projectId],
+      foreignColumns: [projectMembers.id, projectMembers.projectId],
+      name: "task_assignees_member_project_fk",
+    }).onDelete("cascade"),
+    index("task_assignees_project_member_idx").on(table.projectMemberId),
+    index("task_assignees_project_task_idx").on(table.projectId, table.taskId),
+    index("task_assignees_actor_idx").on(table.assignedByWorkspaceMemberId),
   ],
 )
 
@@ -616,7 +643,7 @@ export const projectSettingsRelations = relations(projectSettings, ({ one }) => 
   }),
 }))
 
-export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+export const projectMembersRelations = relations(projectMembers, ({ one, many }) => ({
   project: one(projects, {
     fields: [projectMembers.projectId],
     references: [projects.id],
@@ -625,6 +652,7 @@ export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
     fields: [projectMembers.workspaceMemberId],
     references: [workspaceMembers.id],
   }),
+  taskAssignments: many(taskAssignees),
 }))
 
 export const listsRelations = relations(lists, ({ one, many }) => ({
@@ -640,14 +668,26 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.listId],
     references: [lists.id],
   }),
-  assignee: one(users, {
-    fields: [tasks.assigneeId],
-    references: [users.id],
-    relationName: "taskAssignee",
-  }),
+  assignees: many(taskAssignees),
   comments: many(comments),
   labels: many(taskLabels),
   activityLogs: many(activityLogs),
+}))
+
+export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAssignees.taskId],
+    references: [tasks.id],
+  }),
+  projectMember: one(projectMembers, {
+    fields: [taskAssignees.projectMemberId],
+    references: [projectMembers.id],
+  }),
+  assignedBy: one(workspaceMembers, {
+    fields: [taskAssignees.assignedByWorkspaceMemberId],
+    references: [workspaceMembers.id],
+    relationName: "taskAssigneeActor",
+  }),
 }))
 
 export const labelsRelations = relations(labels, ({ one, many }) => ({
@@ -708,6 +748,8 @@ export type List = typeof lists.$inferSelect
 export type NewList = typeof lists.$inferInsert
 export type Task = typeof tasks.$inferSelect
 export type NewTask = typeof tasks.$inferInsert
+export type TaskAssignee = typeof taskAssignees.$inferSelect
+export type NewTaskAssignee = typeof taskAssignees.$inferInsert
 export type Label = typeof labels.$inferSelect
 export type NewLabel = typeof labels.$inferInsert
 export type TaskLabel = typeof taskLabels.$inferSelect

@@ -1,6 +1,7 @@
 import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
+import { recordTaskAssignmentActivity } from "@/features/assignments/server/assignment.service"
 import { boardCapabilities } from "@/features/board/board.policy"
 import {
   listIdSchema,
@@ -78,10 +79,12 @@ async function requireRateLimitedBoardWrite(projectId: string, permission: Proje
 export async function getProjectBoard(projectId: string): Promise<ProjectBoardDto> {
   const id = projectIdSchema.parse(projectId)
   const access = await requireProjectPermission(id, "view")
-  const { listRows, memberRows, taskRows, labelRows, taskLabelRows, settings } = await readProjectBoard(id)
+  const { listRows, memberRows, taskRows, labelRows, taskLabelRows, taskAssigneeRows, settings } =
+    await readProjectBoard(id)
   if (!settings) throw new ProjectAccessError("Project settings not found", 404)
   const tasksByList = new Map<string, BoardTaskDto[]>()
   const labelsByTask = new Map<string, LabelDto[]>()
+  const assigneesByTask = new Map<string, ProjectBoardDto["members"]>()
 
   for (const label of taskLabelRows) {
     const current = labelsByTask.get(label.taskId) ?? []
@@ -96,8 +99,21 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
     labelsByTask.set(label.taskId, current)
   }
 
+  for (const assignee of taskAssigneeRows) {
+    const current = assigneesByTask.get(assignee.taskId) ?? []
+    current.push({
+      id: assignee.id,
+      userId: assignee.userId,
+      workspaceMemberId: assignee.workspaceMemberId,
+      name: assignee.name,
+      email: assignee.email,
+    })
+    assigneesByTask.set(assignee.taskId, current)
+  }
+
   for (const task of taskRows) {
     const current = tasksByList.get(task.listId) ?? []
+    const assignees = assigneesByTask.get(task.id) ?? []
     current.push({
       id: task.id,
       title: task.title,
@@ -105,9 +121,8 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
       priority: task.priority,
       dueDate: task.dueDate?.toISOString() ?? null,
       position: task.position,
-      assignee: task.assigneeId
-        ? { id: task.assigneeId, name: task.assigneeName ?? "Unknown", email: task.assigneeEmail ?? "" }
-        : null,
+      assignees,
+      assignee: assignees[0] ?? null,
       labels: labelsByTask.get(task.id) ?? [],
     })
     tasksByList.set(task.listId, current)
@@ -204,7 +219,7 @@ export async function createTask(projectId: string, input: unknown) {
   const access = await requireRateLimitedBoardWrite(id, "edit", "board.task.write")
   const task = await insertTask(id, access.user.id, values)
   if (!task) {
-    throw new ProjectAccessError("List not found, assignee is not a member, or you cannot create tasks", 404)
+    throw new ProjectAccessError("List not found, an assignee is invalid, or you cannot create tasks", 404)
   }
   const context = await activityContext(id, access)
   await recordActivity({
@@ -227,6 +242,9 @@ export async function createTask(projectId: string, input: unknown) {
       },
     })
   }
+  if (values.assigneeIds.length) {
+    await recordTaskAssignmentActivity(id, task.id, access)
+  }
   return task
 }
 
@@ -239,7 +257,7 @@ export async function updateTask(projectId: string, taskId: string, input: unkno
   const taskSnapshot = snapshot.taskRows.find((task) => task.id === parsedTaskId)
   if (!taskSnapshot) throw new ProjectAccessError("Task not found", 404)
   if (!(await updateTaskRecord(id, access.user.id, parsedTaskId, values))) {
-    throw new ProjectAccessError("Task not found, assignee is not a member, or you cannot edit it", 404)
+    throw new ProjectAccessError("Task not found, an assignee is invalid, or you cannot edit it", 404)
   }
   const context = await activityContext(id, access)
   await recordActivity({
@@ -264,6 +282,9 @@ export async function updateTask(projectId: string, taskId: string, input: unkno
         },
       },
     })
+  }
+  if (values.assigneeIds !== undefined) {
+    await recordTaskAssignmentActivity(id, parsedTaskId, access)
   }
 }
 

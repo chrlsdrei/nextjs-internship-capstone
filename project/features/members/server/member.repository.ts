@@ -186,12 +186,47 @@ export async function softRemoveMemberAndUnassignTasks(projectId: string, actorU
           AND ${canManageProject(projectId, actorUserId)}
         RETURNING "workspace_member"."user_id" AS "userId"
       ),
-      "unassigned_tasks" AS (
-        UPDATE "tasks"
-        SET "assignee_id" = NULL, "updated_at" = NOW()
-        WHERE "project_id" = ${projectId}
-          AND "assignee_id" = (SELECT "userId" FROM "removed_member")
-        RETURNING "id"
+      "removed_assignments" AS (
+        DELETE FROM "task_assignees" AS "assignment"
+        WHERE "assignment"."project_id" = ${projectId}
+          AND "assignment"."project_member_id" = ${memberId}
+          AND EXISTS (SELECT 1 FROM "removed_member")
+        RETURNING "assignment"."task_id"
+      ), "assignment_activity" AS (
+        INSERT INTO "activity_logs" (
+          "workspace_id", "project_id", "task_id", "actor_workspace_member_id",
+          "action", "schema_version", "metadata"
+        )
+        SELECT "project"."workspace_id", "project"."id", "task"."id", "actor_workspace_member"."id",
+          'task.assignees_updated', 1,
+          jsonb_build_object(
+            'actorName', "actor_user"."name",
+            'workspaceName', "workspace"."name",
+            'projectTitle', "project"."title",
+            'taskTitle', "task"."title",
+            'assigneeNames', COALESCE((
+              SELECT jsonb_agg("remaining_user"."name" ORDER BY "remaining_user"."name")
+              FROM "task_assignees" AS "remaining_assignment"
+              INNER JOIN "project_members" AS "remaining_project_member"
+                ON "remaining_project_member"."id" = "remaining_assignment"."project_member_id"
+              INNER JOIN "workspace_members" AS "remaining_workspace_member"
+                ON "remaining_workspace_member"."id" = "remaining_project_member"."workspace_member_id"
+              INNER JOIN "users" AS "remaining_user"
+                ON "remaining_user"."id" = "remaining_workspace_member"."user_id"
+              WHERE "remaining_assignment"."task_id" = "task"."id"
+                AND "remaining_assignment"."project_member_id" <> ${memberId}
+            ), '[]'::jsonb)
+          )
+        FROM "removed_assignments"
+        INNER JOIN "tasks" AS "task" ON "task"."id" = "removed_assignments"."task_id"
+        INNER JOIN "projects" AS "project" ON "project"."id" = "task"."project_id"
+        INNER JOIN "workspaces" AS "workspace" ON "workspace"."id" = "project"."workspace_id"
+        INNER JOIN "workspace_members" AS "actor_workspace_member"
+          ON "actor_workspace_member"."workspace_id" = "project"."workspace_id"
+          AND "actor_workspace_member"."user_id" = ${actorUserId}
+          AND "actor_workspace_member"."removed_at" IS NULL
+        INNER JOIN "users" AS "actor_user" ON "actor_user"."id" = ${actorUserId}
+        RETURNING "task_id"
       )
       SELECT "userId" FROM "removed_member"
     `),

@@ -13,6 +13,7 @@ const expectedTables = [
   "project_settings",
   "projects",
   "rate_limit_buckets",
+  "task_assignees",
   "task_labels",
   "tasks",
   "users",
@@ -37,7 +38,7 @@ async function main() {
     where table_schema = 'public'
       and table_name in (
         'activity_logs', 'ai_usage_logs', 'comments', 'labels', 'lists', 'project_members', 'project_settings', 'projects',
-        'rate_limit_buckets', 'task_labels', 'tasks', 'users', 'workspace_invitations',
+        'rate_limit_buckets', 'task_assignees', 'task_labels', 'tasks', 'users', 'workspace_invitations',
         'workspace_members', 'workspace_settings', 'workspaces'
       )
     order by table_name
@@ -48,6 +49,24 @@ async function main() {
   if (missingTables.length > 0) {
     throw new Error(`Database is missing expected tables: ${missingTables.join(", ")}`)
   }
+
+  const [legacyAssigneeColumn, assignmentTrigger] = await Promise.all([
+    sql`
+      select column_name
+      from information_schema.columns
+      where table_schema = 'public' and table_name = 'tasks' and column_name = 'assignee_id'
+    `,
+    sql`
+      select trigger_name
+      from information_schema.triggers
+      where event_object_schema = 'public'
+        and event_object_table = 'task_assignees'
+        and trigger_name = 'task_assignees_require_active_membership'
+      limit 1
+    `,
+  ])
+  if (legacyAssigneeColumn.length > 0) throw new Error("Database still contains the legacy tasks.assignee_id column")
+  if (assignmentTrigger.length === 0) throw new Error("Database is missing active task-assignee enforcement")
 
   console.log(`Database connection successful. Verified tables: ${actualTables.join(", ")}.`)
 }

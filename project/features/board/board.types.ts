@@ -1,7 +1,13 @@
 import type { LabelDto } from "@/features/labels/label.types"
 import type { BoardRole } from "@/features/projects/project.types"
 
-export type BoardMemberDto = { id: string; name: string; email: string }
+export type BoardMemberDto = {
+  id: string
+  userId: string
+  workspaceMemberId: string
+  name: string
+  email: string
+}
 
 export type BoardTaskDto = {
   id: string
@@ -10,6 +16,8 @@ export type BoardTaskDto = {
   priority: "low" | "medium" | "high"
   dueDate: string | null
   position: number
+  assignees: BoardMemberDto[]
+  /** Temporary single-assignee compatibility alias; removed by Step 15. */
   assignee: BoardMemberDto | null
   labels: LabelDto[]
 }
@@ -48,4 +56,16 @@ export type ReorderTasksCommand = {
   projectId: string
   listId: string
   taskIds: string[]
+}
+
+export type SetTaskAssigneesCommand = {
+  projectId: string
+  taskId: string
+  projectMemberIds: string[]
+}
+
+export type ChangeTaskAssigneeCommand = {
+  projectId: string
+  taskId: string
+  projectMemberId: string
 }

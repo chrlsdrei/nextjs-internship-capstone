@@ -40,4 +40,19 @@ describe("activity metadata contracts", () => {
   it("rejects unknown action keys until a versioned contract is added", () => {
     expect(activityEventSchema.safeParse({ action: "project.unknown", metadata: {} }).success).toBe(false)
   })
+
+  it("validates assignment-history snapshots", () => {
+    expect(
+      activityEventSchema.safeParse({
+        action: "task.assignees_updated",
+        metadata: {
+          actorName: "Charles",
+          workspaceName: "Product",
+          projectTitle: "MVP",
+          taskTitle: "Build login",
+          assigneeNames: ["Ada", "Grace"],
+        },
+      }).success,
+    ).toBe(true)
+  })
 })

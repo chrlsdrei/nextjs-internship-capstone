@@ -98,6 +98,11 @@ function knownActivityDescription(activity: Extract<ActivityDto, { kind: "known"
         title: `${actor} updated labels on ${event.metadata.taskTitle}`,
         detail: event.metadata.labelNames.length ? event.metadata.labelNames.join(", ") : "All labels removed",
       }
+    case "task.assignees_updated":
+      return {
+        title: `${actor} updated assignees on ${event.metadata.taskTitle}`,
+        detail: event.metadata.assigneeNames.length ? event.metadata.assigneeNames.join(", ") : "All assignees removed",
+      }
   }
 }
 

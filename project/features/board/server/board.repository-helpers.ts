@@ -63,20 +63,6 @@ export function canAssignTasks(projectId: string, userId: string) {
   )`
 }
 
-export function validAssignee(projectId: string, assigneeId: string | null | undefined) {
-  if (!assigneeId) return sql`TRUE`
-  return sql`EXISTS (
-    SELECT 1
-    FROM "project_members" AS "assignee_project_member"
-    INNER JOIN "workspace_members" AS "assignee_workspace_member"
-      ON "assignee_workspace_member"."id" = "assignee_project_member"."workspace_member_id"
-      AND "assignee_workspace_member"."removed_at" IS NULL
-    WHERE "assignee_project_member"."project_id" = ${projectId}
-      AND "assignee_project_member"."removed_at" IS NULL
-      AND "assignee_workspace_member"."user_id" = ${assigneeId}
-  )`
-}
-
 export function orderedUuids(ids: string[]) {
   return sql`SELECT "input"."id", ("input"."ordinality" - 1)::integer AS "position"
     FROM unnest(ARRAY[${sql.join(

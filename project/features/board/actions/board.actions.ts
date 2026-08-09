@@ -38,12 +38,15 @@ function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "")
 }
 
-function optionalValue(formData: FormData, key: string) {
-  return formData.has(key) ? formData.get(key) : undefined
-}
-
 function optionalJson(formData: FormData, key: string) {
   return formData.has(key) ? (JSON.parse(value(formData, key)) as unknown) : undefined
+}
+
+function taskAssigneeIds(formData: FormData) {
+  if (formData.has("assigneeIds")) return optionalJson(formData, "assigneeIds")
+  if (!formData.has("assigneeId")) return undefined
+  const legacyAssignee = value(formData, "assigneeId")
+  return legacyAssignee ? [legacyAssignee] : []
 }
 
 function complete(projectId: string): ActionState {
@@ -93,7 +96,7 @@ export async function createTaskAction(_: ActionState, formData: FormData) {
       title: formData.get("title"),
       description: formData.get("description"),
       listId: formData.get("listId"),
-      assigneeId: optionalValue(formData, "assigneeId"),
+      assigneeIds: taskAssigneeIds(formData),
       priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
       labelIds: optionalJson(formData, "labelIds"),
@@ -107,7 +110,7 @@ export async function updateTaskAction(_: ActionState, formData: FormData) {
     updateTask(projectId, value(formData, "taskId"), {
       title: formData.get("title"),
       description: formData.get("description"),
-      assigneeId: optionalValue(formData, "assigneeId"),
+      assigneeIds: taskAssigneeIds(formData),
       priority: formData.get("priority"),
       dueDate: formData.get("dueDate"),
       labelIds: optionalJson(formData, "labelIds"),

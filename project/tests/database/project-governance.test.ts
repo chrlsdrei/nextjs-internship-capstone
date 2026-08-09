@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import { neon } from "@neondatabase/serverless"
-import { eq, inArray } from "drizzle-orm"
+import { eq, inArray, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 import { insertList } from "../../features/board/server/list.repository"
@@ -13,6 +13,7 @@ import {
   lists,
   projectMembers,
   projectSettings,
+  taskAssignees,
   tasks,
   users,
   workspaceMembers,
@@ -72,6 +73,7 @@ async function createProjectFor(
 }
 
 afterEach(async () => {
+  await database.execute(sql`TRUNCATE TABLE "activity_logs"`)
   if (createdWorkspaceIds.size > 0) {
     await database.delete(workspaces).where(inArray(workspaces.id, [...createdWorkspaceIds]))
     createdWorkspaceIds.clear()
@@ -151,22 +153,25 @@ describe("project workspace governance", () => {
     const withoutMembership = await insertTask(project.id, owner.id, {
       title: "Not assigned",
       listId: list.id,
-      assigneeId: owner.id,
+      assigneeIds: [workspace.ownerMembershipId],
       priority: "medium",
       position: 0,
     })
     expect(withoutMembership).toBeNull()
 
-    await database.insert(projectMembers).values({
-      projectId: project.id,
-      workspaceId: workspace.workspaceId,
-      workspaceMemberId: workspace.ownerMembershipId,
-      role: "viewer",
-    })
+    const [ownerProjectMember] = await database
+      .insert(projectMembers)
+      .values({
+        projectId: project.id,
+        workspaceId: workspace.workspaceId,
+        workspaceMemberId: workspace.ownerMembershipId,
+        role: "viewer",
+      })
+      .returning()
     const withMembership = await insertTask(project.id, owner.id, {
       title: "Assigned",
       listId: list.id,
-      assigneeId: owner.id,
+      assigneeIds: [ownerProjectMember.id],
       priority: "medium",
       position: 0,
     })
@@ -248,20 +253,23 @@ describe("project workspace governance", () => {
     const editorWorkspaceMember = await addWorkspaceMember(workspace.workspaceId, editor.id)
     const assigneeWorkspaceMember = await addWorkspaceMember(workspace.workspaceId, assignee.id)
     const project = await createProjectFor(workspace.workspaceId, workspace.ownerMembershipId, true, "rules")
-    await database.insert(projectMembers).values([
-      {
-        projectId: project.id,
-        workspaceId: workspace.workspaceId,
-        workspaceMemberId: editorWorkspaceMember.id,
-        role: "editor",
-      },
-      {
-        projectId: project.id,
-        workspaceId: workspace.workspaceId,
-        workspaceMemberId: assigneeWorkspaceMember.id,
-        role: "viewer",
-      },
-    ])
+    const [, assigneeProjectMember] = await database
+      .insert(projectMembers)
+      .values([
+        {
+          projectId: project.id,
+          workspaceId: workspace.workspaceId,
+          workspaceMemberId: editorWorkspaceMember.id,
+          role: "editor",
+        },
+        {
+          projectId: project.id,
+          workspaceId: workspace.workspaceId,
+          workspaceMemberId: assigneeWorkspaceMember.id,
+          role: "viewer",
+        },
+      ])
+      .returning()
     const [list] = await database.insert(lists).values({ projectId: project.id, name: "To do" }).returning()
 
     expect(await updateProjectSettingsAsManager(project.id, owner.id, { editorsCanAssignTasks: false })).toEqual({
@@ -272,7 +280,7 @@ describe("project workspace governance", () => {
       await insertTask(project.id, editor.id, {
         title: "Assignment denied",
         listId: list.id,
-        assigneeId: assignee.id,
+        assigneeIds: [assigneeProjectMember.id],
         priority: "medium",
         position: 0,
       }),
@@ -290,7 +298,7 @@ describe("project workspace governance", () => {
     expect(settings.editorsCanAssignTasks).toBe(false)
   })
 
-  it("soft-removes board access and unassigns legacy task assignments", async () => {
+  it("soft-removes board access and clears active task assignments", async () => {
     const owner = await createUser("remove-owner")
     const administrator = await createUser("remove-admin")
     const assignee = await createUser("remove-assignee")
@@ -310,8 +318,14 @@ describe("project workspace governance", () => {
     const [list] = await database.insert(lists).values({ projectId: project.id, name: "To do" }).returning()
     const [task] = await database
       .insert(tasks)
-      .values({ projectId: project.id, listId: list.id, title: "Assigned", assigneeId: assignee.id })
+      .values({ projectId: project.id, listId: list.id, title: "Assigned" })
       .returning()
+    await database.insert(taskAssignees).values({
+      projectId: project.id,
+      taskId: task.id,
+      projectMemberId: assigneeProjectMember.id,
+      assignedByWorkspaceMemberId: administratorWorkspaceMember.id,
+    })
 
     await softRemoveMemberAndUnassignTasks(project.id, administrator.id, assigneeProjectMember.id)
 
@@ -319,9 +333,9 @@ describe("project workspace governance", () => {
       .select()
       .from(projectMembers)
       .where(eq(projectMembers.id, assigneeProjectMember.id))
-    const [unassignedTask] = await database.select().from(tasks).where(eq(tasks.id, task.id))
+    const remainingAssignments = await database.select().from(taskAssignees).where(eq(taskAssignees.taskId, task.id))
     expect(removedMembership.removedAt).toBeInstanceOf(Date)
-    expect(unassignedTask.assigneeId).toBeNull()
+    expect(remainingAssignments).toHaveLength(0)
     expect(await findProjectAccess(project.id, assignee.id)).toBeNull()
   })
 })
