@@ -72,7 +72,13 @@ export async function readProjectBoard(projectId: string) {
       .innerJoin(projectMembers, eq(taskAssignees.projectMemberId, projectMembers.id))
       .innerJoin(workspaceMembers, eq(projectMembers.workspaceMemberId, workspaceMembers.id))
       .innerJoin(users, eq(workspaceMembers.userId, users.id))
-      .where(eq(taskAssignees.projectId, projectId))
+      .where(
+        and(
+          eq(taskAssignees.projectId, projectId),
+          isNull(projectMembers.removedAt),
+          isNull(workspaceMembers.removedAt),
+        ),
+      )
       .orderBy(asc(taskAssignees.assignedAt), asc(projectMembers.id)),
     db
       .select({ editorsCanAssignTasks: projectSettings.editorsCanAssignTasks })

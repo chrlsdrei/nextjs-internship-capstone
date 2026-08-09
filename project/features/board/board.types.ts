@@ -17,8 +17,6 @@ export type BoardTaskDto = {
   dueDate: string | null
   position: number
   assignees: BoardMemberDto[]
-  /** Temporary single-assignee compatibility alias; removed by Step 15. */
-  assignee: BoardMemberDto | null
   labels: LabelDto[]
 }
 

@@ -43,10 +43,7 @@ function optionalJson(formData: FormData, key: string) {
 }
 
 function taskAssigneeIds(formData: FormData) {
-  if (formData.has("assigneeIds")) return optionalJson(formData, "assigneeIds")
-  if (!formData.has("assigneeId")) return undefined
-  const legacyAssignee = value(formData, "assigneeId")
-  return legacyAssignee ? [legacyAssignee] : []
+  return optionalJson(formData, "assigneeIds")
 }
 
 function complete(projectId: string): ActionState {

@@ -1,5 +1,7 @@
 import { X } from "lucide-react"
 
+import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
+import { AssigneeMultiSelect } from "@/features/assignments/components/assignee-multi-select"
 import type { BoardMemberDto, BoardTaskDto } from "@/features/board/board.types"
 import { LabelBadge } from "@/features/labels/components/label-badge"
 import type { LabelDto } from "@/features/labels/label.types"
@@ -19,6 +21,11 @@ type TaskDialogProps = {
   labels: LabelDto[]
   selectedLabelIds: string[]
   onLabelToggle: (labelId: string) => void
+  selectedAssigneeIds: string[]
+  assigneeSearch: string
+  onAssigneeSearchChange: (value: string) => void
+  onAssigneeToggle: (memberId: string) => void
+  onAssigneeClear: () => void
 }
 
 export function TaskDialog({
@@ -35,6 +42,11 @@ export function TaskDialog({
   labels,
   selectedLabelIds,
   onLabelToggle,
+  selectedAssigneeIds,
+  assigneeSearch,
+  onAssigneeSearchChange,
+  onAssigneeToggle,
+  onAssigneeClear,
 }: TaskDialogProps) {
   const isEditing = Boolean(task)
 
@@ -86,47 +98,45 @@ export function TaskDialog({
               className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
             />
           </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="text-sm font-medium">
-              Priority
-              <select
-                name="priority"
-                defaultValue={task?.priority ?? "medium"}
-                className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </label>
-            {canAssignTasks ? (
-              <label className="text-sm font-medium">
-                Assignee
-                <select
-                  name="assigneeId"
-                  defaultValue={task?.assignee?.id ?? ""}
-                  className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
-                >
-                  <option value="">Unassigned</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <div className="text-sm">
-                <p className="font-medium">Assignee</p>
-                <p className="mt-1 rounded border border-french-gray-300 bg-platinum-700 px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400">
-                  {task?.assignee?.name ?? "Unassigned"}
-                </p>
-                <p className="mt-1 text-paynes-gray-500 text-xs dark:text-french-gray-400">
-                  A board administrator must change task assignments.
-                </p>
+          <label className="block text-sm font-medium">
+            Priority
+            <select
+              name="priority"
+              defaultValue={task?.priority ?? "medium"}
+              className="mt-1 w-full rounded border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          {canAssignTasks ? (
+            <AssigneeMultiSelect
+              members={members}
+              selectedIds={selectedAssigneeIds}
+              search={assigneeSearch}
+              onSearchChange={onAssigneeSearchChange}
+              onToggle={onAssigneeToggle}
+              onClear={onAssigneeClear}
+            />
+          ) : (
+            <div className="text-sm">
+              <p className="font-medium">Assignees</p>
+              <div className="mt-2 rounded border border-french-gray-300 bg-platinum-700 px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400">
+                {task?.assignees.length ? (
+                  <div className="flex items-center gap-3">
+                    <AssigneeIdentities assignees={task.assignees} limit={5} />
+                    <span>{task.assignees.map((assignee) => assignee.name).join(", ")}</span>
+                  </div>
+                ) : (
+                  "Unassigned"
+                )}
               </div>
-            )}
-          </div>
+              <p className="mt-1 text-paynes-gray-500 text-xs dark:text-french-gray-400">
+                You do not have permission to change task assignments.
+              </p>
+            </div>
+          )}
           <label className="block text-sm font-medium">
             Due date
             <input

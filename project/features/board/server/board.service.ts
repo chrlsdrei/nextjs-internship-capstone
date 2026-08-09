@@ -122,7 +122,6 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
       dueDate: task.dueDate?.toISOString() ?? null,
       position: task.position,
       assignees,
-      assignee: assignees[0] ?? null,
       labels: labelsByTask.get(task.id) ?? [],
     })
     tasksByList.set(task.listId, current)

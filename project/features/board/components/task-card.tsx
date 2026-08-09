@@ -1,6 +1,7 @@
 import { Calendar, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
 import type { BoardListDto, BoardTaskDto } from "@/features/board/board.types"
 import { LabelBadge } from "@/features/labels/components/label-badge"
 import type { ActionState } from "@/lib/action-state"
@@ -90,11 +91,7 @@ export function TaskCard({
             {new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(task.dueDate))}
           </span>
         )}
-        {task.assignee && (
-          <span className="rounded-full bg-french-gray-300 px-2 py-1 dark:bg-paynes-gray-400">
-            {task.assignee.name}
-          </span>
-        )}
+        <AssigneeIdentities assignees={task.assignees} />
       </div>
       {canEdit && (
         <div className="mt-3 flex items-center gap-2 border-french-gray-300 border-t pt-3 dark:border-paynes-gray-400">

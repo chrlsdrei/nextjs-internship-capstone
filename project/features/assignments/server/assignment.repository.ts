@@ -1,6 +1,6 @@
 import "server-only"
 
-import { and, asc, eq, inArray, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm"
 
 import {
   canAssignTasks,
@@ -172,7 +172,14 @@ export async function findTaskAssignmentContexts(projectId: string, taskIds: str
       .innerJoin(projectMembers, eq(taskAssignees.projectMemberId, projectMembers.id))
       .innerJoin(workspaceMembers, eq(projectMembers.workspaceMemberId, workspaceMembers.id))
       .innerJoin(users, eq(workspaceMembers.userId, users.id))
-      .where(and(eq(taskAssignees.projectId, projectId), inArray(taskAssignees.taskId, taskIds)))
+      .where(
+        and(
+          eq(taskAssignees.projectId, projectId),
+          inArray(taskAssignees.taskId, taskIds),
+          isNull(projectMembers.removedAt),
+          isNull(workspaceMembers.removedAt),
+        ),
+      )
       .orderBy(asc(taskAssignees.assignedAt), asc(projectMembers.id)),
   ])
 

@@ -12,7 +12,12 @@ import { GripVertical } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 import type { BoardListDto, BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
-import { taskMatchesBoardFilters, toggleLabelFilter } from "@/features/board/board-filtering"
+import {
+  retainActiveMemberSelections,
+  taskMatchesBoardFilters,
+  toggleAssigneeFilter,
+  toggleLabelFilter,
+} from "@/features/board/board-filtering"
 import { BoardColumn } from "@/features/board/components/board-column"
 import { BoardFilters } from "@/features/board/components/board-filters"
 import { CreateListController } from "@/features/board/controllers/create-list.controller"
@@ -122,7 +127,8 @@ function DroppableBoardColumn({
 export function BoardController({ projectId, serverBoard }: { projectId: string; serverBoard: ProjectBoardDto }) {
   const [search, setSearch] = useState("")
   const [priority, setPriority] = useState<"all" | BoardTaskDto["priority"]>("all")
-  const [assigneeId, setAssigneeId] = useState("all")
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([])
+  const [includeUnassigned, setIncludeUnassigned] = useState(false)
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([])
   const [createListId, setCreateListId] = useState<string | null>(null)
   const [editingTask, setEditingTask] = useState<BoardTaskDto | null>(null)
@@ -141,6 +147,15 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
     const availableIds = new Set(board.labels.map((label) => label.id))
     setSelectedLabelIds((current) => current.filter((id) => availableIds.has(id)))
   }, [board.labels])
+  useEffect(() => {
+    setSelectedAssigneeIds((current) => retainActiveMemberSelections(current, board.members))
+  }, [board.members])
+  useEffect(() => {
+    setEditingTask((current) => {
+      if (!current) return null
+      return board.lists.flatMap((list) => list.tasks).find((task) => task.id === current.id) ?? null
+    })
+  }, [board.lists])
 
   const canManage = board.capabilities.canManageLists
   const canEdit = board.capabilities.canEditTasks
@@ -149,10 +164,16 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
     return board.lists.map((list) => ({
       ...list,
       tasks: list.tasks.filter((task) =>
-        taskMatchesBoardFilters(task, { search, priority, assigneeId, labelIds: selectedLabelIds }),
+        taskMatchesBoardFilters(task, {
+          search,
+          priority,
+          assigneeIds: selectedAssigneeIds,
+          includeUnassigned,
+          labelIds: selectedLabelIds,
+        }),
       ),
     }))
-  }, [assigneeId, board.lists, priority, search, selectedLabelIds])
+  }, [board.lists, includeUnassigned, priority, search, selectedAssigneeIds, selectedLabelIds])
 
   return (
     <section aria-label="Project board" className="space-y-4">
@@ -160,13 +181,19 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
       <BoardFilters
         search={search}
         priority={priority}
-        assigneeId={assigneeId}
+        selectedAssigneeIds={selectedAssigneeIds}
+        includeUnassigned={includeUnassigned}
         selectedLabelIds={selectedLabelIds}
         members={board.members}
         labels={board.labels}
         onSearchChange={setSearch}
         onPriorityChange={setPriority}
-        onAssigneeChange={setAssigneeId}
+        onAssigneeToggle={(memberId) => setSelectedAssigneeIds((current) => toggleAssigneeFilter(current, memberId))}
+        onUnassignedToggle={() => setIncludeUnassigned((current) => !current)}
+        onClearAssignees={() => {
+          setSelectedAssigneeIds([])
+          setIncludeUnassigned(false)
+        }}
         onLabelToggle={(labelId) => setSelectedLabelIds((current) => toggleLabelFilter(current, labelId))}
         onClearLabels={() => setSelectedLabelIds([])}
       />

@@ -2,7 +2,7 @@
 
 import { create } from "zustand"
 
-import type { ProjectBoardDto } from "@/features/board/board.types"
+import type { BoardMemberDto, ProjectBoardDto } from "@/features/board/board.types"
 import type { LabelDto } from "@/features/labels/label.types"
 
 type BoardState = {
@@ -24,6 +24,12 @@ type BoardState = {
     fallbackBoard: ProjectBoardDto,
     taskId: string,
     labels: LabelDto[],
+  ) => ProjectBoardDto
+  setTaskCollaborationOptimistically: (
+    projectId: string,
+    fallbackBoard: ProjectBoardDto,
+    taskId: string,
+    values: { assignees: BoardMemberDto[]; labels: LabelDto[] },
   ) => ProjectBoardDto
   setSaving: (isSaving: boolean) => void
   setError: (error: string | null) => void
@@ -67,6 +73,20 @@ export function updateTaskLabelsOptimistically(board: ProjectBoardDto, taskId: s
   }
 }
 
+export function updateTaskCollaborationOptimistically(
+  board: ProjectBoardDto,
+  taskId: string,
+  values: { assignees: BoardMemberDto[]; labels: LabelDto[] },
+) {
+  return {
+    ...board,
+    lists: board.lists.map((list) => ({
+      ...list,
+      tasks: list.tasks.map((task) => (task.id === taskId ? { ...task, ...values } : task)),
+    })),
+  }
+}
+
 export const useBoardStore = create<BoardState>((set) => ({
   projectId: null,
   board: null,
@@ -85,6 +105,14 @@ export const useBoardStore = create<BoardState>((set) => ({
     set((state) => {
       previousBoard = state.projectId === projectId && state.board ? state.board : fallbackBoard
       return { projectId, board: updateTaskLabelsOptimistically(previousBoard, taskId, labels) }
+    })
+    return previousBoard
+  },
+  setTaskCollaborationOptimistically: (projectId, fallbackBoard, taskId, values) => {
+    let previousBoard = fallbackBoard
+    set((state) => {
+      previousBoard = state.projectId === projectId && state.board ? state.board : fallbackBoard
+      return { projectId, board: updateTaskCollaborationOptimistically(previousBoard, taskId, values) }
     })
     return previousBoard
   },
