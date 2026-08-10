@@ -1,6 +1,12 @@
 import { SignUp } from "@clerk/nextjs"
+import { authenticationHref, safeInvitationRedirect } from "@/features/invitations/invitation-redirect"
 
-export default function SignUpPage() {
+export default async function SignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string | string[] }>
+}) {
+  const redirectUrl = safeInvitationRedirect((await searchParams).redirect_url)
   return (
     <main className="flex min-h-screen items-center justify-center bg-platinum-900 px-4 dark:bg-outer-space-600">
       <div className="w-full max-w-md">
@@ -12,7 +18,8 @@ export default function SignUpPage() {
         </div>
         <SignUp
           path="/sign-up"
-          signInUrl="/sign-in"
+          signInUrl={redirectUrl ? authenticationHref("/sign-in", redirectUrl) : "/sign-in"}
+          forceRedirectUrl={redirectUrl}
           fallbackRedirectUrl="/dashboard"
           appearance={{
             elements: {

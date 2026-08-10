@@ -3,7 +3,25 @@ import { config } from "dotenv"
 
 config({ path: ".env.local" })
 
-const expectedTables = ["comments", "lists", "projects", "tasks", "users"]
+const expectedTables = [
+  "activity_logs",
+  "ai_usage_logs",
+  "labels",
+  "lists",
+  "project_members",
+  "project_settings",
+  "projects",
+  "rate_limit_buckets",
+  "task_assignees",
+  "task_comments",
+  "task_labels",
+  "tasks",
+  "users",
+  "workspace_invitations",
+  "workspace_members",
+  "workspace_settings",
+  "workspaces",
+]
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL
@@ -18,7 +36,11 @@ async function main() {
     select table_name
     from information_schema.tables
     where table_schema = 'public'
-      and table_name in ('comments', 'lists', 'projects', 'tasks', 'users')
+      and table_name in (
+        'activity_logs', 'ai_usage_logs', 'labels', 'lists', 'project_members', 'project_settings', 'projects',
+        'rate_limit_buckets', 'task_assignees', 'task_comments', 'task_labels', 'tasks', 'users', 'workspace_invitations',
+        'workspace_members', 'workspace_settings', 'workspaces'
+      )
     order by table_name
   `
   const actualTables = rows.map((row) => String(row.table_name))
@@ -27,6 +49,30 @@ async function main() {
   if (missingTables.length > 0) {
     throw new Error(`Database is missing expected tables: ${missingTables.join(", ")}`)
   }
+
+  const [legacyAssigneeColumn, assignmentTrigger, legacyCommentsTable] = await Promise.all([
+    sql`
+      select column_name
+      from information_schema.columns
+      where table_schema = 'public' and table_name = 'tasks' and column_name = 'assignee_id'
+    `,
+    sql`
+      select trigger_name
+      from information_schema.triggers
+      where event_object_schema = 'public'
+        and event_object_table = 'task_assignees'
+        and trigger_name = 'task_assignees_require_active_membership'
+      limit 1
+    `,
+    sql`
+      select table_name
+      from information_schema.tables
+      where table_schema = 'public' and table_name = 'comments'
+    `,
+  ])
+  if (legacyAssigneeColumn.length > 0) throw new Error("Database still contains the legacy tasks.assignee_id column")
+  if (assignmentTrigger.length === 0) throw new Error("Database is missing active task-assignee enforcement")
+  if (legacyCommentsTable.length > 0) throw new Error("Database still contains the legacy comments table")
 
   console.log(`Database connection successful. Verified tables: ${actualTables.join(", ")}.`)
 }
