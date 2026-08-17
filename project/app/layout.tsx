@@ -1,13 +1,13 @@
 import { ClerkProvider } from "@clerk/nextjs"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Oxanium, Sora } from "next/font/google"
 import type React from "react"
-
-import { ThemeProvider } from "@/components/providers/theme-provider"
 
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" })
+const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" })
+const oxanium = Oxanium({ subsets: ["latin"], variable: "--font-oxanium", display: "swap" })
 
 export const metadata: Metadata = {
   title: "ProjectFlow",
@@ -17,10 +17,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
-          <ThemeProvider>{children}</ThemeProvider>
-        </body>
+      <html lang="en">
+        <body className={`${inter.variable} ${sora.variable} ${oxanium.variable}`}>{children}</body>
       </html>
     </ClerkProvider>
   )

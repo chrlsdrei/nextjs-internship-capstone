@@ -1,7 +1,6 @@
 import { Show, UserButton } from "@clerk/nextjs"
 import { ArrowRight, CheckCircle, Kanban, Users } from "lucide-react"
 import Link from "next/link"
-import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 export function MarketingPage() {
   return (
@@ -12,7 +11,6 @@ export function MarketingPage() {
           <div className="flex justify-between items-center h-16">
             <div className="text-2xl font-bold text-blue-munsell-500">ProjectFlow</div>
             <div className="flex items-center space-x-4">
-              <ThemeToggle />
               <Show when="signed-in">
                 <Link
                   href="/dashboard"

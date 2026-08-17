@@ -109,7 +109,7 @@ export function TaskDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-dialog-title"
-        className="dark h-[calc(100dvh-1rem)] w-full max-w-2xl shadow-[inset_0_0_0_2px_var(--ornament-edge-dark),inset_0_0_36px_var(--ornament-depth),0_24px_70px_rgb(0_0_0/0.7),0_0_18px_var(--ornament-glow)] sm:h-[min(44rem,calc(100dvh-3rem))]"
+        className="h-[calc(100dvh-1rem)] w-full max-w-2xl shadow-[inset_0_0_0_2px_var(--ornament-edge-dark),inset_0_0_36px_var(--ornament-depth),0_24px_70px_rgb(0_0_0/0.7),0_0_18px_var(--ornament-glow)] sm:h-[min(44rem,calc(100dvh-3rem))]"
         contentClassName="flex min-h-0 flex-col overflow-hidden px-2 sm:px-4"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-[var(--ornament-edge-bright)] border-b px-1 pb-4">

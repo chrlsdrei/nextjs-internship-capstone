@@ -21,8 +21,6 @@ import { usePathname } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
 
-import { ThemeToggle } from "@/components/ui/theme-toggle"
-
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Workspaces", href: "/workspaces", icon: Building2 },
@@ -147,7 +145,6 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
               >
                 <Bell size={20} />
               </button>
-              <ThemeToggle />
               <UserButton />
             </div>
           </div>
