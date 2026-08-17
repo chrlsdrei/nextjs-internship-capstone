@@ -1,4 +1,5 @@
 import { ActionFeedback } from "@/components/ui/action-feedback"
+import { TechFrameCard } from "@/components/ui/tech-frame-card"
 import { invitationDisplayState } from "@/features/invitations/invitation.presenter"
 import { MemberRowController } from "@/features/members/controllers/member-row.controller"
 import type { ProjectManagementDto } from "@/features/members/member.types"
@@ -20,6 +21,9 @@ type ProjectMemberManagerProps = ProjectManagementDto & {
   updateProject: FormController
   updateRules: FormController
 }
+
+const framedSectionContentClass =
+  "gap-0 px-[clamp(2.5rem,5vw,6rem)] py-6 sm:min-h-0 sm:px-[clamp(2.5rem,5vw,6rem)] sm:py-8"
 
 export function ProjectMemberManager({
   project,
@@ -43,7 +47,7 @@ export function ProjectMemberManager({
   return (
     <div className="space-y-6">
       {capabilities.canManageDetails && (
-        <section className="rounded-lg border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
+        <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
           <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Project settings</h2>
           <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
             Workspace: <span className="font-medium text-outer-space-500 dark:text-platinum-500">{workspace.name}</span>
@@ -89,11 +93,11 @@ export function ProjectMemberManager({
               <ActionFeedback state={updateProject.state} />
             </div>
           </form>
-        </section>
+        </TechFrameCard>
       )}
 
       {capabilities.canManageBoardRules && (
-        <section className="rounded-lg border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
+        <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
           <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Board permissions</h2>
           <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
             Control whether editors may assign and unassign project members on tasks.
@@ -124,11 +128,11 @@ export function ProjectMemberManager({
             </button>
             <ActionFeedback state={updateRules.state} />
           </form>
-        </section>
+        </TechFrameCard>
       )}
 
       {capabilities.canManageMembers && (
-        <section className="rounded-lg border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
+        <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
           <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Members</h2>
           <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
             Invite an active member of this workspace to the board. Workspace outsiders are never available in this
@@ -292,11 +296,11 @@ export function ProjectMemberManager({
               <MemberRowController key={member.id} projectId={project.id} member={member} />
             ))}
           </div>
-        </section>
+        </TechFrameCard>
       )}
 
       {capabilities.canDeleteProject && (
-        <section className="rounded-lg border border-yellow-300 bg-yellow-50 p-6 dark:border-yellow-800 dark:bg-yellow-900/20">
+        <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
           <h2 className="font-semibold text-lg text-yellow-900 dark:text-yellow-100">Project controls</h2>
           <form action={deleteProject.action} className="mt-4">
             <input type="hidden" name="projectId" value={project.id} />
@@ -312,7 +316,7 @@ export function ProjectMemberManager({
               Deleting a project also deletes its lists, tasks, and memberships.
             </p>
           </form>
-        </section>
+        </TechFrameCard>
       )}
     </div>
   )

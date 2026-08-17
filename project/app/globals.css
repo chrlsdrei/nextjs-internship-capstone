@@ -51,6 +51,7 @@
   --scroll-track-edge: #0b2d55;
   --scroll-thumb: #0878bd;
   --scroll-thumb-highlight: #22dff5;
+  --text-stroke: rgb(1 7 18 / 72%);
 }
 
 @theme inline {
@@ -146,11 +147,16 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-oxanium), sans-serif;
+    font-weight: 500;
+    -webkit-text-stroke: 0.18px var(--text-stroke);
+    paint-order: stroke fill;
   }
 
   h1,
   h2 {
     font-family: var(--font-inter), sans-serif;
+    font-weight: 750;
+    -webkit-text-stroke-width: 0.32px;
   }
 
   h3,
@@ -159,6 +165,15 @@
   h6,
   legend {
     font-family: var(--font-sora), sans-serif;
+    font-weight: 650;
+    -webkit-text-stroke-width: 0.24px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-weight: 600;
   }
 }
 
