@@ -1,8 +1,7 @@
 import { Calendar, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
-
+import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
 import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
 import type { BoardListDto, BoardTaskDto } from "@/features/board/board.types"
-import { OrnamentalFrame } from "@/features/board/components/ornamental-frame"
 import { LabelBadge } from "@/features/labels/components/label-badge"
 import type { ActionState } from "@/lib/action-state"
 import { cn } from "@/lib/utils"

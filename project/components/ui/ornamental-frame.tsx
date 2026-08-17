@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
 
-type OrnamentalFrameProps = {
+export type OrnamentalFrameProps = {
   variant: "column" | "task"
   title?: string
   actions?: ReactNode

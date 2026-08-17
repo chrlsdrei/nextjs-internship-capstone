@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 
+import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
 import type { BoardListDto } from "@/features/board/board.types"
-import { OrnamentalFrame } from "@/features/board/components/ornamental-frame"
 
 export function BoardColumn({
   list,
