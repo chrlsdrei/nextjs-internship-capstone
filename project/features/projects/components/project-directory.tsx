@@ -52,13 +52,13 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
             className="w-full rounded-lg border border-french-gray-300 bg-white py-2 pr-4 pl-10 text-outer-space-500 placeholder-paynes-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500 dark:border-paynes-gray-400 dark:bg-outer-space-500 dark:text-platinum-500 dark:placeholder-french-gray-400"
           />
         </label>
-        <label className="inline-flex items-center gap-2 rounded-lg border border-french-gray-300 px-3 py-2 text-outer-space-500 dark:border-paynes-gray-400 dark:text-platinum-500">
-          <Filter size={16} />
+        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/25 bg-blue-950/55 px-3 py-2 text-white focus-within:border-cyan-300/60 focus-within:ring-2 focus-within:ring-cyan-300/30">
+          <Filter className="shrink-0 text-cyan-100" size={16} />
           <span className="sr-only">Filter by role</span>
           <select
             value={role}
             onChange={(event) => setRole(event.target.value as typeof role)}
-            className="bg-transparent focus:outline-none"
+            className="w-full min-w-44 bg-transparent text-white [color-scheme:dark] focus:outline-none [&>option]:bg-[#081b31] [&>option]:text-white"
           >
             <option value="all">All roles</option>
             <option value="board_admin">Board administrator</option>
@@ -66,12 +66,12 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
             <option value="viewer">Viewer</option>
           </select>
         </label>
-        <label className="inline-flex items-center gap-2 rounded-lg border border-french-gray-300 px-3 py-2 text-outer-space-500 dark:border-paynes-gray-400 dark:text-platinum-500">
+        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/25 bg-blue-950/55 px-3 py-2 text-white focus-within:border-cyan-300/60 focus-within:ring-2 focus-within:ring-cyan-300/30">
           <span className="sr-only">Filter by workspace</span>
           <select
             value={workspaceId}
             onChange={(event) => setWorkspaceId(event.target.value)}
-            className="max-w-56 bg-transparent focus:outline-none"
+            className="w-full min-w-52 max-w-60 bg-transparent text-white [color-scheme:dark] focus:outline-none [&>option]:bg-[#081b31] [&>option]:text-white"
           >
             <option value="all">All workspaces</option>
             {workspaces.map((workspace) => (
