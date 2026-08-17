@@ -35,7 +35,6 @@ import { TaskCardController } from "@/features/board/controllers/task-card.contr
 import { TaskDialogController } from "@/features/board/controllers/task-dialog.controller"
 import { useTaskDrag } from "@/features/board/controllers/use-task-drag"
 import { moveTaskOptimistically as calculateTaskMove, useBoardStore } from "@/features/board/stores/board.store"
-import { LabelPaletteController } from "@/features/labels/controllers/label-palette.controller"
 
 type TaskMovePreview = [taskId: string, targetListId: string, targetIndex: number]
 
@@ -278,7 +277,6 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
 
   return (
     <section aria-label="Project board" className="space-y-4">
-      {canManage && <LabelPaletteController projectId={projectId} labels={board.labels} />}
       <BoardFilters
         search={search}
         priority={priority}
@@ -402,6 +400,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           board={board}
           canEditTask={true}
           canAssignTasks={board.capabilities.canAssignTasks}
+          canManageLabels={canManage}
           onClose={() => setCreateListId(null)}
         />
       )}
@@ -413,6 +412,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           board={board}
           canEditTask={canEdit}
           canAssignTasks={board.capabilities.canAssignTasks}
+          canManageLabels={canManage}
           task={editingTask}
           onClose={() => setEditingTask(null)}
         />

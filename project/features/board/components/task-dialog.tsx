@@ -28,6 +28,7 @@ type TaskDialogProps = {
   onAssigneeSearchChange: (value: string) => void
   onAssigneeToggle: (memberId: string) => void
   onAssigneeClear: () => void
+  labelPalette?: ReactNode
   comments?: ReactNode
 }
 
@@ -51,6 +52,7 @@ export function TaskDialog({
   onAssigneeSearchChange,
   onAssigneeToggle,
   onAssigneeClear,
+  labelPalette,
   comments,
 }: TaskDialogProps) {
   const isEditing = Boolean(task)
@@ -205,6 +207,7 @@ export function TaskDialog({
             )}
           </div>
         </form>
+        {labelPalette && <div className="mt-6">{labelPalette}</div>}
         {comments && <div className="mt-6">{comments}</div>}
       </div>
     </div>

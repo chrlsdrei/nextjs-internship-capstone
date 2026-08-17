@@ -9,6 +9,7 @@ import { retainActiveMemberSelections, toggleAssigneeFilter, toggleLabelFilter }
 import { TaskDialog } from "@/features/board/components/task-dialog"
 import { useBoardStore } from "@/features/board/stores/board.store"
 import { TaskCommentsController } from "@/features/comments/controllers/task-comments.controller"
+import { LabelPaletteController } from "@/features/labels/controllers/label-palette.controller"
 import type { LabelDto } from "@/features/labels/label.types"
 import { initialActionState } from "@/lib/action-state"
 
@@ -22,10 +23,22 @@ type TaskDialogControllerProps = {
   onClose: () => void
   canEditTask: boolean
   canAssignTasks: boolean
+  canManageLabels: boolean
 }
 
 export function TaskDialogController(props: TaskDialogControllerProps) {
-  const { board, canAssignTasks, canEditTask, labels, members, onClose, projectId, task, ...dialogProps } = props
+  const {
+    board,
+    canAssignTasks,
+    canEditTask,
+    canManageLabels,
+    labels,
+    members,
+    onClose,
+    projectId,
+    task,
+    ...dialogProps
+  } = props
   const router = useRouter()
   const action = task ? updateTaskAction : createTaskAction
   const [state, formAction, isPending] = useActionState(action, initialActionState)
@@ -54,6 +67,14 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
   useEffect(() => {
     setSelectedAssigneeIds((current) => retainActiveMemberSelections(current, members))
   }, [members])
+
+  useEffect(() => {
+    const availableLabelIds = new Set(labels.map((label) => label.id))
+    setSelectedLabelIds((current) => {
+      const retained = current.filter((id) => availableLabelIds.has(id))
+      return retained.length === current.length ? current : retained
+    })
+  }, [labels])
 
   useEffect(() => {
     if (state.status === "error" && previousBoard.current) {
@@ -88,6 +109,9 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
       onAssigneeSearchChange={setAssigneeSearch}
       onAssigneeToggle={(memberId) => setSelectedAssigneeIds((current) => toggleAssigneeFilter(current, memberId))}
       onAssigneeClear={() => setSelectedAssigneeIds([])}
+      labelPalette={
+        task && canManageLabels ? <LabelPaletteController projectId={projectId} labels={labels} /> : undefined
+      }
       comments={
         task ? <TaskCommentsController projectId={projectId} taskId={task.id} canComment={canEditTask} /> : undefined
       }
