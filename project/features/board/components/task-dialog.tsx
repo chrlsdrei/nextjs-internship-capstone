@@ -1,6 +1,7 @@
 import { Trash2, X } from "lucide-react"
 import type { ReactNode } from "react"
 
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
 import { AssigneeMultiSelect } from "@/features/assignments/components/assignee-multi-select"
 import type { BoardMemberDto, BoardTaskDto } from "@/features/board/board.types"
@@ -71,7 +72,7 @@ export function TaskDialog({
       aria-modal="true"
       aria-labelledby="task-dialog-title"
     >
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 dark:bg-outer-space-500">
+      <ScrollArea className="max-h-[90vh] w-full max-w-2xl rounded-lg bg-white p-6 dark:bg-outer-space-500">
         <div className="flex items-center justify-between gap-4">
           <h2 id="task-dialog-title" className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500">
             {isEditing ? (canEditTask ? "Edit task" : "Task details") : "Create task"}
@@ -239,7 +240,7 @@ export function TaskDialog({
         )}
         {labelPalette && <div className="mt-6">{labelPalette}</div>}
         {comments && <div className="mt-6">{comments}</div>}
-      </div>
+      </ScrollArea>
     </div>
   )
 }

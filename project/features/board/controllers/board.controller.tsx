@@ -20,6 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { useEffect, useMemo, useRef, useState } from "react"
 
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { BoardListDto, BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
 import {
   retainActiveMemberSelections,
@@ -337,7 +338,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
             setActiveDrag(null)
           }}
         >
-          <div className="flex items-start gap-4 overflow-x-auto px-1 pb-4 pt-5 scrollbar-thin">
+          <ScrollArea orientation="horizontal" className="flex items-start gap-4 px-1 pb-4 pt-5">
             {visibleLists.map((list) => {
               const originalList = board.lists.find((candidate) => candidate.id === list.id)
               if (!originalList) return null
@@ -356,7 +357,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
               )
             })}
             {canManage && <CreateListController projectId={projectId} />}
-          </div>
+          </ScrollArea>
           <DragOverlay>
             {overlayLocation?.task ? (
               <div className="pointer-events-none w-[min(19rem,calc(100vw-3rem))] scale-[1.015] opacity-95 drop-shadow-[0_18px_25px_rgb(0_0_0/0.5)]">
