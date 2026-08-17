@@ -3,7 +3,6 @@ import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 export type OrnamentalFrameProps = {
-  variant: "column" | "task"
   title?: string
   actions?: ReactNode
   children: ReactNode
@@ -40,15 +39,12 @@ function CornerFlourish({ position }: { position: "top-left" | "top-right" | "bo
   )
 }
 
-function CrownFlourish({ compact }: { compact: boolean }) {
+function CrownFlourish() {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 180 50"
-      className={cn(
-        "absolute left-1/2 top-0 -translate-x-1/2 overflow-visible text-[var(--ornament-accent)] drop-shadow-[0_0_5px_var(--ornament-glow)]",
-        compact ? "h-9 w-32 -translate-y-[45%]" : "h-12 w-44 -translate-y-[32%]",
-      )}
+      className="absolute left-1/2 top-0 h-12 w-44 -translate-x-1/2 -translate-y-[32%] overflow-visible text-[var(--ornament-accent)] drop-shadow-[0_0_5px_var(--ornament-glow)]"
       fill="none"
     >
       <path
@@ -69,7 +65,6 @@ function CrownFlourish({ compact }: { compact: boolean }) {
 }
 
 export function OrnamentalFrame({
-  variant,
   title,
   actions,
   children,
@@ -77,14 +72,11 @@ export function OrnamentalFrame({
   contentClassName,
   isHighlighted = false,
 }: OrnamentalFrameProps) {
-  const isColumn = variant === "column"
-
   return (
     <div
-      data-ornamental-frame={variant}
+      data-slot="ornamental-frame"
       className={cn(
-        "relative isolate flex overflow-visible border border-[var(--ornament-edge-bright)] bg-[var(--ornament-surface)] text-[var(--ornament-foreground)] shadow-[inset_0_0_0_2px_var(--ornament-edge-dark),inset_0_0_28px_var(--ornament-depth),0_10px_30px_rgb(0_10_25/0.38)] transition-[border-color,box-shadow] duration-200",
-        isColumn ? "min-h-72 flex-col rounded-sm px-3 pb-3 pt-5" : "mt-4 min-h-40 flex-col rounded-sm px-4 pb-4 pt-7",
+        "relative isolate flex min-h-0 flex-col overflow-visible rounded-sm border border-[var(--ornament-edge-bright)] bg-[var(--ornament-surface)] px-3 pb-3 pt-7 text-[var(--ornament-foreground)] shadow-[inset_0_0_0_2px_var(--ornament-edge-dark),inset_0_0_28px_var(--ornament-depth),0_10px_30px_rgb(0_10_25/0.38)] transition-[border-color,box-shadow] duration-200",
         isHighlighted &&
           "border-[var(--ornament-accent)] shadow-[inset_0_0_0_2px_var(--ornament-edge-bright),inset_0_0_32px_var(--ornament-depth),0_0_18px_var(--ornament-glow)]",
         className,
@@ -105,10 +97,10 @@ export function OrnamentalFrame({
         <CornerFlourish position="bottom-right" />
       </div>
       <div className="pointer-events-none absolute inset-0 z-20">
-        <CrownFlourish compact={!isColumn} />
+        <CrownFlourish />
       </div>
 
-      {isColumn && title && (
+      {title && (
         <header className="relative z-30 mx-5 mb-3 flex min-h-16 items-center justify-center border-[var(--ornament-edge-bright)] border-b px-7 text-center shadow-[0_8px_14px_-12px_var(--ornament-glow)]">
           <h2
             title={title}

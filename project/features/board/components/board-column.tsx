@@ -23,10 +23,10 @@ export function BoardColumn({
   return (
     <section className="w-[min(20rem,calc(100vw-2rem))] shrink-0 self-start" aria-label={`${list.name} list`}>
       <OrnamentalFrame
-        variant="column"
         title={list.name}
         actions={actions}
         isHighlighted={isDropTarget}
+        className="min-h-72"
         contentClassName="flex flex-col"
       >
         <p className="mb-2 px-2 text-[0.7rem] text-[var(--ornament-muted)] tracking-wide">

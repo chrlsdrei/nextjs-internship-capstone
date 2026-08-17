@@ -1,5 +1,5 @@
 import { Calendar } from "lucide-react"
-import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
+import { TaskFrame } from "@/components/ui/task-frame"
 import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
 import type { BoardTaskDto } from "@/features/board/board.types"
 import { LabelBadge } from "@/features/labels/components/label-badge"
@@ -19,8 +19,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
   }[task.priority]
   return (
     <article>
-      <OrnamentalFrame
-        variant="task"
+      <TaskFrame
         className={cn(
           isDragging && "opacity-35",
           isOverlay &&
@@ -56,7 +55,7 @@ export function TaskCard({ task, isDragging = false, isOverlay = false }: TaskCa
           )}
           <AssigneeIdentities assignees={task.assignees} />
         </div>
-      </OrnamentalFrame>
+      </TaskFrame>
     </article>
   )
 }

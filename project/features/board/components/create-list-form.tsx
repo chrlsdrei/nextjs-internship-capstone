@@ -16,7 +16,7 @@ export function CreateListForm({
   isPending: boolean
 }) {
   return (
-    <OrnamentalFrame variant="task" className="min-w-72" contentClassName="px-1 py-1">
+    <OrnamentalFrame className="min-w-72" contentClassName="px-1 py-1">
       <form action={formAction} className="flex flex-col gap-3">
         <label className="font-medium text-[var(--ornament-foreground)] text-sm">
           New list

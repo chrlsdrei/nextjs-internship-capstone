@@ -26,7 +26,7 @@ export function ActivityHistory({
   onLoadMore: () => void
 }) {
   return (
-    <OrnamentalFrame variant="task" className="w-full" contentClassName="px-2 py-1 sm:px-4 sm:py-2">
+    <OrnamentalFrame className="w-full" contentClassName="px-2 py-1 sm:px-4 sm:py-2">
       <section aria-labelledby="project-activity-heading">
         <div className="flex items-start justify-between gap-4">
           <div>
