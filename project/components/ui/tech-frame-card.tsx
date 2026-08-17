@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 type TechFrameCardProps = React.ComponentProps<"div"> & {
   /** Adds a brighter frame treatment for selected or drag-over states. */
   isHighlighted?: boolean
+  contentClassName?: string
 }
 
 function FrameDecoration() {
@@ -70,7 +71,7 @@ function FrameDecoration() {
   )
 }
 
-function TechFrameCard({ className, isHighlighted = false, children, ...props }: TechFrameCardProps) {
+function TechFrameCard({ className, contentClassName, isHighlighted = false, children, ...props }: TechFrameCardProps) {
   return (
     <div
       data-highlighted={isHighlighted || undefined}
@@ -97,7 +98,12 @@ function TechFrameCard({ className, isHighlighted = false, children, ...props }:
           "group-data-[highlighted]/tech-card:opacity-100",
         )}
       />
-      <div className="relative z-10 flex min-h-[calc(10rem-28px)] flex-col gap-6 px-4 py-5 sm:min-h-[calc(10rem-36px)] sm:px-6 sm:py-6">
+      <div
+        className={cn(
+          "relative z-10 flex min-h-[calc(10rem-28px)] flex-col gap-6 px-4 py-5 sm:min-h-[calc(10rem-36px)] sm:px-6 sm:py-6",
+          contentClassName,
+        )}
+      >
         {children}
       </div>
     </div>

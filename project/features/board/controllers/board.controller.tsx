@@ -29,7 +29,8 @@ import {
   toggleLabelFilter,
 } from "@/features/board/board-filtering"
 import { BoardColumn } from "@/features/board/components/board-column"
-import { BoardFilters } from "@/features/board/components/board-filters"
+import { BoardFilterModal } from "@/features/board/components/board-filter-modal"
+import { BoardToolbar } from "@/features/board/components/board-toolbar"
 import { CreateListController } from "@/features/board/controllers/create-list.controller"
 import { ListControlsController } from "@/features/board/controllers/list-controls.controller"
 import { TaskCardController } from "@/features/board/controllers/task-card.controller"
@@ -129,8 +130,19 @@ function DroppableBoardColumn({
   )
 }
 
-export function BoardController({ projectId, serverBoard }: { projectId: string; serverBoard: ProjectBoardDto }) {
+export function BoardController({
+  projectId,
+  projectTitle,
+  projectDescription,
+  serverBoard,
+}: {
+  projectId: string
+  projectTitle: string
+  projectDescription: string | null
+  serverBoard: ProjectBoardDto
+}) {
   const [search, setSearch] = useState("")
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const [priority, setPriority] = useState<"all" | BoardTaskDto["priority"]>("all")
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([])
   const [includeUnassigned, setIncludeUnassigned] = useState(false)
@@ -175,6 +187,8 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
   const canManage = board.capabilities.canManageLists
   const canEdit = board.capabilities.canEditTasks
   const listIds = board.lists.map((list) => list.id)
+  const activeFilterCount =
+    (priority === "all" ? 0 : 1) + selectedAssigneeIds.length + (includeUnassigned ? 1 : 0) + selectedLabelIds.length
   const visibleLists = useMemo(() => {
     return board.lists.map((list) => ({
       ...list,
@@ -265,15 +279,25 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
 
   return (
     <section aria-label="Project board" className="space-y-4">
-      <BoardFilters
+      <BoardToolbar
+        projectId={projectId}
+        title={projectTitle}
+        description={projectDescription}
         search={search}
+        activeFilterCount={activeFilterCount}
+        canManage={canManage}
+        onSearchChange={setSearch}
+        onOpenFilters={() => setFiltersOpen(true)}
+      />
+      <BoardFilterModal
+        open={filtersOpen}
         priority={priority}
         selectedAssigneeIds={selectedAssigneeIds}
         includeUnassigned={includeUnassigned}
         selectedLabelIds={selectedLabelIds}
         members={board.members}
         labels={board.labels}
-        onSearchChange={setSearch}
+        onClose={() => setFiltersOpen(false)}
         onPriorityChange={setPriority}
         onAssigneeToggle={(memberId) => setSelectedAssigneeIds((current) => toggleAssigneeFilter(current, memberId))}
         onUnassignedToggle={() => setIncludeUnassigned((current) => !current)}
@@ -283,6 +307,12 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
         }}
         onLabelToggle={(labelId) => setSelectedLabelIds((current) => toggleLabelFilter(current, labelId))}
         onClearLabels={() => setSelectedLabelIds([])}
+        onClearAll={() => {
+          setPriority("all")
+          setSelectedAssigneeIds([])
+          setIncludeUnassigned(false)
+          setSelectedLabelIds([])
+        }}
       />
       <p className="sr-only" role="status" aria-live="polite">
         {isSaving ? "Saving task movement" : (error ?? "")}
