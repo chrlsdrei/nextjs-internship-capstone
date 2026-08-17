@@ -1,4 +1,4 @@
-import { X } from "lucide-react"
+import { Trash2, X } from "lucide-react"
 import type { ReactNode } from "react"
 
 import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
@@ -18,6 +18,9 @@ type TaskDialogProps = {
   onSubmit: () => void
   state: ActionState
   isPending: boolean
+  deleteAction?: (payload: FormData) => void
+  deleteState: ActionState
+  isDeleting: boolean
   canEditTask: boolean
   canAssignTasks: boolean
   labels: LabelDto[]
@@ -42,6 +45,9 @@ export function TaskDialog({
   onSubmit,
   state,
   isPending,
+  deleteAction,
+  deleteState,
+  isDeleting,
   canEditTask,
   canAssignTasks,
   labels,
@@ -56,6 +62,7 @@ export function TaskDialog({
   comments,
 }: TaskDialogProps) {
   const isEditing = Boolean(task)
+  const deleteFormId = task ? `delete-task-${task.id}` : undefined
 
   return (
     <div
@@ -78,6 +85,12 @@ export function TaskDialog({
             <X size={20} />
           </button>
         </div>
+        {task && deleteAction && (
+          <form id={deleteFormId} action={deleteAction}>
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="taskId" value={task.id} />
+          </form>
+        )}
         <form action={formAction} onSubmit={onSubmit} className="mt-5 space-y-4">
           <input type="hidden" name="projectId" value={projectId} />
           {task ? (
@@ -192,21 +205,38 @@ export function TaskDialog({
               {state.message}
             </p>
           )}
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="rounded px-4 py-2 hover:bg-platinum-500">
-              {canEditTask ? "Cancel" : "Close"}
-            </button>
-            {canEditTask && (
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            {task && deleteAction && (
               <button
                 type="submit"
-                disabled={isPending}
-                className="rounded bg-blue-munsell-500 px-4 py-2 text-white disabled:opacity-60"
+                form={deleteFormId}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-2 rounded px-4 py-2 text-red-600 hover:bg-red-50 disabled:opacity-60 dark:hover:bg-red-950"
               >
-                {isPending ? "Saving…" : isEditing ? "Save task" : "Create task"}
+                <Trash2 aria-hidden="true" size={16} /> {isDeleting ? "Deleting…" : "Delete task"}
               </button>
             )}
+            <div className="ml-auto flex gap-3">
+              <button type="button" onClick={onClose} className="rounded px-4 py-2 hover:bg-platinum-500">
+                {canEditTask ? "Cancel" : "Close"}
+              </button>
+              {canEditTask && (
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="rounded bg-blue-munsell-500 px-4 py-2 text-white disabled:opacity-60"
+                >
+                  {isPending ? "Saving…" : isEditing ? "Save task" : "Create task"}
+                </button>
+              )}
+            </div>
           </div>
         </form>
+        {deleteState.status === "error" && (
+          <p role="alert" className="mt-2 text-red-600 text-sm">
+            {deleteState.message}
+          </p>
+        )}
         {labelPalette && <div className="mt-6">{labelPalette}</div>}
         {comments && <div className="mt-6">{comments}</div>}
       </div>

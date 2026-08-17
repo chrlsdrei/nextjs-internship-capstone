@@ -84,7 +84,6 @@ function DroppableBoardColumn({
   projectId,
   list,
   originalList,
-  allLists,
   listIds,
   canManage,
   canEdit,
@@ -94,7 +93,6 @@ function DroppableBoardColumn({
   projectId: string
   list: BoardListDto
   originalList: BoardListDto
-  allLists: BoardListDto[]
   listIds: string[]
   canManage: boolean
   canEdit: boolean
@@ -123,18 +121,7 @@ function DroppableBoardColumn({
     >
       <SortableContext items={list.tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
         {list.tasks.map((task) => (
-          <SortableTask
-            key={task.id}
-            projectId={projectId}
-            task={task}
-            lists={allLists}
-            listId={list.id}
-            taskIds={originalList.tasks.map((item) => item.id)}
-            index={originalList.tasks.findIndex((item) => item.id === task.id)}
-            canDelete={canManage}
-            canEdit={canEdit}
-            onEdit={() => onEditTask(task)}
-          />
+          <SortableTask key={task.id} task={task} canEdit={canEdit} onEdit={() => onEditTask(task)} />
         ))}
       </SortableContext>
     </BoardColumn>
@@ -360,7 +347,6 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
                   projectId={projectId}
                   list={list}
                   originalList={originalList}
-                  allLists={board.lists}
                   listIds={listIds}
                   canManage={canManage}
                   canEdit={canEdit}
@@ -374,18 +360,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           <DragOverlay>
             {overlayLocation?.task ? (
               <div className="pointer-events-none w-[min(19rem,calc(100vw-3rem))] scale-[1.015] opacity-95 drop-shadow-[0_18px_25px_rgb(0_0_0/0.5)]">
-                <TaskCardController
-                  projectId={projectId}
-                  task={overlayLocation.task}
-                  lists={board.lists}
-                  listId={overlayLocation.list.id}
-                  taskIds={overlayLocation.list.tasks.map((task) => task.id)}
-                  index={overlayLocation.index}
-                  canDelete={canManage}
-                  canEdit={canEdit}
-                  onEdit={() => undefined}
-                  isOverlay
-                />
+                <TaskCardController task={overlayLocation.task} canEdit={canEdit} onEdit={() => undefined} isOverlay />
               </div>
             ) : null}
           </DragOverlay>
@@ -401,6 +376,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           canEditTask={true}
           canAssignTasks={board.capabilities.canAssignTasks}
           canManageLabels={canManage}
+          canDeleteTask={board.capabilities.canDeleteTasks}
           onClose={() => setCreateListId(null)}
         />
       )}
@@ -413,6 +389,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
           canEditTask={canEdit}
           canAssignTasks={board.capabilities.canAssignTasks}
           canManageLabels={canManage}
+          canDeleteTask={board.capabilities.canDeleteTasks}
           task={editingTask}
           onClose={() => setEditingTask(null)}
         />

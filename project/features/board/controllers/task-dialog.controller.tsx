@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useRef, useState } from "react"
 
-import { createTaskAction, updateTaskAction } from "@/features/board/actions/board.actions"
+import { createTaskAction, deleteTaskAction, updateTaskAction } from "@/features/board/actions/board.actions"
 import type { BoardMemberDto, BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
 import { retainActiveMemberSelections, toggleAssigneeFilter, toggleLabelFilter } from "@/features/board/board-filtering"
 import { TaskDialog } from "@/features/board/components/task-dialog"
@@ -24,12 +24,14 @@ type TaskDialogControllerProps = {
   canEditTask: boolean
   canAssignTasks: boolean
   canManageLabels: boolean
+  canDeleteTask: boolean
 }
 
 export function TaskDialogController(props: TaskDialogControllerProps) {
   const {
     board,
     canAssignTasks,
+    canDeleteTask,
     canEditTask,
     canManageLabels,
     labels,
@@ -42,6 +44,7 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
   const router = useRouter()
   const action = task ? updateTaskAction : createTaskAction
   const [state, formAction, isPending] = useActionState(action, initialActionState)
+  const [deleteState, deleteAction, isDeleting] = useActionState(deleteTaskAction, initialActionState)
   const [selectedLabelIds, setSelectedLabelIds] = useState(() => task?.labels.map((label) => label.id) ?? [])
   const [selectedAssigneeIds, setSelectedAssigneeIds] = useState(
     () => task?.assignees.map((assignee) => assignee.id) ?? [],
@@ -88,6 +91,13 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
     }
   }, [onClose, projectId, restoreBoard, router, state])
 
+  useEffect(() => {
+    if (deleteState.status === "success") {
+      router.refresh()
+      onClose()
+    }
+  }, [deleteState, onClose, router])
+
   return (
     <TaskDialog
       {...dialogProps}
@@ -102,6 +112,9 @@ export function TaskDialogController(props: TaskDialogControllerProps) {
       onSubmit={beginOptimisticUpdate}
       state={state}
       isPending={isPending}
+      deleteAction={task && canDeleteTask ? deleteAction : undefined}
+      deleteState={deleteState}
+      isDeleting={isDeleting}
       selectedLabelIds={selectedLabelIds}
       onLabelToggle={(labelId) => setSelectedLabelIds((current) => toggleLabelFilter(current, labelId))}
       selectedAssigneeIds={selectedAssigneeIds}
