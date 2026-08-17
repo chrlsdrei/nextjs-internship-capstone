@@ -1,12 +1,10 @@
-import type { ReactNode } from "react"
+import type * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-export type OrnamentalFrameProps = {
+export type OrnamentalFrameProps = React.ComponentProps<"div"> & {
   title?: string
-  actions?: ReactNode
-  children: ReactNode
-  className?: string
+  actions?: React.ReactNode
   contentClassName?: string
   isHighlighted?: boolean
 }
@@ -71,6 +69,7 @@ export function OrnamentalFrame({
   className,
   contentClassName,
   isHighlighted = false,
+  ...props
 }: OrnamentalFrameProps) {
   return (
     <div
@@ -81,6 +80,7 @@ export function OrnamentalFrame({
           "border-[var(--ornament-accent)] shadow-[inset_0_0_0_2px_var(--ornament-edge-bright),inset_0_0_32px_var(--ornament-depth),0_0_18px_var(--ornament-glow)]",
         className,
       )}
+      {...props}
     >
       <div
         aria-hidden="true"
