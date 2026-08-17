@@ -1,6 +1,5 @@
 "use client"
 
-import type { ReactNode } from "react"
 import { useActionState } from "react"
 
 import { deleteTaskAction, moveTaskAction, reorderTasksAction } from "@/features/board/actions/board.actions"
@@ -18,7 +17,8 @@ type TaskCardControllerProps = {
   canDelete: boolean
   canEdit: boolean
   onEdit: () => void
-  dragHandle?: ReactNode
+  isDragging?: boolean
+  isOverlay?: boolean
 }
 
 export function TaskCardController(props: TaskCardControllerProps) {

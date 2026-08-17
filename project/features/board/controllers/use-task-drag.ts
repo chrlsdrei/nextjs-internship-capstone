@@ -7,7 +7,18 @@ import { moveTaskCommandAction, reorderTasksCommandAction } from "@/features/boa
 import type { ProjectBoardDto } from "@/features/board/board.types"
 import { useBoardStore } from "@/features/board/stores/board.store"
 
-/** Coordinates optimistic task drags with the existing authorized server actions. */
+function taskLocation(board: ProjectBoardDto, taskId: string) {
+  const list = board.lists.find((candidate) => candidate.tasks.some((task) => task.id === taskId))
+  if (!list) return null
+  const index = list.tasks.findIndex((task) => task.id === taskId)
+  return { list, index }
+}
+
+function taskOrder(board: ProjectBoardDto) {
+  return board.lists.map((list) => `${list.id}:${list.tasks.map((task) => task.id).join(",")}`).join("|")
+}
+
+/** Coordinates live task previews and one final authorized persistence request. */
 export function useTaskDrag(projectId: string, board: ProjectBoardDto) {
   const router = useRouter()
   const setSaving = useBoardStore((state) => state.setSaving)
@@ -15,46 +26,73 @@ export function useTaskDrag(projectId: string, board: ProjectBoardDto) {
   const restoreBoard = useBoardStore((state) => state.restoreBoard)
   const moveTaskOptimistically = useBoardStore((state) => state.moveTaskOptimistically)
 
-  const moveTask = useCallback(
-    async (taskId: string, sourceListId: string, targetListId: string, targetIndex: number) => {
-      const previousBoard = board
-      moveTaskOptimistically(projectId, previousBoard, taskId, targetListId, targetIndex)
+  const previewTaskMove = useCallback(
+    (taskId: string, targetListId: string, targetIndex: number) => {
+      moveTaskOptimistically(projectId, board, taskId, targetListId, targetIndex)
+    },
+    [board, moveTaskOptimistically, projectId],
+  )
+
+  const cancelTaskMove = useCallback(
+    (initialBoard: ProjectBoardDto) => {
+      restoreBoard(projectId, initialBoard)
+    },
+    [projectId, restoreBoard],
+  )
+
+  const commitTaskMove = useCallback(
+    async (taskId: string, initialBoard: ProjectBoardDto) => {
+      const finalBoard =
+        useBoardStore.getState().projectId === projectId && useBoardStore.getState().board
+          ? useBoardStore.getState().board
+          : board
+      if (!finalBoard || taskOrder(initialBoard) === taskOrder(finalBoard)) return
+
+      const source = taskLocation(initialBoard, taskId)
+      const target = taskLocation(finalBoard, taskId)
+      if (!source || !target) {
+        restoreBoard(projectId, initialBoard)
+        setError("Task is no longer available")
+        return
+      }
+
       setSaving(true)
       setError(null)
 
       try {
-        if (sourceListId === targetListId) {
-          const sourceList = previousBoard.lists.find((list) => list.id === sourceListId)
-          const activeTask = sourceList?.tasks.find((task) => task.id === taskId)
-          if (!sourceList || !activeTask) throw new Error("Task is no longer available")
-          const taskIds = sourceList.tasks.filter((task) => task.id !== taskId).map((task) => task.id)
-          taskIds.splice(Math.max(0, Math.min(targetIndex, taskIds.length)), 0, activeTask.id)
-          const result = await reorderTasksCommandAction({ projectId, listId: sourceListId, taskIds })
+        if (source.list.id === target.list.id) {
+          const result = await reorderTasksCommandAction({
+            projectId,
+            listId: target.list.id,
+            taskIds: target.list.tasks.map((task) => task.id),
+          })
           if (result.status === "error") throw new Error(result.message)
         } else {
           const result = await moveTaskCommandAction({
             projectId,
             taskId,
-            sourceListId,
-            targetListId,
-            targetIndex,
+            sourceListId: source.list.id,
+            targetListId: target.list.id,
+            targetIndex: target.index,
           })
           if (result.status === "error") throw new Error(result.message)
         }
       } catch (error) {
-        restoreBoard(projectId, previousBoard)
+        restoreBoard(projectId, initialBoard)
         setError(error instanceof Error ? error.message : "Unable to save task movement")
       } finally {
         setSaving(false)
         router.refresh()
       }
     },
-    [board, moveTaskOptimistically, projectId, restoreBoard, router, setError, setSaving],
+    [board, projectId, restoreBoard, router, setError, setSaving],
   )
 
   return {
     isSaving: useBoardStore((state) => state.isSaving),
     error: useBoardStore((state) => state.error),
-    moveTask,
+    previewTaskMove,
+    commitTaskMove,
+    cancelTaskMove,
   }
 }

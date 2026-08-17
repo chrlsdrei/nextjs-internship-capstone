@@ -29,6 +29,14 @@
   --outer-space: #46494c;
   --paynes-gray: #4c5c68;
   --blue-munsell: #1985a1;
+  --ornament-surface: #081b31;
+  --ornament-depth: #020b16;
+  --ornament-edge-dark: #102b52;
+  --ornament-edge-bright: #326ca8;
+  --ornament-accent: #23d8f5;
+  --ornament-glow: #16bfe8;
+  --ornament-foreground: #f1f8ff;
+  --ornament-muted: #a9bfd4;
 }
 
 .dark {
