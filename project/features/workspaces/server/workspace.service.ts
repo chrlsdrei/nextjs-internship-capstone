@@ -75,6 +75,36 @@ function summaryDto(access: WorkspaceAccess, role: WorkspaceRole, memberCount: n
   }
 }
 
+async function detailDto(
+  access: WorkspaceAccess,
+  role: WorkspaceRole,
+  currentUserId: string,
+): Promise<WorkspaceDetailDto> {
+  const members = await listActiveWorkspaceMembers(access.id)
+  const memberDtos: WorkspaceMemberDto[] = members.map((member) => {
+    const memberRole: WorkspaceRole = member.id === access.ownerWorkspaceMemberId ? "owner" : member.role
+    return {
+      id: member.id,
+      userId: member.userId,
+      name: member.name,
+      email: member.email,
+      role: memberRole,
+      joinedAt: member.joinedAt.toISOString(),
+      capabilities: {
+        canChangeRole: canChangeWorkspaceMemberRole(role, memberRole),
+        canRemove: canRemoveWorkspaceMember(role, memberRole, member.userId === currentUserId),
+        canReceiveOwnership: canTransferWorkspaceOwnership(role) && memberRole !== "owner",
+      },
+    }
+  })
+
+  return {
+    ...summaryDto(access, role, memberDtos.length),
+    capabilities: workspaceCapabilities(role),
+    members: memberDtos,
+  }
+}
+
 async function requireWorkspaceAccess(workspaceId: string) {
   const id = workspaceIdSchema.parse(workspaceId)
   const user = await getCurrentDatabaseUser()
@@ -102,29 +132,18 @@ export async function listWorkspaces(): Promise<WorkspaceSummaryDto[]> {
 
 export async function getWorkspaceDetails(workspaceId: string): Promise<WorkspaceDetailDto> {
   const { access, role, user } = await requireWorkspaceAccess(workspaceId)
-  const members = await listActiveWorkspaceMembers(access.id)
-  const memberDtos: WorkspaceMemberDto[] = members.map((member) => {
-    const memberRole: WorkspaceRole = member.id === access.ownerWorkspaceMemberId ? "owner" : member.role
-    return {
-      id: member.id,
-      userId: member.userId,
-      name: member.name,
-      email: member.email,
-      role: memberRole,
-      joinedAt: member.joinedAt.toISOString(),
-      capabilities: {
-        canChangeRole: canChangeWorkspaceMemberRole(role, memberRole),
-        canRemove: canRemoveWorkspaceMember(role, memberRole, member.userId === user.id),
-        canReceiveOwnership: canTransferWorkspaceOwnership(role) && memberRole !== "owner",
-      },
-    }
-  })
+  return detailDto(access, role, user.id)
+}
 
-  return {
-    ...summaryDto(access, role, memberDtos.length),
-    capabilities: workspaceCapabilities(role),
-    members: memberDtos,
-  }
+export async function listWorkspaceTeamDetails(): Promise<WorkspaceDetailDto[]> {
+  const user = await getCurrentDatabaseUser()
+  const memberships = await listActiveWorkspaceMemberships(user.id)
+  return Promise.all(
+    memberships.map((access) => {
+      const role = effectiveRole(access)
+      return detailDto(access, role, user.id)
+    }),
+  )
 }
 
 export async function createWorkspace(input: unknown): Promise<WorkspaceSummaryDto> {
