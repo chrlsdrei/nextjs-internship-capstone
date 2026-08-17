@@ -1,5 +1,7 @@
 import { Building2, CheckCircle, FolderKanban, Users } from "lucide-react"
 
+import { TaskFrame } from "@/components/ui/task-frame"
+
 export function DashboardStats({
   projectCount,
   memberCount,
@@ -21,20 +23,17 @@ export function DashboardStats({
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
-        <div
-          key={stat.name}
-          className="bg-white dark:bg-outer-space-500 overflow-hidden rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6"
-        >
+        <TaskFrame key={stat.name} className="h-full" contentClassName="h-full px-7 py-6 sm:px-8 sm:py-7">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-blue-munsell-100 dark:bg-blue-munsell-900 rounded-lg flex items-center justify-center">
-              <stat.icon className="text-blue-munsell-500" size={20} />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-cyan-400/15 ring-1 ring-cyan-300/20">
+              <stat.icon className="text-cyan-300" size={20} />
             </div>
             <div className="ml-5">
-              <p className="text-sm font-medium text-paynes-gray-500 dark:text-french-gray-400">{stat.name}</p>
-              <p className="text-2xl font-semibold text-outer-space-500 dark:text-platinum-500">{stat.value}</p>
+              <p className="font-medium text-cyan-100/75 text-sm">{stat.name}</p>
+              <p className="font-semibold text-2xl text-white">{stat.value}</p>
             </div>
           </div>
-        </div>
+        </TaskFrame>
       ))}
     </div>
   )
