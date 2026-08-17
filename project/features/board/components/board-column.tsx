@@ -21,7 +21,7 @@ export function BoardColumn({
   dropRef: (element: HTMLDivElement | null) => void
 }) {
   return (
-    <section className="w-[min(20rem,calc(100vw-2rem))] shrink-0" aria-label={`${list.name} list`}>
+    <section className="w-[min(20rem,calc(100vw-2rem))] shrink-0 self-start" aria-label={`${list.name} list`}>
       <OrnamentalFrame
         variant="column"
         title={list.name}
@@ -32,10 +32,7 @@ export function BoardColumn({
         <p className="mb-2 px-2 text-[0.7rem] text-[var(--ornament-muted)] tracking-wide">
           {list.tasks.length} shown · {totalTasks} total
         </p>
-        <div
-          ref={dropRef}
-          className="scrollbar-thin min-h-24 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-sm px-1 py-2"
-        >
+        <div ref={dropRef} className="min-h-24 space-y-3 rounded-sm px-1 py-2">
           {children}
           {list.tasks.length === 0 && (
             <p className="rounded-sm border border-[var(--ornament-edge-bright)] border-dashed bg-[color-mix(in_srgb,var(--ornament-depth)_52%,transparent)] p-4 text-center text-sm text-[var(--ornament-muted)]">

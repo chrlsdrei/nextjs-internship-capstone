@@ -352,7 +352,7 @@ export function BoardController({ projectId, serverBoard }: { projectId: string;
             setActiveDrag(null)
           }}
         >
-          <div className="flex gap-4 overflow-x-auto px-1 pb-4 pt-5 scrollbar-thin">
+          <div className="flex items-start gap-4 overflow-x-auto px-1 pb-4 pt-5 scrollbar-thin">
             {visibleLists.map((list) => {
               const originalList = board.lists.find((candidate) => candidate.id === list.id)
               if (!originalList) return null

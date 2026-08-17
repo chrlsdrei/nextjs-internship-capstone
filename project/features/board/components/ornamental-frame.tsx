@@ -84,9 +84,7 @@ export function OrnamentalFrame({
       data-ornamental-frame={variant}
       className={cn(
         "relative isolate flex overflow-visible border border-[var(--ornament-edge-bright)] bg-[var(--ornament-surface)] text-[var(--ornament-foreground)] shadow-[inset_0_0_0_2px_var(--ornament-edge-dark),inset_0_0_28px_var(--ornament-depth),0_10px_30px_rgb(0_10_25/0.38)] transition-[border-color,box-shadow] duration-200",
-        isColumn
-          ? "h-[clamp(32rem,68vh,48rem)] flex-col rounded-sm px-3 pb-3 pt-5"
-          : "mt-4 min-h-40 flex-col rounded-sm px-4 pb-4 pt-7",
+        isColumn ? "min-h-72 flex-col rounded-sm px-3 pb-3 pt-5" : "mt-4 min-h-40 flex-col rounded-sm px-4 pb-4 pt-7",
         isHighlighted &&
           "border-[var(--ornament-accent)] shadow-[inset_0_0_0_2px_var(--ornament-edge-bright),inset_0_0_32px_var(--ornament-depth),0_0_18px_var(--ornament-glow)]",
         className,
