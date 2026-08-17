@@ -1,7 +1,21 @@
 "use client"
 
 import { UserButton } from "@clerk/nextjs"
-import { BarChart3, Bell, Building2, Calendar, FolderOpen, Home, Menu, Search, Settings, Users, X } from "lucide-react"
+import {
+  BarChart3,
+  Bell,
+  Building2,
+  Calendar,
+  FolderOpen,
+  Home,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings,
+  Users,
+  X,
+} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type React from "react"
@@ -22,6 +36,7 @@ const navigation = [
 export function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
     <div className="min-h-screen bg-platinum-900 dark:bg-outer-space-600">
@@ -35,14 +50,28 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-french-gray-300 border-r bg-white transition-transform duration-300 ease-in-out dark:border-paynes-gray-400 dark:bg-outer-space-500 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-french-gray-300 border-r bg-white transition-[width,transform] duration-300 ease-in-out dark:border-paynes-gray-400 dark:bg-outer-space-500 lg:translate-x-0 ${
+          sidebarCollapsed ? "lg:w-20" : "lg:w-64"
+        } ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <div className="flex h-16 items-center justify-between border-french-gray-300 border-b px-6 dark:border-paynes-gray-400">
-          <Link href="/" className="font-bold text-2xl text-blue-munsell-500">
+        <div
+          className={`flex h-16 items-center border-french-gray-300 border-b dark:border-paynes-gray-400 ${
+            sidebarCollapsed ? "justify-between px-6 lg:justify-center lg:px-2" : "justify-between px-6"
+          }`}
+        >
+          <Link href="/" className={`font-bold text-2xl text-blue-munsell-500 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
             ProjectFlow
           </Link>
+          <button
+            type="button"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-expanded={!sidebarCollapsed}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setSidebarCollapsed((current) => !current)}
+            className="hidden rounded-lg p-2 text-paynes-gray-500 transition-colors hover:bg-platinum-500 hover:text-outer-space-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-munsell-500 dark:text-french-gray-400 dark:hover:bg-paynes-gray-400 dark:hover:text-platinum-500 lg:inline-flex"
+          >
+            {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+          </button>
           <button
             type="button"
             aria-label="Close navigation"
@@ -53,7 +82,7 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
           </button>
         </div>
 
-        <nav aria-label="Dashboard navigation" className="mt-6 px-3">
+        <nav aria-label="Dashboard navigation" className={`mt-6 px-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
           <ul className="space-y-1">
             {navigation.map((item) => {
               const isActive =
@@ -63,15 +92,19 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
                   <Link
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
+                    aria-label={sidebarCollapsed ? item.name : undefined}
+                    title={sidebarCollapsed ? item.name : undefined}
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center rounded-lg px-3 py-2 font-medium text-sm transition-colors ${
+                      sidebarCollapsed ? "lg:justify-center lg:px-2" : ""
+                    } ${
                       isActive
                         ? "bg-blue-munsell-100 text-blue-munsell-700 dark:bg-blue-munsell-800 dark:text-blue-munsell-50"
                         : "text-outer-space-500 hover:bg-platinum-500 dark:text-platinum-500 dark:hover:bg-paynes-gray-400"
                     }`}
                   >
-                    <item.icon className="mr-3" size={20} />
-                    {item.name}
+                    <item.icon className={sidebarCollapsed ? "mr-3 lg:mr-0" : "mr-3"} size={20} />
+                    <span className={sidebarCollapsed ? "lg:sr-only" : undefined}>{item.name}</span>
                   </Link>
                 </li>
               )
@@ -80,7 +113,7 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
         </nav>
       </aside>
 
-      <div className="lg:pl-64">
+      <div className={`transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <header className="sticky top-0 z-30 flex h-16 items-center gap-x-4 border-french-gray-300 border-b bg-white px-4 shadow-sm dark:border-paynes-gray-400 dark:bg-outer-space-500 sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"
