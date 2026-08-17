@@ -37,6 +37,14 @@
   --ornament-glow: #16bfe8;
   --ornament-foreground: #f1f8ff;
   --ornament-muted: #a9bfd4;
+  --tech-card-surface: #0734c4;
+  --tech-card-surface-bright: #075df0;
+  --tech-card-surface-deep: #020b65;
+  --tech-card-foreground: #eefbff;
+  --tech-frame-shadow: #0533d6;
+  --tech-frame-edge: #087cff;
+  --tech-frame-glow: #19edff;
+  --tech-frame-aura: rgba(0, 174, 255, 0.45);
 }
 
 .dark {
