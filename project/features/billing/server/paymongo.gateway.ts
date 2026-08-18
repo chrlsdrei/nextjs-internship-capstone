@@ -34,7 +34,10 @@ async function request<T>(path: string, init: RequestInit & { idempotencyKey?: s
 }
 
 export function paymongoLivemode() {
-  return secretKey().startsWith("sk_live_")
+  const key = secretKey()
+  if (key.startsWith("sk_live_")) return true
+  if (key.startsWith("sk_test_")) return false
+  throw new Error("PAYMONGO_SECRET_KEY must be a PayMongo test or live secret key")
 }
 
 export async function createPaymongoPlan(input: {

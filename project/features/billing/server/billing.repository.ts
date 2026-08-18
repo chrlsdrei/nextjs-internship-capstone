@@ -16,11 +16,17 @@ import {
   workspaces,
 } from "@/server/db/schema"
 
-export async function listActiveBillingPlans(target?: BillingTarget) {
+export async function listActiveBillingPlans(target?: BillingTarget, livemode?: boolean) {
   return db
     .select()
     .from(billingPlans)
-    .where(and(eq(billingPlans.active, true), target ? eq(billingPlans.target, target) : undefined))
+    .where(
+      and(
+        eq(billingPlans.active, true),
+        target ? eq(billingPlans.target, target) : undefined,
+        livemode === undefined ? undefined : eq(billingPlans.livemode, livemode),
+      ),
+    )
     .orderBy(billingPlans.target, billingPlans.amount)
 }
 
