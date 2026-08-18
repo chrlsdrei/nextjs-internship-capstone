@@ -304,8 +304,20 @@ export function verifyPaymongoSignature(rawBody: string, header: string | null) 
   if (!secret || !header) return false
   const parts = Object.fromEntries(header.split(",").map((part) => part.trim().split("=", 2)))
   const timestamp = parts.t
-  const supplied = paymongoLivemode() ? parts.li : parts.te
-  if (!timestamp || !supplied || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false
+  let supplied: string | undefined
+  try {
+    supplied = paymongoLivemode() ? parts.li : parts.te
+  } catch {
+    return false
+  }
+  const timestampNumber = Number(timestamp)
+  if (
+    !timestamp ||
+    !supplied ||
+    !Number.isFinite(timestampNumber) ||
+    Math.abs(Date.now() / 1000 - timestampNumber) > 300
+  )
+    return false
   const expected = createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex")
   if (expected.length !== supplied.length) return false
   return timingSafeEqual(Buffer.from(expected), Buffer.from(supplied))
