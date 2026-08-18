@@ -129,6 +129,33 @@ export const workspaceSettings = pgTable("workspace_settings", {
   ...timestamps,
 })
 
+export const calendarEvents = pgTable(
+  "calendar_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    createdByWorkspaceMemberId: uuid("created_by_workspace_member_id").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    allDay: boolean("all_day").default(false).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.createdByWorkspaceMemberId, table.workspaceId],
+      foreignColumns: [workspaceMembers.id, workspaceMembers.workspaceId],
+      name: "calendar_events_creator_workspace_member_fk",
+    }).onDelete("cascade"),
+    index("calendar_events_workspace_starts_idx").on(table.workspaceId, table.startsAt),
+    index("calendar_events_creator_idx").on(table.createdByWorkspaceMemberId),
+    check("calendar_events_time_order", sql`${table.endsAt} > ${table.startsAt}`),
+  ],
+)
+
 export const projects = pgTable(
   "projects",
   {

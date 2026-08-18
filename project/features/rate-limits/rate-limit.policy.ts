@@ -58,6 +58,10 @@ export const rateLimitPolicies = {
     actor: { maxRequests: 30, windowSeconds: minute },
     workspace: { maxRequests: 180, windowSeconds: minute },
   },
+  "calendar.event.create": {
+    actor: { maxRequests: 30, windowSeconds: minute },
+    workspace: { maxRequests: 180, windowSeconds: minute },
+  },
   "attachment.write": {
     actor: { maxRequests: 20, windowSeconds: 5 * minute },
     workspace: { maxRequests: 100, windowSeconds: 5 * minute },

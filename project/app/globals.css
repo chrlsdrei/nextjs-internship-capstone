@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "react-big-calendar/lib/css/react-big-calendar.css";
 
 /* Legacy dark utilities resolve permanently to the single ornamental theme. */
 @custom-variant dark (&);
@@ -52,6 +53,130 @@
   --scroll-thumb: #0878bd;
   --scroll-thumb-highlight: #22dff5;
   --text-stroke: rgb(1 7 18 / 72%);
+}
+
+/* React Big Calendar inherits the permanent ProjectFlow ornamental theme. */
+.projectflow-calendar .rbc-calendar {
+  color: var(--ornament-foreground);
+  font-family: var(--font-oxanium), sans-serif;
+}
+
+.projectflow-calendar .rbc-toolbar {
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.projectflow-calendar .rbc-toolbar-label {
+  color: #f1f8ff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.projectflow-calendar .rbc-btn-group button {
+  border-color: rgb(35 216 245 / 42%);
+  background: #07182c;
+  color: #dff9ff;
+  font-weight: 650;
+}
+
+.projectflow-calendar .rbc-btn-group button:hover,
+.projectflow-calendar .rbc-btn-group button:focus,
+.projectflow-calendar .rbc-btn-group button.rbc-active {
+  border-color: #23d8f5;
+  background: #123d63;
+  color: #fff;
+  box-shadow: 0 0 12px rgb(22 191 232 / 30%);
+}
+
+.projectflow-calendar .rbc-month-view,
+.projectflow-calendar .rbc-time-view,
+.projectflow-calendar .rbc-agenda-view table.rbc-agenda-table {
+  border-color: rgb(50 108 168 / 70%);
+  background: rgb(2 11 22 / 74%);
+}
+
+.projectflow-calendar .rbc-header,
+.projectflow-calendar .rbc-day-bg,
+.projectflow-calendar .rbc-month-row,
+.projectflow-calendar .rbc-time-header-content,
+.projectflow-calendar .rbc-time-content,
+.projectflow-calendar .rbc-timeslot-group,
+.projectflow-calendar .rbc-agenda-view table.rbc-agenda-table tbody > tr > td,
+.projectflow-calendar .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  border-color: rgb(50 108 168 / 48%);
+}
+
+.projectflow-calendar .rbc-header {
+  padding: 0.65rem 0.25rem;
+  background: #0d223b;
+  color: #bceeff;
+}
+
+.projectflow-calendar .rbc-off-range-bg {
+  background: rgb(1 7 18 / 72%);
+}
+
+.projectflow-calendar .rbc-today {
+  background: rgb(35 216 245 / 10%);
+  box-shadow: inset 0 0 18px rgb(22 191 232 / 9%);
+}
+
+.projectflow-calendar .rbc-date-cell,
+.projectflow-calendar .rbc-time-header-gutter,
+.projectflow-calendar .rbc-time-gutter,
+.projectflow-calendar .rbc-agenda-date-cell,
+.projectflow-calendar .rbc-agenda-time-cell {
+  color: #a9bfd4;
+}
+
+.projectflow-calendar .rbc-event {
+  min-height: 1.45rem;
+  border: 1px solid rgb(108 232 255 / 58%);
+  background: #07508a;
+  color: #f1fbff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+}
+
+.projectflow-calendar .rbc-event--project {
+  border-color: rgb(168 139 250 / 70%);
+  background: #4338ca;
+}
+
+.projectflow-calendar .rbc-event--task {
+  border-color: rgb(45 212 191 / 70%);
+  background: #0f766e;
+}
+
+.projectflow-calendar .rbc-event.rbc-selected,
+.projectflow-calendar .rbc-event:focus {
+  outline: 2px solid #67e8f9;
+  outline-offset: 1px;
+}
+
+.projectflow-calendar .rbc-show-more {
+  color: #67e8f9;
+  background: transparent;
+}
+
+.projectflow-calendar .rbc-overlay {
+  border-color: #326ca8;
+  background: #07182c;
+  color: #f1f8ff;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 55%);
+}
+
+@media (max-width: 640px) {
+  .projectflow-calendar .rbc-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .projectflow-calendar .rbc-toolbar-label {
+    order: -1;
+    padding: 0.25rem;
+    text-align: left;
+  }
 }
 
 @theme inline {
@@ -169,6 +294,7 @@
     -webkit-text-stroke-width: 0.24px;
   }
 
+  /* biome-ignore lint/style/noDescendingSpecificity: global controls intentionally follow component theme rules. */
   button,
   input,
   select,
