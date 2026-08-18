@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
+import { reserveCheckoutPurchase } from "@/features/billing/server/checkout.repository"
 import * as schema from "@/server/db/schema"
 import { billingCheckoutPurchases, billingPlans, users, workspaceMembers, workspaces } from "@/server/db/schema"
 
@@ -169,5 +170,24 @@ describe("billing checkout purchase persistence", () => {
         amount: 29_900,
       }),
     ).rejects.toThrow()
+  })
+
+  it("returns one logical reservation under concurrent retries", async () => {
+    const referenceNumber = `concurrent-${randomUUID()}`
+    const reservation = {
+      planId,
+      target: "user" as const,
+      userId,
+      workspaceId: null,
+      payerUserId: userId,
+      referenceNumber,
+      amount: 29_900,
+      currency: "PHP",
+    }
+
+    const purchases = await Promise.all(Array.from({ length: 6 }, () => reserveCheckoutPurchase(reservation)))
+
+    expect(new Set(purchases.map((purchase) => purchase?.id)).size).toBe(1)
+    expect(purchases.every((purchase) => purchase?.referenceNumber === referenceNumber)).toBe(true)
   })
 })
