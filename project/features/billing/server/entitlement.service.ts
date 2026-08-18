@@ -5,8 +5,6 @@ import { DEFAULT_SUBSCRIPTION_LIMITS, tierGrantsAccess } from "@/features/billin
 import type { UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
 import {
   countWorkspaceCapacity,
-  findCurrentUserSubscription,
-  findCurrentWorkspaceSubscription,
   findFreeBillingPlan,
   findPaidBillingPlan,
   findUserSubscriptionTier,
@@ -15,29 +13,22 @@ import {
 } from "@/features/billing/server/billing.repository"
 
 async function userTierContext(userId: string) {
-  const [tierState, providerSubscription] = await Promise.all([
-    findUserSubscriptionTier(userId),
-    findCurrentUserSubscription(userId),
-  ])
+  const tierState = await findUserSubscriptionTier(userId)
   const subscribed = Boolean(tierState && tierGrantsAccess(tierState.tier, tierState.endsAt))
-  return { tierState, providerSubscription, subscribed }
+  return { tierState, subscribed }
 }
 
 async function workspaceTierContext(workspaceId: string) {
-  const [tierState, providerSubscription] = await Promise.all([
-    findWorkspaceSubscriptionTier(workspaceId),
-    findCurrentWorkspaceSubscription(workspaceId),
-  ])
+  const tierState = await findWorkspaceSubscriptionTier(workspaceId)
   const subscribed = Boolean(tierState && tierGrantsAccess(tierState.tier, tierState.endsAt))
-  return { tierState, providerSubscription, subscribed }
+  return { tierState, subscribed }
 }
 
 export async function getUserAiEntitlement(userId: string): Promise<UserAiEntitlementDto> {
-  const { tierState, providerSubscription, subscribed } = await userTierContext(userId)
+  const { tierState, subscribed } = await userTierContext(userId)
   return {
     tier: subscribed ? "pro" : "free",
     subscribed,
-    status: providerSubscription?.subscription.status ?? null,
     periodEndsAt: subscribed ? (tierState?.endsAt?.toISOString() ?? null) : null,
   }
 }
@@ -46,14 +37,13 @@ export async function getWorkspaceEntitlement(
   workspaceId: string,
   actorUserId: string,
 ): Promise<WorkspaceEntitlementDto> {
-  const [{ tierState, providerSubscription, subscribed }, freePlan, paidPlan, capacity, ownerUserId] =
-    await Promise.all([
-      workspaceTierContext(workspaceId),
-      findFreeBillingPlan("workspace"),
-      findPaidBillingPlan("workspace"),
-      countWorkspaceCapacity(workspaceId),
-      findWorkspaceOwnerUserId(workspaceId),
-    ])
+  const [{ tierState, subscribed }, freePlan, paidPlan, capacity, ownerUserId] = await Promise.all([
+    workspaceTierContext(workspaceId),
+    findFreeBillingPlan("workspace"),
+    findPaidBillingPlan("workspace"),
+    countWorkspaceCapacity(workspaceId),
+    findWorkspaceOwnerUserId(workspaceId),
+  ])
   const maxProjects = subscribed
     ? (paidPlan?.maxProjects ?? DEFAULT_SUBSCRIPTION_LIMITS.workspace.proMaxProjects)
     : (freePlan?.maxProjects ?? DEFAULT_SUBSCRIPTION_LIMITS.workspace.freeMaxProjects)
@@ -64,7 +54,6 @@ export async function getWorkspaceEntitlement(
   return {
     tier: subscribed ? "pro" : "free",
     subscribed,
-    status: providerSubscription?.subscription.status ?? null,
     maxProjects,
     maxMembers,
     ...capacity,

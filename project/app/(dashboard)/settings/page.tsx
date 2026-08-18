@@ -12,13 +12,13 @@ export default async function SettingsPage() {
       <div className="relative z-10 mx-auto max-w-6xl space-y-6">
         <TechFrameCard contentClassName="px-10 py-9 sm:px-14">
           <h1 className="font-bold text-3xl text-white">Account settings</h1>
-          <p className="mt-2 text-cyan-100/70">Manage your personal AI subscription and account preferences.</p>
+          <p className="mt-2 text-cyan-100/70">Manage your personal AI access and account preferences.</p>
         </TechFrameCard>
         <BillingPanelController
-          title="User AI plan"
-          description="Unlock Build with AI and AI Tasks across workspaces where you already have permission."
+          title="User AI access"
+          description="Unlock Build with AI and AI Tasks for 30 days across workspaces where you have permission."
           plans={billing.plans}
-          subscription={billing.subscription}
+          access={billing.access}
         />
       </div>
     </div>

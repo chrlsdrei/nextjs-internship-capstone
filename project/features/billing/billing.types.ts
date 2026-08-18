@@ -1,5 +1,4 @@
 export type BillingTarget = "user" | "workspace"
-export type BillingStatus = "incomplete" | "incomplete_cancelled" | "active" | "past_due" | "unpaid" | "cancelled"
 export type SubscriptionTier = "free" | "pro"
 
 export const checkoutPurchaseStatuses = ["pending", "paid", "cancelled", "expired", "failed"] as const
@@ -34,30 +33,20 @@ export type StartCheckoutResult = {
   checkoutUrl: string
 }
 
-/** @deprecated Remove with the recurring PayMongo flow in Step 7. */
-export type SubscriptionDto = {
-  id: string
-  plan: BillingPlanDto
-  target: BillingTarget
-  status: BillingStatus
-  workspaceId: string | null
-  currentPeriodStartsAt: string
-  currentPeriodEndsAt: string
-  nextBillingAt: string | null
-  canManage: boolean
+export type BillingAccessDto = {
+  tier: SubscriptionTier
+  periodEndsAt: string | null
 }
 
 export type UserAiEntitlementDto = {
   tier: SubscriptionTier
   subscribed: boolean
-  status: BillingStatus | null
   periodEndsAt: string | null
 }
 
 export type WorkspaceEntitlementDto = {
   tier: SubscriptionTier
   subscribed: boolean
-  status: BillingStatus | null
   maxProjects: number | null
   maxMembers: number | null
   projectCount: number

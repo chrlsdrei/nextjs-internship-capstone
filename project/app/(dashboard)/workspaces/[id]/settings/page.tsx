@@ -21,10 +21,10 @@ export default async function WorkspaceSettingsPage({ params }: { params: Promis
         <WorkspaceHeader current="settings" workspace={workspace} />
         <WorkspaceSettingsController workspace={workspace} />
         <BillingPanelController
-          title="Workspace plan"
-          description="Unlock AI board summaries and higher project and member capacity for this workspace."
+          title="Workspace Pro access"
+          description="Unlock AI board summaries and higher project and member capacity for 30 days."
           plans={billing.plans}
-          subscription={billing.subscription}
+          access={billing.access}
           workspaceId={workspace.id}
           canManage={billing.canManage}
         />
