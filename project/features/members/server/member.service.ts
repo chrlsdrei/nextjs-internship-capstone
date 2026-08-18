@@ -1,6 +1,7 @@
 import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
+import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { listProjectInvitations } from "@/features/invitations/server/invitation.service"
 import {
   projectMemberIdSchema,
@@ -92,6 +93,7 @@ export async function addProjectMember(projectId: string, input: unknown) {
   const id = projectIdSchema.parse(projectId)
   const values = projectMemberSchema.parse(input)
   const access = await requireProjectPermission(id, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   const workspaceMember = await findWorkspaceMemberByEmail(id, values.email)
   if (!workspaceMember) {
     throw new ProjectAccessError("That user must be an active member of this project's workspace", 422)
@@ -132,6 +134,7 @@ export async function updateProjectMemberRole(projectId: string, memberId: strin
   const parsedMemberId = projectMemberIdSchema.parse(memberId)
   const values = updateProjectMemberRoleSchema.parse(input)
   const access = await requireProjectPermission(id, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   const currentMember = (await listProjectMembers(id)).find((member) => member.id === parsedMemberId)
   if (!currentMember) throw new ProjectAccessError("Project member not found", 404)
   await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })

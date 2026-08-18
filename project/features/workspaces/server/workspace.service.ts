@@ -2,6 +2,7 @@ import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
 import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
+import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
 import {
   countActiveWorkspaceMembers,
@@ -75,6 +76,36 @@ function summaryDto(access: WorkspaceAccess, role: WorkspaceRole, memberCount: n
   }
 }
 
+async function detailDto(
+  access: WorkspaceAccess,
+  role: WorkspaceRole,
+  currentUserId: string,
+): Promise<WorkspaceDetailDto> {
+  const members = await listActiveWorkspaceMembers(access.id)
+  const memberDtos: WorkspaceMemberDto[] = members.map((member) => {
+    const memberRole: WorkspaceRole = member.id === access.ownerWorkspaceMemberId ? "owner" : member.role
+    return {
+      id: member.id,
+      userId: member.userId,
+      name: member.name,
+      email: member.email,
+      role: memberRole,
+      joinedAt: member.joinedAt.toISOString(),
+      capabilities: {
+        canChangeRole: canChangeWorkspaceMemberRole(role, memberRole),
+        canRemove: canRemoveWorkspaceMember(role, memberRole, member.userId === currentUserId),
+        canReceiveOwnership: canTransferWorkspaceOwnership(role) && memberRole !== "owner",
+      },
+    }
+  })
+
+  return {
+    ...summaryDto(access, role, memberDtos.length),
+    capabilities: workspaceCapabilities(role),
+    members: memberDtos,
+  }
+}
+
 async function requireWorkspaceAccess(workspaceId: string) {
   const id = workspaceIdSchema.parse(workspaceId)
   const user = await getCurrentDatabaseUser()
@@ -102,29 +133,18 @@ export async function listWorkspaces(): Promise<WorkspaceSummaryDto[]> {
 
 export async function getWorkspaceDetails(workspaceId: string): Promise<WorkspaceDetailDto> {
   const { access, role, user } = await requireWorkspaceAccess(workspaceId)
-  const members = await listActiveWorkspaceMembers(access.id)
-  const memberDtos: WorkspaceMemberDto[] = members.map((member) => {
-    const memberRole: WorkspaceRole = member.id === access.ownerWorkspaceMemberId ? "owner" : member.role
-    return {
-      id: member.id,
-      userId: member.userId,
-      name: member.name,
-      email: member.email,
-      role: memberRole,
-      joinedAt: member.joinedAt.toISOString(),
-      capabilities: {
-        canChangeRole: canChangeWorkspaceMemberRole(role, memberRole),
-        canRemove: canRemoveWorkspaceMember(role, memberRole, member.userId === user.id),
-        canReceiveOwnership: canTransferWorkspaceOwnership(role) && memberRole !== "owner",
-      },
-    }
-  })
+  return detailDto(access, role, user.id)
+}
 
-  return {
-    ...summaryDto(access, role, memberDtos.length),
-    capabilities: workspaceCapabilities(role),
-    members: memberDtos,
-  }
+export async function listWorkspaceTeamDetails(): Promise<WorkspaceDetailDto[]> {
+  const user = await getCurrentDatabaseUser()
+  const memberships = await listActiveWorkspaceMemberships(user.id)
+  return Promise.all(
+    memberships.map((access) => {
+      const role = effectiveRole(access)
+      return detailDto(access, role, user.id)
+    }),
+  )
 }
 
 export async function createWorkspace(input: unknown): Promise<WorkspaceSummaryDto> {
@@ -148,6 +168,7 @@ export async function updateWorkspaceDetails(workspaceId: string, input: unknown
   const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
   if (role !== "owner") throw new WorkspaceAccessError("Only the workspace owner can update its details", 403)
+  await requireWorkspaceWritable(access.id, user.id)
   await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const workspace = await updateWorkspaceDetailsById(access.id, values)
   if (!workspace) throw new WorkspaceAccessError("Workspace not found", 404)
@@ -164,6 +185,7 @@ export async function updateWorkspaceSettings(workspaceId: string, input: unknow
   const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
   if (role !== "owner") throw new WorkspaceAccessError("Only the workspace owner can update settings", 403)
+  await requireWorkspaceWritable(access.id, user.id)
   await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
   const settings = await updateWorkspaceSettingsById(access.id, values)
   if (!settings) throw new WorkspaceAccessError("Workspace settings not found", 404)
@@ -186,6 +208,7 @@ export async function updateWorkspaceMemberRole(workspaceId: string, input: unkn
   const values = updateWorkspaceMemberRoleSchema.parse(input)
   const { access, role, user } = await requireWorkspaceAccess(workspaceId)
   requireActiveWorkspace(access)
+  await requireWorkspaceWritable(access.id, user.id)
   const target = await findActiveWorkspaceMember(access.id, values.memberId)
   if (!target) throw new WorkspaceAccessError("Workspace member not found", 404)
   const targetSnapshot = (await listActiveWorkspaceMembers(access.id)).find((member) => member.id === target.id)
@@ -247,6 +270,7 @@ export async function transferWorkspaceOwnershipTo(workspaceId: string, input: u
   if (!canTransferWorkspaceOwnership(role)) {
     throw new WorkspaceAccessError("Only the owner can transfer workspace ownership", 403)
   }
+  await requireWorkspaceWritable(access.id, user.id)
   if (values.newOwnerMemberId === access.ownerWorkspaceMemberId) {
     throw new WorkspaceAccessError("This member already owns the workspace", 400)
   }

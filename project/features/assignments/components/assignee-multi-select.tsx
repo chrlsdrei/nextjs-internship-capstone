@@ -1,5 +1,6 @@
 import { Check, Search, Users } from "lucide-react"
 
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { AssigneeIdentities } from "@/features/assignments/components/assignee-identities"
 import type { BoardMemberDto } from "@/features/board/board.types"
 
@@ -47,7 +48,7 @@ export function AssigneeMultiSelect({
             className="w-full rounded-t-lg bg-white py-2 pr-3 pl-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-munsell-500 dark:bg-outer-space-400"
           />
         </label>
-        <div className="max-h-44 space-y-1 overflow-y-auto p-2">
+        <ScrollArea className="max-h-44 space-y-1 p-2">
           {visibleMembers.length === 0 ? (
             <p className="px-2 py-3 text-center text-paynes-gray-500 text-sm dark:text-french-gray-400">
               No active project members match your search.
@@ -81,7 +82,7 @@ export function AssigneeMultiSelect({
               )
             })
           )}
-        </div>
+        </ScrollArea>
       </div>
       <div className="mt-2 flex min-h-7 items-center gap-2 text-paynes-gray-500 text-xs dark:text-french-gray-400">
         {selectedMembers.length > 0 ? (

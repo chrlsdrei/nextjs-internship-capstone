@@ -34,6 +34,19 @@ export const workspaceMemberRole = pgEnum("workspace_member_role", ["admin", "me
 export const rateLimitScope = pgEnum("rate_limit_scope", ["actor", "workspace"])
 export const invitationKind = pgEnum("invitation_kind", ["workspace", "project"])
 export const invitationDeliveryStatus = pgEnum("invitation_delivery_status", ["pending", "sent", "failed"])
+export const subscriptionTier = pgEnum("subscription_tier", ["free", "pro"])
+export const billingTarget = pgEnum("billing_target", ["user", "workspace"])
+export const billingInterval = pgEnum("billing_interval", ["monthly", "yearly"])
+export const billingSubscriptionStatus = pgEnum("billing_subscription_status", [
+  "incomplete",
+  "incomplete_cancelled",
+  "active",
+  "past_due",
+  "unpaid",
+  "cancelled",
+])
+export const billingWebhookStatus = pgEnum("billing_webhook_status", ["processing", "processed", "failed"])
+export const aiUsageStatus = pgEnum("ai_usage_status", ["pending", "succeeded", "failed"])
 
 export const users = pgTable(
   "users",
@@ -45,6 +58,9 @@ export const users = pgTable(
     name: text("name").notNull(),
     systemRole: systemRole("system_role").default("user").notNull(),
     accountStatus: accountStatus("account_status").default("active").notNull(),
+    subscriptionTier: subscriptionTier("subscription_tier").default("free").notNull(),
+    subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
+    subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
   },
@@ -62,6 +78,9 @@ export const workspaces = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     status: workspaceStatus("status").default("active").notNull(),
+    subscriptionTier: subscriptionTier("subscription_tier").default("free").notNull(),
+    subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
+    subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
     ownerWorkspaceMemberId: uuid("owner_workspace_member_id").notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
@@ -109,6 +128,33 @@ export const workspaceSettings = pgTable("workspace_settings", {
   membersCanCreateProjects: boolean("members_can_create_projects").default(false).notNull(),
   ...timestamps,
 })
+
+export const calendarEvents = pgTable(
+  "calendar_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    createdByWorkspaceMemberId: uuid("created_by_workspace_member_id").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    allDay: boolean("all_day").default(false).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.createdByWorkspaceMemberId, table.workspaceId],
+      foreignColumns: [workspaceMembers.id, workspaceMembers.workspaceId],
+      name: "calendar_events_creator_workspace_member_fk",
+    }).onDelete("cascade"),
+    index("calendar_events_workspace_starts_idx").on(table.workspaceId, table.startsAt),
+    index("calendar_events_creator_idx").on(table.createdByWorkspaceMemberId),
+    check("calendar_events_time_order", sql`${table.endsAt} > ${table.startsAt}`),
+  ],
+)
 
 export const projects = pgTable(
   "projects",
@@ -380,6 +426,111 @@ export const rateLimitBuckets = pgTable(
   ],
 )
 
+export const billingPlans = pgTable(
+  "billing_plans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    code: text("code").notNull(),
+    name: text("name").notNull(),
+    target: billingTarget("target").notNull(),
+    paymongoPlanId: text("paymongo_plan_id"),
+    livemode: boolean("livemode").default(false).notNull(),
+    currency: text("currency").default("PHP").notNull(),
+    amount: integer("amount").default(0).notNull(),
+    interval: billingInterval("interval").default("monthly").notNull(),
+    maxProjects: integer("max_projects"),
+    maxMembers: integer("max_members"),
+    version: integer("version").default(1).notNull(),
+    active: boolean("active").default(true).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("billing_plans_code_version_unique").on(table.code, table.version, table.livemode),
+    uniqueIndex("billing_plans_paymongo_plan_unique").on(table.paymongoPlanId),
+    index("billing_plans_target_active_idx").on(table.target, table.active, table.livemode),
+    check("billing_plans_amount_nonnegative", sql`${table.amount} >= 0`),
+    check("billing_plans_version_positive", sql`${table.version} > 0`),
+    check(
+      "billing_plans_limits_nonnegative",
+      sql`coalesce(${table.maxProjects}, 0) >= 0 AND coalesce(${table.maxMembers}, 0) >= 0`,
+    ),
+  ],
+)
+
+export const billingCustomers = pgTable(
+  "billing_customers",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    paymongoCustomerId: text("paymongo_customer_id").notNull(),
+    livemode: boolean("livemode").default(false).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("billing_customers_user_mode_unique").on(table.userId, table.livemode),
+    uniqueIndex("billing_customers_paymongo_unique").on(table.paymongoCustomerId),
+  ],
+)
+
+export const billingSubscriptions = pgTable(
+  "billing_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    planId: uuid("plan_id")
+      .notNull()
+      .references(() => billingPlans.id, { onDelete: "restrict" }),
+    target: billingTarget("target").notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
+    payerUserId: uuid("payer_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    billingCustomerId: uuid("billing_customer_id")
+      .notNull()
+      .references(() => billingCustomers.id, { onDelete: "restrict" }),
+    paymongoSubscriptionId: text("paymongo_subscription_id").notNull(),
+    status: billingSubscriptionStatus("status").default("incomplete").notNull(),
+    currentPeriodStartsAt: timestamp("current_period_starts_at", { withTimezone: true }).notNull(),
+    currentPeriodEndsAt: timestamp("current_period_ends_at", { withTimezone: true }).notNull(),
+    nextBillingAt: timestamp("next_billing_at", { withTimezone: true }),
+    providerUpdatedAt: timestamp("provider_updated_at", { withTimezone: true }).notNull(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    cancellationReason: text("cancellation_reason"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("billing_subscriptions_paymongo_unique").on(table.paymongoSubscriptionId),
+    index("billing_subscriptions_user_status_idx").on(table.userId, table.status),
+    index("billing_subscriptions_workspace_status_idx").on(table.workspaceId, table.status),
+    check(
+      "billing_subscriptions_target_valid",
+      sql`(${table.target} = 'user' AND ${table.userId} IS NOT NULL AND ${table.workspaceId} IS NULL) OR (${table.target} = 'workspace' AND ${table.workspaceId} IS NOT NULL AND ${table.userId} IS NULL)`,
+    ),
+    check("billing_subscriptions_period_valid", sql`${table.currentPeriodEndsAt} > ${table.currentPeriodStartsAt}`),
+  ],
+)
+
+export const billingWebhookEvents = pgTable(
+  "billing_webhook_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type").notNull(),
+    status: billingWebhookStatus("status").default("processing").notNull(),
+    providerCreatedAt: timestamp("provider_created_at", { withTimezone: true }).notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    errorCode: text("error_code"),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("billing_webhook_events_provider_id_unique").on(table.providerEventId),
+    index("billing_webhook_events_status_created_idx").on(table.status, table.providerCreatedAt),
+  ],
+)
+
 export const aiUsageLogs = pgTable(
   "ai_usage_logs",
   {
@@ -393,9 +544,21 @@ export const aiUsageLogs = pgTable(
     projectId: uuid("project_id"),
     quotaKey: text("quota_key").notNull(),
     action: text("action").notNull(),
+    requestKey: text("request_key").default(sql`gen_random_uuid()::text`).notNull(),
+    status: aiUsageStatus("status").default("pending").notNull(),
     model: text("model"),
+    providerRequestId: text("provider_request_id"),
+    resultResourceId: uuid("result_resource_id"),
+    inputTokens: integer("input_tokens").default(0).notNull(),
+    outputTokens: integer("output_tokens").default(0).notNull(),
     tokensUsed: integer("tokens_used").default(0).notNull(),
+    errorCode: text("error_code"),
+    periodStartsAt: timestamp("period_starts_at", { withTimezone: true }).defaultNow().notNull(),
+    periodEndsAt: timestamp("period_ends_at", { withTimezone: true })
+      .default(sql`NOW() + INTERVAL '1 month'`)
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     foreignKey({
@@ -406,7 +569,51 @@ export const aiUsageLogs = pgTable(
     index("ai_usage_logs_workspace_quota_created_idx").on(table.workspaceId, table.quotaKey, table.createdAt),
     index("ai_usage_logs_user_created_idx").on(table.userId, table.createdAt),
     index("ai_usage_logs_project_created_idx").on(table.projectId, table.createdAt),
-    check("ai_usage_logs_tokens_nonnegative", sql`${table.tokensUsed} >= 0`),
+    uniqueIndex("ai_usage_logs_user_request_unique").on(table.userId, table.requestKey),
+    check(
+      "ai_usage_logs_tokens_nonnegative",
+      sql`${table.inputTokens} >= 0 AND ${table.outputTokens} >= 0 AND ${table.tokensUsed} >= 0`,
+    ),
+    check("ai_usage_logs_period_valid", sql`${table.periodEndsAt} > ${table.periodStartsAt}`),
+  ],
+)
+
+export const aiBoardSummaries = pgTable(
+  "ai_board_summaries",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    usageId: uuid("usage_id")
+      .notNull()
+      .references(() => aiUsageLogs.id, { onDelete: "restrict" }),
+    metrics: jsonb("metrics").$type<Record<string, unknown>>().notNull(),
+    executiveSummary: text("executive_summary").notNull(),
+    progress: text("progress").notNull(),
+    deadlineRisks: text("deadline_risks").notNull(),
+    unassignedWork: text("unassigned_work").notNull(),
+    activityHighlights: jsonb("activity_highlights").$type<string[]>().notNull(),
+    suggestedActions: jsonb("suggested_actions").$type<string[]>().notNull(),
+    activityWindowStartsAt: timestamp("activity_window_starts_at", { withTimezone: true }).notNull(),
+    activityWindowEndsAt: timestamp("activity_window_ends_at", { withTimezone: true }).notNull(),
+    model: text("model").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.projectId, table.workspaceId],
+      foreignColumns: [projects.id, projects.workspaceId],
+      name: "ai_board_summaries_project_workspace_fk",
+    }).onDelete("cascade"),
+    uniqueIndex("ai_board_summaries_usage_unique").on(table.usageId),
+    index("ai_board_summaries_project_created_idx").on(table.projectId, table.createdAt, table.id),
   ],
 )
 

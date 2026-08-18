@@ -17,6 +17,7 @@ describe("rate-limit policy", () => {
     expect(getRateLimitPolicy("invitation.revoke").workspace).toBeDefined()
     expect(getRateLimitPolicy("comment.write").workspace).toBeDefined()
     expect(getRateLimitPolicy("attachment.write").workspace).toBeDefined()
+    expect(getRateLimitPolicy("calendar.event.create").workspace).toBeDefined()
   })
 
   it("preserves structured rate-limit metadata in action errors", () => {

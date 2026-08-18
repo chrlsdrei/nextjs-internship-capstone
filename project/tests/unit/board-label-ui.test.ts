@@ -117,6 +117,78 @@ describe("board label UI behavior", () => {
     }
     const moved = moveTaskOptimistically(boardWithTarget, task.id, targetListId, 0)
     expect(moved.lists[1]?.tasks[0]?.assignees).toEqual([charles, ada])
+    expect(moved.lists[1]?.tasks[0]?.position).toBe(0)
+  })
+
+  it("reorders tasks with array positions normalized for live drag previews", () => {
+    const sourceList = board.lists[0]
+    if (!sourceList) throw new Error("Expected the test board to contain a source list")
+    const secondTask: BoardTaskDto = {
+      ...task,
+      id: "00000000-0000-4000-8000-000000000021",
+      title: "Review login page",
+      position: 1,
+    }
+    const thirdTask: BoardTaskDto = {
+      ...task,
+      id: "00000000-0000-4000-8000-000000000022",
+      title: "Deploy login page",
+      position: 2,
+    }
+    const boardWithTasks = {
+      ...board,
+      lists: [{ ...sourceList, tasks: [task, secondTask, thirdTask] }],
+    }
+
+    const reordered = moveTaskOptimistically(boardWithTasks, task.id, sourceList.id, 2)
+
+    expect(reordered.lists[0]?.tasks.map((item) => item.id)).toEqual([secondTask.id, thirdTask.id, task.id])
+    expect(reordered.lists[0]?.tasks.map((item) => item.position)).toEqual([0, 1, 2])
+  })
+
+  it("normalizes both columns when previewing a cross-column drag", () => {
+    const sourceList = board.lists[0]
+    if (!sourceList) throw new Error("Expected the test board to contain a source list")
+    const secondTask: BoardTaskDto = {
+      ...task,
+      id: "00000000-0000-4000-8000-000000000021",
+      title: "Review login page",
+      position: 1,
+    }
+    const targetTask: BoardTaskDto = {
+      ...task,
+      id: "00000000-0000-4000-8000-000000000022",
+      title: "Deploy login page",
+      position: 0,
+    }
+    const targetListId = "00000000-0000-4000-8000-000000000041"
+    const boardWithTarget = {
+      ...board,
+      lists: [
+        { ...sourceList, tasks: [task, secondTask] },
+        { id: targetListId, name: "Doing", position: 1, tasks: [targetTask] },
+      ],
+    }
+
+    const moved = moveTaskOptimistically(boardWithTarget, task.id, targetListId, 1)
+
+    expect(moved.lists[0]?.tasks.map((item) => [item.id, item.position])).toEqual([[secondTask.id, 0]])
+    expect(moved.lists[1]?.tasks.map((item) => [item.id, item.position])).toEqual([
+      [targetTask.id, 0],
+      [task.id, 1],
+    ])
+  })
+
+  it("does not publish a new Zustand state for a no-op drag preview", () => {
+    const projectId = redLabel.projectId
+    const sourceList = board.lists[0]
+    if (!sourceList) throw new Error("Expected the test board to contain a source list")
+    useBoardStore.getState().setBoard(projectId, board)
+    const stateBeforePreview = useBoardStore.getState()
+
+    stateBeforePreview.moveTaskOptimistically(projectId, board, task.id, sourceList.id, 0)
+
+    expect(useBoardStore.getState()).toBe(stateBeforePreview)
   })
 
   it("selects a readable foreground for light and dark label colors", () => {

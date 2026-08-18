@@ -1,8 +1,9 @@
 "use client"
 
+import { arrayMove } from "@dnd-kit/sortable"
 import { create } from "zustand"
 
-import type { BoardMemberDto, ProjectBoardDto } from "@/features/board/board.types"
+import type { BoardMemberDto, BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
 import type { LabelDto } from "@/features/labels/label.types"
 
 type BoardState = {
@@ -48,16 +49,31 @@ export function moveTaskOptimistically(
   const task = sourceList.tasks.find((item) => item.id === taskId)
   if (!task) return board
 
-  const sourceTasks = sourceList.tasks.filter((item) => item.id !== taskId)
-  const targetTasks = sourceList.id === targetList.id ? sourceTasks : [...targetList.tasks]
+  const withPositions = (tasks: BoardTaskDto[]) =>
+    tasks.map((item, position) => (item.position === position ? item : { ...item, position }))
+
+  if (sourceList.id === targetList.id) {
+    const sourceIndex = sourceList.tasks.findIndex((item) => item.id === taskId)
+    const insertionIndex = Math.max(0, Math.min(targetIndex, sourceList.tasks.length - 1))
+    if (sourceIndex === insertionIndex) return board
+    const reorderedTasks = withPositions(arrayMove(sourceList.tasks, sourceIndex, insertionIndex))
+    return {
+      ...board,
+      lists: board.lists.map((list) => (list.id === sourceList.id ? { ...list, tasks: reorderedTasks } : list)),
+    }
+  }
+
+  const sourceTasks = withPositions(sourceList.tasks.filter((item) => item.id !== taskId))
+  const targetTasks = [...targetList.tasks]
   const insertionIndex = Math.max(0, Math.min(targetIndex, targetTasks.length))
   targetTasks.splice(insertionIndex, 0, task)
+  const positionedTargetTasks = withPositions(targetTasks)
 
   return {
     ...board,
     lists: board.lists.map((list) => {
       if (list.id === sourceList.id) return { ...list, tasks: sourceTasks }
-      if (list.id === targetList.id) return { ...list, tasks: targetTasks }
+      if (list.id === targetList.id) return { ...list, tasks: positionedTargetTasks }
       return list
     }),
   }
@@ -98,7 +114,9 @@ export const useBoardStore = create<BoardState>((set) => ({
   moveTaskOptimistically: (projectId, fallbackBoard, taskId, targetListId, targetIndex) =>
     set((state) => {
       const board = state.projectId === projectId && state.board ? state.board : fallbackBoard
-      return { projectId, board: moveTaskOptimistically(board, taskId, targetListId, targetIndex) }
+      const nextBoard = moveTaskOptimistically(board, taskId, targetListId, targetIndex)
+      if (state.projectId === projectId && nextBoard === board) return state
+      return { projectId, board: nextBoard }
     }),
   setTaskLabelsOptimistically: (projectId, fallbackBoard, taskId, labels) => {
     let previousBoard = fallbackBoard

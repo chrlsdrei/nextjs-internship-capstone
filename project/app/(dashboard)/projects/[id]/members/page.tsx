@@ -17,18 +17,12 @@ export default async function ProjectMembersPage({ params }: { params: Promise<{
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Link
-            href="/projects"
-            className="rounded p-2 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400"
-            aria-label="Back to projects"
-          >
+          <Link href="/projects" className="rounded p-2 text-cyan-50 hover:bg-white/10" aria-label="Back to projects">
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">
-              Manage {data.project.title}
-            </h1>
-            <p className="mt-1 text-paynes-gray-500 dark:text-french-gray-500">Project settings and team membership.</p>
+            <h1 className="text-3xl font-bold text-white">Manage {data.project.title}</h1>
+            <p className="mt-1 text-cyan-100/75">Project settings and team membership.</p>
           </div>
         </div>
         <ProjectMemberManagerController {...data} />

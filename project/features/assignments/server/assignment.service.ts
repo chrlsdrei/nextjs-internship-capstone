@@ -7,6 +7,7 @@ import {
   removeTaskAssigneeRecord,
   replaceTaskAssignees,
 } from "@/features/assignments/server/assignment.repository"
+import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { changeTaskAssigneeSchema, setTaskAssigneesSchema } from "@/features/board/board.schema"
 import { findProjectById } from "@/features/projects/server/project.repository"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
@@ -40,8 +41,9 @@ export async function recordTaskAssignmentActivity(projectId: string, taskId: st
   })
 }
 
-async function assignmentAccess(projectId: string) {
+async function assignmentAccess(projectId: string, allowCleanup = false) {
   const access = await requireProjectPermission(projectId, "edit")
+  if (!allowCleanup) await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceRateLimit({ action: "board.task.write", actorUserId: access.user.id, workspaceId: access.workspaceId })
   return access
 }
@@ -64,7 +66,7 @@ export async function addTaskAssignee(input: unknown) {
 
 export async function removeTaskAssignee(input: unknown) {
   const values = changeTaskAssigneeSchema.parse(input)
-  const access = await assignmentAccess(values.projectId)
+  const access = await assignmentAccess(values.projectId, true)
   const result = await removeTaskAssigneeRecord(values.projectId, access.user.id, values.taskId, values.projectMemberId)
   if (!result) throw new ProjectAccessError("Task is invalid or you cannot assign tasks", 404)
   await recordTaskAssignmentActivity(values.projectId, values.taskId, access)

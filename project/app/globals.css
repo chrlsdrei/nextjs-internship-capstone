@@ -1,56 +1,182 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "react-big-calendar/lib/css/react-big-calendar.css";
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* Legacy dark utilities resolve permanently to the single ornamental theme. */
+@custom-variant dark (&);
 
 :root {
-  --background: #ffffff;
-  --foreground: #46494c;
-  --card: #ffffff;
-  --card-foreground: #46494c;
-  --popover: #ffffff;
-  --popover-foreground: #46494c;
-  --primary: #1985a1;
-  --primary-foreground: #ffffff;
-  --secondary: #dcdcdd;
-  --secondary-foreground: #46494c;
-  --muted: #f1f1f1;
-  --muted-foreground: #4c5c68;
-  --accent: #c7edf6;
-  --accent-foreground: #0a3540;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --border: #c5c3c6;
-  --input: #c5c3c6;
-  --ring: #1985a1;
+  color-scheme: dark;
+  --background: #020b16;
+  --foreground: #f1f8ff;
+  --card: #081b31;
+  --card-foreground: #f1f8ff;
+  --popover: #07182c;
+  --popover-foreground: #f1f8ff;
+  --primary: #23d8f5;
+  --primary-foreground: #020b16;
+  --secondary: #102b52;
+  --secondary-foreground: #f1f8ff;
+  --muted: #0d223b;
+  --muted-foreground: #a9bfd4;
+  --accent: #123d63;
+  --accent-foreground: #e5f8ff;
+  --destructive: #ef4444;
+  --destructive-foreground: #fff4f4;
+  --border: #326ca8;
+  --input: #102b52;
+  --ring: #23d8f5;
   --radius: 0.625rem;
-  --platinum: #dcdcdd;
-  --french-gray: #c5c3c6;
-  --outer-space: #46494c;
-  --paynes-gray: #4c5c68;
-  --blue-munsell: #1985a1;
+  --platinum: #f1f8ff;
+  --french-gray: #a9bfd4;
+  --outer-space: #081b31;
+  --paynes-gray: #102b52;
+  --blue-munsell: #23d8f5;
+  --ornament-surface: #081b31;
+  --ornament-depth: #020b16;
+  --ornament-edge-dark: #102b52;
+  --ornament-edge-bright: #326ca8;
+  --ornament-accent: #23d8f5;
+  --ornament-glow: #16bfe8;
+  --ornament-foreground: #f1f8ff;
+  --ornament-muted: #a9bfd4;
+  --tech-card-surface: #0734c4;
+  --tech-card-surface-bright: #075df0;
+  --tech-card-surface-deep: #020b65;
+  --tech-card-foreground: #eefbff;
+  --tech-frame-shadow: #0533d6;
+  --tech-frame-edge: #087cff;
+  --tech-frame-glow: #19edff;
+  --tech-frame-aura: rgba(0, 174, 255, 0.45);
+  --scroll-track: #02091a;
+  --scroll-track-edge: #0b2d55;
+  --scroll-thumb: #0878bd;
+  --scroll-thumb-highlight: #22dff5;
+  --text-stroke: rgb(1 7 18 / 72%);
 }
 
-.dark {
-  --background: #2b2c2e;
-  --foreground: #f1f1f1;
-  --card: #46494c;
-  --card-foreground: #f1f1f1;
-  --popover: #46494c;
-  --popover-foreground: #f1f1f1;
-  --primary: #22b3d7;
-  --primary-foreground: #0e0f0f;
-  --secondary: #4c5c68;
-  --secondary-foreground: #f1f1f1;
-  --muted: #3c4953;
-  --muted-foreground: #c5c3c6;
-  --accent: #0a3540;
-  --accent-foreground: #c7edf6;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #677d8e;
-  --input: #677d8e;
-  --ring: #22b3d7;
+/* React Big Calendar inherits the permanent ProjectFlow ornamental theme. */
+.projectflow-calendar .rbc-calendar {
+  color: var(--ornament-foreground);
+  font-family: var(--font-oxanium), sans-serif;
+}
+
+.projectflow-calendar .rbc-toolbar {
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.projectflow-calendar .rbc-toolbar-label {
+  color: #f1f8ff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.projectflow-calendar .rbc-btn-group button {
+  border-color: rgb(35 216 245 / 42%);
+  background: #07182c;
+  color: #dff9ff;
+  font-weight: 650;
+}
+
+.projectflow-calendar .rbc-btn-group button:hover,
+.projectflow-calendar .rbc-btn-group button:focus,
+.projectflow-calendar .rbc-btn-group button.rbc-active {
+  border-color: #23d8f5;
+  background: #123d63;
+  color: #fff;
+  box-shadow: 0 0 12px rgb(22 191 232 / 30%);
+}
+
+.projectflow-calendar .rbc-month-view,
+.projectflow-calendar .rbc-time-view,
+.projectflow-calendar .rbc-agenda-view table.rbc-agenda-table {
+  border-color: rgb(50 108 168 / 70%);
+  background: rgb(2 11 22 / 74%);
+}
+
+.projectflow-calendar .rbc-header,
+.projectflow-calendar .rbc-day-bg,
+.projectflow-calendar .rbc-month-row,
+.projectflow-calendar .rbc-time-header-content,
+.projectflow-calendar .rbc-time-content,
+.projectflow-calendar .rbc-timeslot-group,
+.projectflow-calendar .rbc-agenda-view table.rbc-agenda-table tbody > tr > td,
+.projectflow-calendar .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  border-color: rgb(50 108 168 / 48%);
+}
+
+.projectflow-calendar .rbc-header {
+  padding: 0.65rem 0.25rem;
+  background: #0d223b;
+  color: #bceeff;
+}
+
+.projectflow-calendar .rbc-off-range-bg {
+  background: rgb(1 7 18 / 72%);
+}
+
+.projectflow-calendar .rbc-today {
+  background: rgb(35 216 245 / 10%);
+  box-shadow: inset 0 0 18px rgb(22 191 232 / 9%);
+}
+
+.projectflow-calendar .rbc-date-cell,
+.projectflow-calendar .rbc-time-header-gutter,
+.projectflow-calendar .rbc-time-gutter,
+.projectflow-calendar .rbc-agenda-date-cell,
+.projectflow-calendar .rbc-agenda-time-cell {
+  color: #a9bfd4;
+}
+
+.projectflow-calendar .rbc-event {
+  min-height: 1.45rem;
+  border: 1px solid rgb(108 232 255 / 58%);
+  background: #07508a;
+  color: #f1fbff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+}
+
+.projectflow-calendar .rbc-event--project {
+  border-color: rgb(168 139 250 / 70%);
+  background: #4338ca;
+}
+
+.projectflow-calendar .rbc-event--task {
+  border-color: rgb(45 212 191 / 70%);
+  background: #0f766e;
+}
+
+.projectflow-calendar .rbc-event.rbc-selected,
+.projectflow-calendar .rbc-event:focus {
+  outline: 2px solid #67e8f9;
+  outline-offset: 1px;
+}
+
+.projectflow-calendar .rbc-show-more {
+  color: #67e8f9;
+  background: transparent;
+}
+
+.projectflow-calendar .rbc-overlay {
+  border-color: #326ca8;
+  background: #07182c;
+  color: #f1f8ff;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 55%);
+}
+
+@media (max-width: 640px) {
+  .projectflow-calendar .rbc-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .projectflow-calendar .rbc-toolbar-label {
+    order: -1;
+    padding: 0.25rem;
+    text-align: left;
+  }
 }
 
 @theme inline {
@@ -73,61 +199,64 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --font-sans: var(--font-oxanium);
+  --font-heading: var(--font-inter);
+  --font-subheading: var(--font-sora);
 
-  --color-platinum-50: #f8f8f8;
-  --color-platinum-100: #f1f1f1;
-  --color-platinum-200: #e9e9ea;
-  --color-platinum-300: #e2e2e3;
-  --color-platinum-400: #afafb0;
-  --color-platinum-500: #dcdcdd;
-  --color-platinum-600: #828285;
-  --color-platinum-700: #575759;
-  --color-platinum-800: #2b2b2c;
-  --color-platinum-900: #f8f8f8;
+  --color-platinum-50: #f7fbff;
+  --color-platinum-100: #edf7ff;
+  --color-platinum-200: #dbeeff;
+  --color-platinum-300: #c7e2f4;
+  --color-platinum-400: #b7cfe0;
+  --color-platinum-500: #f1f8ff;
+  --color-platinum-600: #91aabd;
+  --color-platinum-700: #62798c;
+  --color-platinum-800: #344b60;
+  --color-platinum-900: #061326;
 
-  --color-french-gray-50: #f3f3f4;
-  --color-french-gray-100: #e8e7e8;
-  --color-french-gray-200: #dcdbdd;
-  --color-french-gray-300: #d1cfd1;
-  --color-french-gray-400: #9e9aa0;
-  --color-french-gray-500: #c5c3c6;
-  --color-french-gray-600: #777279;
-  --color-french-gray-700: #4f4c51;
-  --color-french-gray-800: #282628;
-  --color-french-gray-900: #f3f3f4;
+  --color-french-gray-50: #eaf8ff;
+  --color-french-gray-100: #d5effb;
+  --color-french-gray-200: #c0e5f5;
+  --color-french-gray-300: #5c83a3;
+  --color-french-gray-400: #a9bfd4;
+  --color-french-gray-500: #7695ad;
+  --color-french-gray-600: #53738d;
+  --color-french-gray-700: #36556f;
+  --color-french-gray-800: #1c374f;
+  --color-french-gray-900: #0d223b;
 
-  --color-outer-space-50: #d9dbdc;
-  --color-outer-space-100: #b4b7b9;
-  --color-outer-space-200: #8e9297;
-  --color-outer-space-300: #6a6e73;
-  --color-outer-space-400: #393b3e;
-  --color-outer-space-500: #46494c;
-  --color-outer-space-600: #2b2c2e;
-  --color-outer-space-700: #1c1e1f;
-  --color-outer-space-800: #0e0f0f;
-  --color-outer-space-900: #d9dbdc;
+  --color-outer-space-50: #d5e8f5;
+  --color-outer-space-100: #afcadc;
+  --color-outer-space-200: #86a9c0;
+  --color-outer-space-300: #326ca8;
+  --color-outer-space-400: #0d2945;
+  --color-outer-space-500: #081b31;
+  --color-outer-space-600: #020b16;
+  --color-outer-space-700: #020912;
+  --color-outer-space-800: #01050b;
+  --color-outer-space-900: #081b31;
 
-  --color-paynes-gray-50: #d9dfe3;
-  --color-paynes-gray-100: #b2bec7;
-  --color-paynes-gray-200: #8c9eab;
-  --color-paynes-gray-300: #677d8e;
-  --color-paynes-gray-400: #3c4953;
-  --color-paynes-gray-500: #4c5c68;
-  --color-paynes-gray-600: #2d373e;
-  --color-paynes-gray-700: #1e2429;
-  --color-paynes-gray-800: #0f1215;
-  --color-paynes-gray-900: #d9dfe3;
+  --color-paynes-gray-50: #d6e9f6;
+  --color-paynes-gray-100: #b4cedf;
+  --color-paynes-gray-200: #89adc4;
+  --color-paynes-gray-300: #326ca8;
+  --color-paynes-gray-400: #102b52;
+  --color-paynes-gray-500: #0d223b;
+  --color-paynes-gray-600: #08182b;
+  --color-paynes-gray-700: #05111f;
+  --color-paynes-gray-800: #020912;
+  --color-paynes-gray-900: #102b52;
 
-  --color-blue-munsell-50: #c7edf6;
-  --color-blue-munsell-100: #8edaed;
-  --color-blue-munsell-200: #56c8e5;
-  --color-blue-munsell-300: #22b3d7;
-  --color-blue-munsell-400: #146a7f;
-  --color-blue-munsell-500: #1985a1;
-  --color-blue-munsell-600: #0f4f5f;
-  --color-blue-munsell-700: #0a3540;
-  --color-blue-munsell-800: #051a20;
-  --color-blue-munsell-900: #c7edf6;
+  --color-blue-munsell-50: #e4fbff;
+  --color-blue-munsell-100: #bdf5ff;
+  --color-blue-munsell-200: #83ecfb;
+  --color-blue-munsell-300: #23d8f5;
+  --color-blue-munsell-400: #1ac8eb;
+  --color-blue-munsell-500: #16bfe8;
+  --color-blue-munsell-600: #0b94bd;
+  --color-blue-munsell-700: #087092;
+  --color-blue-munsell-800: #05485e;
+  --color-blue-munsell-900: #062f45;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -142,23 +271,75 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-oxanium), sans-serif;
+    font-weight: 500;
+    -webkit-text-stroke: 0.18px var(--text-stroke);
+    paint-order: stroke fill;
+  }
+
+  h1,
+  h2 {
+    font-family: var(--font-inter), sans-serif;
+    font-weight: 750;
+    -webkit-text-stroke-width: 0.32px;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6,
+  legend {
+    font-family: var(--font-sora), sans-serif;
+    font-weight: 650;
+    -webkit-text-stroke-width: 0.24px;
+  }
+
+  /* biome-ignore lint/style/noDescendingSpecificity: global controls intentionally follow component theme rules. */
+  button,
+  input,
+  select,
+  textarea {
+    font-weight: 600;
   }
 }
 
-.scrollbar-thin {
-  scrollbar-color: var(--french-gray) transparent;
+.themed-scrollbar,
+html {
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
   scrollbar-width: thin;
 }
 
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
+.themed-scrollbar::-webkit-scrollbar,
+html::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
+.themed-scrollbar::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track {
+  background: linear-gradient(90deg, var(--scroll-track), #061a35, var(--scroll-track));
+  border: 1px solid var(--scroll-track-edge);
+  border-radius: 999px;
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: var(--french-gray);
-  border-radius: 3px;
+.themed-scrollbar::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--scroll-thumb), var(--scroll-thumb-highlight), var(--scroll-thumb));
+  background-clip: padding-box;
+  border: 2px solid var(--scroll-track);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 4px rgb(255 255 255 / 45%),
+    0 0 7px rgb(34 223 245 / 55%);
+}
+
+.themed-scrollbar::-webkit-scrollbar-thumb:hover,
+html::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #0ea5e9, #67e8f9, #0ea5e9);
+  background-clip: padding-box;
+}
+
+.themed-scrollbar::-webkit-scrollbar-corner,
+html::-webkit-scrollbar-corner {
+  background: var(--scroll-track);
 }
