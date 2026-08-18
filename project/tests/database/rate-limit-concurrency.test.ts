@@ -4,6 +4,7 @@ import { neon } from "@neondatabase/serverless"
 import { and, eq, inArray } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
+import { reserveAiUsage } from "../../features/ai/server/ai-usage.repository"
 import type { RateLimitRequirement } from "../../features/rate-limits/rate-limit.types"
 import { consumeRateLimitBuckets } from "../../features/rate-limits/server/rate-limit.repository"
 import * as schema from "../../server/db/schema"
@@ -131,6 +132,32 @@ describe("database-backed rate limiting", () => {
 })
 
 describe("AI usage persistence", () => {
+  it("allows unlimited Pro AI reservations while retaining unique request keys", async () => {
+    const actor = await createUser("ai-quota")
+    const workspace = await createWorkspace(actor.id, "ai-quota")
+    const startsAt = new Date(Date.UTC(2026, 0, 1))
+    const endsAt = new Date(Date.UTC(2027, 0, 1))
+
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        reserveAiUsage({
+          workspaceId: workspace.workspaceId,
+          userId: actor.id,
+          quotaKey: "parallel_board_generation",
+          action: "ai.board.generate",
+          requestKey: randomUUID(),
+          model: "test-model",
+          limit: null,
+          scope: "user",
+          periodStartsAt: startsAt,
+          periodEndsAt: endsAt,
+        }),
+      ),
+    )
+
+    expect(results.filter(Boolean)).toHaveLength(20)
+  })
+
   it("records usage and rejects projects from another workspace", async () => {
     const firstOwner = await createUser("ai-first")
     const secondOwner = await createUser("ai-second")

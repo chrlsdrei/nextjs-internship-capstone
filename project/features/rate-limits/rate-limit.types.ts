@@ -15,6 +15,9 @@ export type RateLimitAction =
   | "invitation.accept"
   | "comment.write"
   | "attachment.write"
+  | "ai.board.generate"
+  | "ai.tasks.generate"
+  | "ai.board.summarize"
 
 export type RateLimitRule = {
   maxRequests: number

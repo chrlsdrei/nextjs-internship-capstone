@@ -2,6 +2,7 @@ import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
 import { getCurrentDatabaseUser, getVerifiedPrimaryEmail } from "@/features/auth/server/session.service"
+import { requireMemberCapacity, requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { InvitationError } from "@/features/invitations/invitation.error"
 import {
   acceptInvitationSchema,
@@ -122,6 +123,7 @@ async function requireInvitationManagement(invitationId: string) {
 export async function createWorkspaceInvitation(input: unknown): Promise<InvitationDto> {
   const values = createWorkspaceInvitationSchema.parse(input)
   const { user, access } = await requireWorkspaceInvitationAuthority(values.workspaceId)
+  await requireWorkspaceWritable(access.id, user.id)
   if (await findActiveWorkspaceMemberByNormalizedEmail(access.id, normalizeEmail(values.email))) {
     throw new InvitationError("This email already belongs to an active workspace member", "INVITATION_CONFLICT", 409)
   }
@@ -177,6 +179,7 @@ export async function createWorkspaceInvitation(input: unknown): Promise<Invitat
 export async function createProjectInvitation(input: unknown): Promise<InvitationDto> {
   const values = createProjectInvitationSchema.parse(input)
   const access = await requireProjectPermission(values.projectId, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   const workspaceMember = await findActiveWorkspaceMemberByNormalizedEmail(
     access.workspaceId,
     normalizeEmail(values.email),
@@ -283,6 +286,7 @@ export async function getInvitationPreview(token: string): Promise<InvitationPre
 
 export async function resendInvitation(invitationId: string): Promise<InvitationDto> {
   const { actorWorkspaceMemberId, invitation, user } = await requireInvitationManagement(invitationId)
+  await requireWorkspaceWritable(invitation.workspaceId, user.id)
   await enforceRateLimit({ action: "invitation.resend", actorUserId: user.id, workspaceId: invitation.workspaceId })
   const token = createInvitationToken()
   const rotated = await rotateInvitationToken(invitation.id, hashInvitationToken(token), invitationExpiry())
@@ -344,6 +348,14 @@ export async function acceptInvitation(input: unknown) {
     )
   }
   const tokenHash = hashInvitationToken(values.token)
+  const pendingInvitation = await findInvitationByTokenHash(tokenHash)
+  if (pendingInvitation) {
+    if (await findActiveWorkspaceAccess(pendingInvitation.workspaceId, user.id)) {
+      await requireWorkspaceWritable(pendingInvitation.workspaceId, user.id)
+    } else {
+      await requireMemberCapacity(pendingInvitation.workspaceId, user.id)
+    }
+  }
   const accepted = await acceptInvitationRecord(tokenHash, user.id, normalizedEmail, user.name)
   if (accepted) return accepted
 

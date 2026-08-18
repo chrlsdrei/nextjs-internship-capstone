@@ -2,6 +2,7 @@ import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
 import { recordTaskAssignmentActivity } from "@/features/assignments/server/assignment.service"
+import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { boardCapabilities } from "@/features/board/board.policy"
 import {
   listIdSchema,
@@ -72,6 +73,7 @@ async function boardSnapshot(projectId: string) {
 
 async function requireRateLimitedBoardWrite(projectId: string, permission: ProjectPermission, action: RateLimitAction) {
   const access = await requireProjectPermission(projectId, permission)
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceRateLimit({ action, actorUserId: access.user.id, workspaceId: access.workspaceId })
   return access
 }

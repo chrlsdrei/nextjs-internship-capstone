@@ -22,6 +22,8 @@ import type React from "react"
 import { useState } from "react"
 
 import { TaskFrame } from "@/components/ui/task-frame"
+import { BuildAiController } from "@/features/ai/controllers/build-ai.controller"
+import type { BillingPlanDto, UserAiEntitlementDto } from "@/features/billing/billing.types"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -33,7 +35,15 @@ const navigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-export function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export function DashboardLayout({
+  children,
+  ai,
+  userAiPlan,
+}: Readonly<{
+  children: React.ReactNode
+  ai: { entitlement: UserAiEntitlementDto; workspaces: Array<{ id: string; name: string }> }
+  userAiPlan: BillingPlanDto | null
+}>) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -54,7 +64,7 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
           sidebarCollapsed ? "lg:w-20" : "lg:w-64"
         } ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <TaskFrame className="h-full rounded-l-none" contentClassName="h-full p-0">
+        <TaskFrame className="h-full rounded-l-none" contentClassName="flex h-full flex-col p-0">
           <div
             className={`flex h-16 items-center border-cyan-300/20 border-b ${
               sidebarCollapsed ? "justify-between px-6 lg:justify-center lg:px-2" : "justify-between px-6"
@@ -112,6 +122,14 @@ export function DashboardLayout({ children }: Readonly<{ children: React.ReactNo
               })}
             </ul>
           </nav>
+          <div className={`mt-auto px-3 pb-5 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+            <BuildAiController
+              collapsed={sidebarCollapsed}
+              entitlement={ai.entitlement}
+              workspaces={ai.workspaces}
+              plan={userAiPlan}
+            />
+          </div>
         </TaskFrame>
       </aside>
 

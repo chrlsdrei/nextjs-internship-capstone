@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { ZodError } from "zod"
-
+import { BillingError } from "@/features/billing/billing.error"
 import { publishProjectEvent } from "@/features/board/server/project-event.service"
 import { InvitationError } from "@/features/invitations/invitation.error"
 import type { InvitationAcceptanceDto } from "@/features/invitations/invitation.types"
@@ -18,6 +18,7 @@ import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
 
 function errorState<T = undefined>(error: unknown): ActionState<T> {
+  if (error instanceof BillingError) return actionError(error.message, undefined, { code: error.code })
   if (error instanceof RateLimitError) {
     return actionError(error.message, undefined, {
       code: error.code,

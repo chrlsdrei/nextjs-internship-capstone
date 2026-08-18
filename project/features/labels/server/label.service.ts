@@ -1,6 +1,7 @@
 import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
+import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { LabelError } from "@/features/labels/label.error"
 import {
   createLabelSchema,
@@ -84,6 +85,7 @@ export async function createLabel(projectId: string, input: unknown): Promise<La
   const id = projectIdSchema.parse(projectId)
   const values = createLabelSchema.parse(input)
   const access = await requireProjectPermission(id, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceLabelRateLimit(access, "label.admin")
   if (await findDuplicateLabelRecord(id, values.normalizedName)) throw duplicateLabelError()
   const label = await insertLabelRecord(id, access.workspaceMemberId, values)
@@ -104,6 +106,7 @@ export async function updateLabel(projectId: string, labelId: string, input: unk
   const parsedLabelId = labelIdSchema.parse(labelId)
   const values = updateLabelSchema.parse(input)
   const access = await requireProjectPermission(id, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceLabelRateLimit(access, "label.admin")
   const existing = await findProjectLabelRecord(id, parsedLabelId)
   if (!existing) throw new LabelError("Label not found", "LABEL_NOT_FOUND", 404)
@@ -149,6 +152,7 @@ export async function deleteLabel(projectId: string, labelId: string) {
 export async function setTaskLabels(input: unknown): Promise<LabelDto[]> {
   const values = setTaskLabelsSchema.parse(input)
   const access = await requireProjectPermission(values.projectId, "edit")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceLabelRateLimit(access, "label.assign")
   const contextData = await findTaskLabelContext(values.projectId, values.taskId, values.labelIds)
   if (!contextData.task || contextData.labels.length !== values.labelIds.length) {

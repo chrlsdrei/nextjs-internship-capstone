@@ -1,123 +1,25 @@
-import { Bell, Palette, Shield, User } from "lucide-react"
+import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
+import { TechFrameCard } from "@/components/ui/tech-frame-card"
+import { BillingPanelController } from "@/features/billing/controllers/billing-panel.controller"
+import { getAccountBilling } from "@/features/billing/server/billing.service"
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const billing = await getAccountBilling()
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">Settings</h1>
-        <p className="text-paynes-gray-500 dark:text-french-gray-500 mt-2">
-          Manage your account and application preferences
-        </p>
-      </div>
-
-      {/* Implementation Tasks Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-          ⚙️ Settings Implementation Tasks
-        </h3>
-        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-          <li>• Task 2.4: Implement user session management</li>
-          <li>• Task 6.4: Implement project member management and permissions</li>
-        </ul>
-      </div>
-
-      {/* Settings Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Settings Navigation */}
-        <div className="bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500 mb-4">Settings</h3>
-          <nav className="space-y-2">
-            {[
-              { name: "Profile", icon: User, active: true },
-              { name: "Notifications", icon: Bell, active: false },
-              { name: "Security", icon: Shield, active: false },
-              { name: "Appearance", icon: Palette, active: false },
-            ].map((item) => (
-              <button
-                type="button"
-                key={item.name}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  item.active
-                    ? "bg-blue-munsell-100 dark:bg-blue-munsell-900 text-blue-munsell-700 dark:text-blue-munsell-300"
-                    : "text-outer-space-500 dark:text-platinum-500 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400"
-                }`}
-              >
-                <item.icon className="mr-3" size={16} />
-                {item.name}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        {/* Settings Content */}
-        <div className="lg:col-span-2 bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500 mb-6">Profile Settings</h3>
-
-          <div className="space-y-6">
-            <div>
-              <label
-                htmlFor="profile-name"
-                className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500 mb-2"
-              >
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="profile-name"
-                defaultValue="John Doe"
-                className="w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400 text-outer-space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="profile-email"
-                className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500 mb-2"
-              >
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="profile-email"
-                defaultValue="john@example.com"
-                className="w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400 text-outer-space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="profile-role"
-                className="block text-sm font-medium text-outer-space-500 dark:text-platinum-500 mb-2"
-              >
-                Role
-              </label>
-              <select
-                id="profile-role"
-                className="w-full px-3 py-2 border border-french-gray-300 dark:border-paynes-gray-400 rounded-lg bg-white dark:bg-outer-space-400 text-outer-space-500 dark:text-platinum-500 focus:outline-none focus:ring-2 focus:ring-blue-munsell-500"
-              >
-                <option>Project Manager</option>
-                <option>Developer</option>
-                <option>Designer</option>
-                <option>QA Engineer</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                className="px-4 py-2 text-paynes-gray-500 dark:text-french-gray-400 hover:bg-platinum-500 dark:hover:bg-paynes-gray-400 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 bg-blue-munsell-500 text-white rounded-lg hover:bg-blue-munsell-600 transition-colors"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
+    <div className="relative isolate min-h-full overflow-hidden p-4 sm:p-6">
+      <RealisticFogBackground />
+      <div className="relative z-10 mx-auto max-w-6xl space-y-6">
+        <TechFrameCard contentClassName="px-10 py-9 sm:px-14">
+          <h1 className="font-bold text-3xl text-white">Account settings</h1>
+          <p className="mt-2 text-cyan-100/70">Manage your personal AI subscription and account preferences.</p>
+        </TechFrameCard>
+        <BillingPanelController
+          title="User AI plan"
+          description="Unlock Build with AI and AI Tasks across workspaces where you already have permission."
+          plans={billing.plans}
+          subscription={billing.subscription}
+        />
       </div>
     </div>
   )

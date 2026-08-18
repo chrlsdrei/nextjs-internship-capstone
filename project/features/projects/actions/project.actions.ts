@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { ZodError } from "zod"
+import { BillingError } from "@/features/billing/billing.error"
 import { publishProjectEvent } from "@/features/board/server/project-event.service"
 import {
   createProject,
@@ -16,6 +17,7 @@ import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
 
 function errorState(error: unknown): ActionState {
+  if (error instanceof BillingError) return actionError(error.message, undefined, { code: error.code })
   if (error instanceof RateLimitError) {
     return actionError(error.message, undefined, {
       code: error.code,

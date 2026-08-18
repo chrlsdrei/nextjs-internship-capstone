@@ -62,6 +62,18 @@ export const rateLimitPolicies = {
     actor: { maxRequests: 20, windowSeconds: 5 * minute },
     workspace: { maxRequests: 100, windowSeconds: 5 * minute },
   },
+  "ai.board.generate": {
+    actor: { maxRequests: 5, windowSeconds: hour },
+    workspace: { maxRequests: 20, windowSeconds: hour },
+  },
+  "ai.tasks.generate": {
+    actor: { maxRequests: 20, windowSeconds: hour },
+    workspace: { maxRequests: 100, windowSeconds: hour },
+  },
+  "ai.board.summarize": {
+    actor: { maxRequests: 10, windowSeconds: hour },
+    workspace: { maxRequests: 50, windowSeconds: hour },
+  },
 } satisfies Record<RateLimitAction, RateLimitPolicy>
 
 export function getRateLimitPolicy(action: RateLimitAction): RateLimitPolicy {

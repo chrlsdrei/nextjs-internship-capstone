@@ -1,5 +1,6 @@
 import { ArrowLeft, Search, Settings, SlidersHorizontal } from "lucide-react"
 import Link from "next/link"
+import type { ReactNode } from "react"
 
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
 
@@ -12,6 +13,7 @@ type BoardToolbarProps = {
   canManage: boolean
   onSearchChange: (value: string) => void
   onOpenFilters: () => void
+  aiControls?: ReactNode
 }
 
 export function BoardToolbar({
@@ -23,6 +25,7 @@ export function BoardToolbar({
   canManage,
   onSearchChange,
   onOpenFilters,
+  aiControls,
 }: BoardToolbarProps) {
   return (
     <TechFrameCard className="min-h-0 w-full" contentClassName="min-h-0 gap-0 px-5 py-4 sm:min-h-0 sm:px-7 sm:py-5">
@@ -69,6 +72,7 @@ export function BoardToolbar({
               </span>
             )}
           </button>
+          {aiControls}
           {canManage && (
             <Link
               href={`/projects/${projectId}/members`}

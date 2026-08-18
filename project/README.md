@@ -9,6 +9,8 @@ Implemented capabilities include:
 - Database-backed projects and role-based project membership.
 - Lists and tasks with validation, authorization, ordering, and optimistic drag-and-drop.
 - Authenticated Server-Sent Events for local board refresh.
+- Separate user and workspace subscriptions with PayMongo webhook reconciliation.
+- Gemini-powered board generation, task generation, and persisted board summaries.
 - Responsive light and dark interfaces.
 
 See the [architecture guide](../docs/ARCHITECTURE.md) for the directory map, dependency boundaries, data flows, and the process for adding a feature. See [development setup](../docs/DEVELOPMENT_SETUP.md) for local environment and service configuration.
@@ -36,6 +38,8 @@ The Clerk webhook endpoint is `/api/webhooks/clerk` and subscribes to `user.crea
 
 Workspace and board invitation delivery uses Resend. Configure `RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, and `NEXT_PUBLIC_APP_URL`; invitation links expire after seven days, are single-use, and are matched to the signed-in user's verified primary Clerk email.
 
+Gemini and PayMongo secrets remain server-only; billing access is activated by verified PayMongo webhooks.
+
 ## Commands
 
 ```powershell
@@ -52,6 +56,7 @@ pnpm db:migrate
 pnpm db:push
 pnpm db:studio
 pnpm db:check
+pnpm billing:plan:check
 ```
 
 Biome provides linting and formatting. Drizzle migrations are generated under `drizzle/`.

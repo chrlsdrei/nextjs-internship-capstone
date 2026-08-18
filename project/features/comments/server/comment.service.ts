@@ -1,6 +1,7 @@
 import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
+import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { CommentError } from "@/features/comments/comment.error"
 import { toTaskCommentDto } from "@/features/comments/comment.mapper"
 import { commentCapabilities } from "@/features/comments/comment.policy"
@@ -83,6 +84,7 @@ export async function listTaskComments(input: unknown): Promise<TaskCommentPageD
 export async function createTaskComment(input: unknown) {
   const values = createTaskCommentSchema.parse(input)
   const access = await requireProjectPermission(values.projectId, "edit")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   const context = await findTaskCommentContext(values.projectId, values.taskId)
   if (!context) throw new CommentError("Task not found", "TASK_NOT_FOUND", 404)
   await enforceCommentWrite(access)
@@ -105,6 +107,7 @@ export async function createTaskComment(input: unknown) {
 export async function updateTaskComment(input: unknown) {
   const values = updateTaskCommentSchema.parse(input)
   const access = await requireProjectPermission(values.projectId, "edit")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   const [context, current] = await Promise.all([
     findTaskCommentContext(values.projectId, values.taskId),
     findTaskCommentRecord(values.projectId, values.taskId, values.commentId),

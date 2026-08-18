@@ -2,6 +2,7 @@ import "server-only"
 
 import { recordActivity } from "@/features/activity/server/activity.service"
 import { getCurrentDatabaseUser } from "@/features/auth/server/session.service"
+import { requireProjectCapacity, requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import {
   projectIdSchema,
   projectSchema,
@@ -103,6 +104,7 @@ export async function createProject(input: unknown): Promise<ProjectDto> {
     workspaceRole === "admin" ||
     (workspaceRole === "member" && workspaceAccess.membersCanCreateProjects)
   if (!mayCreate) throw new ProjectAccessError("You cannot create projects in this workspace", 403)
+  await requireProjectCapacity(values.workspaceId, creator.id)
   await enforceRateLimit({ action: "project.create", actorUserId: creator.id, workspaceId: values.workspaceId })
 
   const project = await insertProject(workspaceAccess.membershipId, workspaceRole === "owner", values)
@@ -125,6 +127,7 @@ export async function updateProject(projectId: string, input: unknown): Promise<
   if (Object.keys(values).length === 0) return getProjectById(id)
 
   const access = await requireProjectPermission(id, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceRateLimit({ action: "project.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
   const project = await updateProjectAsManager(id, access.user.id, values)
   if (!project) {
@@ -182,6 +185,7 @@ export async function updateProjectSettings(projectId: string, input: unknown) {
   const id = projectIdSchema.parse(projectId)
   const values = updateProjectSettingsSchema.parse(input)
   const access = await requireProjectPermission(id, "manage")
+  await requireWorkspaceWritable(access.workspaceId, access.user.id)
   await enforceRateLimit({ action: "project.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
   const settings = await updateProjectSettingsAsManager(id, access.user.id, values)
   if (!settings) {

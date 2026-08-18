@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { ZodError } from "zod"
-
+import { BillingError } from "@/features/billing/billing.error"
 import type { MoveTaskCommand, ReorderTasksCommand } from "@/features/board/board.types"
 import {
   createList,
@@ -22,6 +22,7 @@ import type { ActionState } from "@/lib/action-state"
 import { actionError, actionSuccess } from "@/lib/action-state"
 
 function errorState(error: unknown): ActionState {
+  if (error instanceof BillingError) return actionError(error.message, undefined, { code: error.code })
   if (error instanceof RateLimitError) {
     return actionError(error.message, undefined, {
       code: error.code,
