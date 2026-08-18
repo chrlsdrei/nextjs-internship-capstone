@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react"
 import { type ReactNode, useEffect, useId, useRef } from "react"
+import { createPortal } from "react-dom"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
@@ -47,8 +48,8 @@ export function Modal({ open, onClose, title, description, children, footer, cla
 
   if (!open) return null
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+  const dialog = (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-6">
       <button
         type="button"
         aria-label="Close modal"
@@ -66,7 +67,7 @@ export function Modal({ open, onClose, title, description, children, footer, cla
         )}
         contentClassName="min-h-0 max-h-[min(42rem,90vh)] gap-0 overflow-hidden p-0 sm:min-h-0 sm:p-0"
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-3 sm:px-6 sm:py-5">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-[clamp(2.5rem,6vw,4rem)] py-6 sm:py-8">
           <header className="flex items-start justify-between gap-4 border-cyan-300/20 border-b px-1 pb-4">
             <div>
               <h2 id={titleId} className="font-semibold text-lg text-white">
@@ -94,4 +95,6 @@ export function Modal({ open, onClose, title, description, children, footer, cla
       </TechFrameCard>
     </div>
   )
+
+  return createPortal(dialog, document.body)
 }
