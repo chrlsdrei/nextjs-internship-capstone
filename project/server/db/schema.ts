@@ -45,6 +45,13 @@ export const billingSubscriptionStatus = pgEnum("billing_subscription_status", [
   "unpaid",
   "cancelled",
 ])
+export const billingCheckoutPurchaseStatus = pgEnum("billing_checkout_purchase_status", [
+  "pending",
+  "paid",
+  "cancelled",
+  "expired",
+  "failed",
+])
 export const billingWebhookStatus = pgEnum("billing_webhook_status", ["processing", "processed", "failed"])
 export const aiUsageStatus = pgEnum("ai_usage_status", ["pending", "succeeded", "failed"])
 
@@ -512,6 +519,51 @@ export const billingSubscriptions = pgTable(
   ],
 )
 
+export const billingCheckoutPurchases = pgTable(
+  "billing_checkout_purchases",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    planId: uuid("plan_id")
+      .notNull()
+      .references(() => billingPlans.id, { onDelete: "restrict" }),
+    target: billingTarget("target").notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "restrict" }),
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "restrict" }),
+    payerUserId: uuid("payer_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    referenceNumber: text("reference_number").notNull(),
+    paymongoCheckoutSessionId: text("paymongo_checkout_session_id"),
+    amount: integer("amount").notNull(),
+    currency: text("currency").default("PHP").notNull(),
+    status: billingCheckoutPurchaseStatus("status").default("pending").notNull(),
+    checkoutUrl: text("checkout_url"),
+    providerCreatedAt: timestamp("provider_created_at", { withTimezone: true }),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    accessEndsAt: timestamp("access_ends_at", { withTimezone: true }),
+    failureCode: text("failure_code"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("billing_checkout_purchases_reference_unique").on(table.referenceNumber),
+    uniqueIndex("billing_checkout_purchases_paymongo_session_unique").on(table.paymongoCheckoutSessionId),
+    index("billing_checkout_purchases_user_status_idx").on(table.userId, table.status, table.createdAt),
+    index("billing_checkout_purchases_workspace_status_idx").on(table.workspaceId, table.status, table.createdAt),
+    index("billing_checkout_purchases_payer_status_idx").on(table.payerUserId, table.status, table.createdAt),
+    index("billing_checkout_purchases_plan_idx").on(table.planId),
+    check(
+      "billing_checkout_purchases_target_valid",
+      sql`(${table.target} = 'user' AND ${table.userId} IS NOT NULL AND ${table.workspaceId} IS NULL) OR (${table.target} = 'workspace' AND ${table.workspaceId} IS NOT NULL AND ${table.userId} IS NULL)`,
+    ),
+    check("billing_checkout_purchases_amount_positive", sql`${table.amount} > 0`),
+    check(
+      "billing_checkout_purchases_currency_valid",
+      sql`char_length(${table.currency}) = 3 AND ${table.currency} = upper(${table.currency})`,
+    ),
+    check("billing_checkout_purchases_paid_state_valid", sql`${table.status} <> 'paid' OR ${table.paidAt} IS NOT NULL`),
+  ],
+)
+
 export const billingWebhookEvents = pgTable(
   "billing_webhook_events",
   {
@@ -726,6 +778,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
+  checkoutPurchases: many(billingCheckoutPurchases, { relationName: "checkoutPurchaseUser" }),
+  paidCheckoutPurchases: many(billingCheckoutPurchases, { relationName: "checkoutPurchasePayer" }),
   acceptedInvitations: many(workspaceInvitations, { relationName: "acceptedInvitationUser" }),
   revokedInvitations: many(workspaceInvitations, { relationName: "revokedInvitationUser" }),
 }))
@@ -743,6 +797,28 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   aiUsageLogs: many(aiUsageLogs),
   invitations: many(workspaceInvitations),
   activityLogs: many(activityLogs),
+  checkoutPurchases: many(billingCheckoutPurchases),
+}))
+
+export const billingCheckoutPurchasesRelations = relations(billingCheckoutPurchases, ({ one }) => ({
+  plan: one(billingPlans, {
+    fields: [billingCheckoutPurchases.planId],
+    references: [billingPlans.id],
+  }),
+  user: one(users, {
+    fields: [billingCheckoutPurchases.userId],
+    references: [users.id],
+    relationName: "checkoutPurchaseUser",
+  }),
+  workspace: one(workspaces, {
+    fields: [billingCheckoutPurchases.workspaceId],
+    references: [workspaces.id],
+  }),
+  payer: one(users, {
+    fields: [billingCheckoutPurchases.payerUserId],
+    references: [users.id],
+    relationName: "checkoutPurchasePayer",
+  }),
 }))
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ many, one }) => ({
@@ -991,6 +1067,8 @@ export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect
 export type NewRateLimitBucket = typeof rateLimitBuckets.$inferInsert
 export type AiUsageLog = typeof aiUsageLogs.$inferSelect
 export type NewAiUsageLog = typeof aiUsageLogs.$inferInsert
+export type BillingCheckoutPurchase = typeof billingCheckoutPurchases.$inferSelect
+export type NewBillingCheckoutPurchase = typeof billingCheckoutPurchases.$inferInsert
 export type WorkspaceInvitation = typeof workspaceInvitations.$inferSelect
 export type NewWorkspaceInvitation = typeof workspaceInvitations.$inferInsert
 export type ActivityLog = typeof activityLogs.$inferSelect
@@ -1004,3 +1082,4 @@ export type WorkspaceMemberRole = (typeof workspaceMemberRole.enumValues)[number
 export type RateLimitScope = (typeof rateLimitScope.enumValues)[number]
 export type InvitationKind = (typeof invitationKind.enumValues)[number]
 export type InvitationDeliveryStatus = (typeof invitationDeliveryStatus.enumValues)[number]
+export type BillingCheckoutPurchaseStatus = (typeof billingCheckoutPurchaseStatus.enumValues)[number]

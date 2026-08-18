@@ -8,6 +8,7 @@ const expectedTables = [
   "ai_usage_logs",
   "ai_board_summaries",
   "billing_customers",
+  "billing_checkout_purchases",
   "billing_plans",
   "billing_subscriptions",
   "billing_webhook_events",
@@ -43,7 +44,7 @@ async function main() {
     from information_schema.tables
     where table_schema = 'public'
       and table_name in (
-        'activity_logs', 'ai_board_summaries', 'ai_usage_logs', 'billing_customers', 'billing_plans',
+        'activity_logs', 'ai_board_summaries', 'ai_usage_logs', 'billing_checkout_purchases', 'billing_customers', 'billing_plans',
         'billing_subscriptions', 'billing_webhook_events', 'calendar_events', 'labels', 'lists', 'project_members', 'project_settings', 'projects',
         'rate_limit_buckets', 'task_assignees', 'task_comments', 'task_labels', 'tasks', 'users', 'workspace_invitations',
         'workspace_members', 'workspace_settings', 'workspaces'
