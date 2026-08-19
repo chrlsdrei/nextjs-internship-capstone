@@ -7,6 +7,7 @@ const protectedRoutePrefixes = [
   "/team",
   "/analytics",
   "/calendar",
+  "/subscription",
   "/settings",
 ]
 
