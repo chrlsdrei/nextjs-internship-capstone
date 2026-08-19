@@ -92,16 +92,22 @@ function proExpired(tier: SubscriptionTier, periodEndsAt: Date | null | undefine
 
 export async function getSubscriptionPageData(): Promise<SubscriptionPageDto> {
   const user = await getCurrentDatabaseUser()
-  const livemode = paymongoLivemode()
-  const [userAccess, userPlans, workspacePlans, ownedWorkspaces, latestUserPurchase, latestPaidUserPurchase] =
-    await Promise.all([
-      findUserSubscriptionTier(user.id),
-      listActiveBillingPlans("user", livemode),
-      listActiveBillingPlans("workspace", livemode),
-      listActiveOwnedWorkspaces(user.id),
-      findLatestUserCheckoutPurchase(user.id),
-      findLatestPaidUserCheckoutPurchase(user.id),
-    ])
+  let livemode: boolean | null = null
+  try {
+    livemode = paymongoLivemode()
+  } catch {
+    livemode = null
+  }
+  const [userAccess, ownedWorkspaces, latestUserPurchase, latestPaidUserPurchase] = await Promise.all([
+    findUserSubscriptionTier(user.id),
+    listActiveOwnedWorkspaces(user.id),
+    findLatestUserCheckoutPurchase(user.id),
+    findLatestPaidUserCheckoutPurchase(user.id),
+  ])
+  const [userPlans, workspacePlans] =
+    livemode === null
+      ? [[], []]
+      : await Promise.all([listActiveBillingPlans("user", livemode), listActiveBillingPlans("workspace", livemode)])
   const userCatalog = toCatalog(userPlans)
   const workspaceCatalog = toCatalog(workspacePlans)
 
@@ -132,6 +138,7 @@ export async function getSubscriptionPageData(): Promise<SubscriptionPageDto> {
   )
 
   return {
+    checkout: { available: livemode !== null, mode: livemode === null ? null : livemode ? "live" : "test" },
     user: {
       tier: userAccess?.tier ?? "free",
       periodEndsAt: userAccess?.endsAt?.toISOString() ?? null,

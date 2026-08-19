@@ -11,7 +11,7 @@ import { type ActionState, actionError, actionSuccess } from "@/lib/action-state
 function failure(error: unknown): ActionState {
   if (error instanceof z.ZodError) return actionError("Check the highlighted fields", error.flatten().fieldErrors)
   if (error instanceof BillingError) return actionError(error.message, undefined, { code: error.code })
-  return actionError(error instanceof Error ? error.message : "Billing request failed", undefined, {
+  return actionError("Unable to start checkout. Please try again.", undefined, {
     code: "BILLING_PROVIDER_ERROR",
   })
 }

@@ -113,6 +113,7 @@ describe("subscription page service", () => {
       proExpired: false,
       latestPurchase: null,
     })
+    expect(result.checkout).toEqual({ available: true, mode: "test" })
     expect(result.catalog.user).toMatchObject({
       free: { code: "user-free" },
       pro: { code: "user-pro" },
@@ -161,5 +162,20 @@ describe("subscription page service", () => {
     await expect(getSubscriptionPageData()).resolves.toMatchObject({
       user: { tier: "free", proAccessSource: "manual", proExpired: true },
     })
+  })
+
+  it("keeps the page available when PayMongo configuration is invalid", async () => {
+    mocks.paymongoLivemode.mockImplementation(() => {
+      throw new Error("invalid key")
+    })
+
+    const result = await getSubscriptionPageData()
+
+    expect(result.checkout).toEqual({ available: false, mode: null })
+    expect(result.catalog).toEqual({
+      user: { free: null, pro: null },
+      workspace: { free: null, pro: null },
+    })
+    expect(mocks.listActiveBillingPlans).not.toHaveBeenCalled()
   })
 })

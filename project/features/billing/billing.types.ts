@@ -80,6 +80,10 @@ export type OwnedWorkspaceSubscriptionDto = SubscriptionAccessSummaryDto & {
 }
 
 export type SubscriptionPageDto = {
+  checkout: {
+    available: boolean
+    mode: "test" | "live" | null
+  }
   user: SubscriptionAccessSummaryDto
   catalog: {
     user: SubscriptionCatalogDto

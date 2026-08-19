@@ -35,7 +35,7 @@ describe("checkout actions", () => {
 
     await expect(startCheckoutAction({})).resolves.toMatchObject({
       status: "error",
-      message: "Unable to start PayMongo checkout",
+      message: "Unable to start checkout. Please try again.",
       code: "BILLING_PROVIDER_ERROR",
     })
   })
