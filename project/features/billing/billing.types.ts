@@ -34,11 +34,6 @@ export type StartCheckoutResult = {
   checkoutUrl: string
 }
 
-export type BillingAccessDto = {
-  tier: SubscriptionTier
-  periodEndsAt: string | null
-}
-
 export type UserAiEntitlementDto = {
   tier: SubscriptionTier
   subscribed: boolean

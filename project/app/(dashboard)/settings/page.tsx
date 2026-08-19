@@ -1,25 +1,15 @@
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
-import { BillingPanelController } from "@/features/billing/controllers/billing-panel.controller"
-import { getAccountBilling } from "@/features/billing/server/billing.service"
 
-export default async function SettingsPage() {
-  const billing = await getAccountBilling()
-
+export default function SettingsPage() {
   return (
     <div className="relative isolate min-h-full overflow-hidden p-4 sm:p-6">
       <RealisticFogBackground />
       <div className="relative z-10 mx-auto max-w-6xl space-y-6">
         <TechFrameCard contentClassName="px-10 py-9 sm:px-14">
           <h1 className="font-bold text-3xl text-white">Account settings</h1>
-          <p className="mt-2 text-cyan-100/70">Manage your personal AI access and account preferences.</p>
+          <p className="mt-2 text-cyan-100/70">Manage your account preferences.</p>
         </TechFrameCard>
-        <BillingPanelController
-          title="User AI access"
-          description="Unlock Build with AI and AI Tasks for 30 days across workspaces where you have permission."
-          plans={billing.plans}
-          access={billing.access}
-        />
       </div>
     </div>
   )
