@@ -1,75 +1,33 @@
-import { BarChart3, Clock, TrendingUp, Users } from "lucide-react"
+import { BarChart3 } from "lucide-react"
 
-export default function AnalyticsPage() {
+import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
+import { TechFrameCard } from "@/components/ui/tech-frame-card"
+import { AnalyticsDashboard } from "@/features/analytics/components/analytics-dashboard"
+import { getAnalyticsDashboard } from "@/features/analytics/server/analytics.service"
+
+export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
+  const requestedYear = Number.parseInt((await searchParams).year ?? "", 10)
+  const data = await getAnalyticsDashboard(Number.isNaN(requestedYear) ? undefined : requestedYear)
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500">Analytics</h1>
-        <p className="text-paynes-gray-500 dark:text-french-gray-500 mt-2">
-          Track project performance and team productivity
-        </p>
-      </div>
-
-      {/* Implementation Tasks Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-          📊 Analytics Implementation Tasks
-        </h3>
-        <ul className="text-sm text-yellow-700 dark:text-yellow-300 space-y-1">
-          <li>• Task 6.6: Optimize performance and implement loading states</li>
-          <li>• Task 8.5: Set up performance monitoring and analytics</li>
-        </ul>
-      </div>
-
-      {/* Analytics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: "Project Velocity", value: "8.5", unit: "tasks/week", icon: TrendingUp, color: "blue" },
-          { title: "Team Efficiency", value: "92%", unit: "completion rate", icon: BarChart3, color: "green" },
-          { title: "Active Users", value: "24", unit: "this week", icon: Users, color: "purple" },
-          { title: "Avg. Task Time", value: "2.3", unit: "days", icon: Clock, color: "orange" },
-        ].map((metric) => (
-          <div
-            key={metric.title}
-            className="bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div
-                className={`w-10 h-10 bg-${metric.color}-100 dark:bg-${metric.color}-900 rounded-lg flex items-center justify-center`}
-              >
-                <metric.icon className={`text-${metric.color}-500`} size={20} />
-              </div>
+    <div className="relative isolate -mx-4 -my-8 min-h-[calc(100vh-4rem)] overflow-hidden px-4 py-8 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <RealisticFogBackground className="fixed inset-0 -z-20" />
+      <div className="relative z-10 mx-auto max-w-[112rem] space-y-6">
+        <TechFrameCard
+          className="min-h-0 w-full"
+          contentClassName="min-h-0 gap-0 px-[clamp(2.5rem,5vw,6rem)] py-6 sm:min-h-0 sm:px-[clamp(2.5rem,5vw,6rem)] sm:py-8"
+        >
+          <header className="flex items-center gap-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-cyan-400/15 ring-1 ring-cyan-300/25">
+              <BarChart3 className="text-cyan-300" size={24} />
             </div>
-            <div className="text-2xl font-bold text-outer-space-500 dark:text-platinum-500 mb-1">{metric.value}</div>
-            <div className="text-sm text-paynes-gray-500 dark:text-french-gray-400 mb-2">{metric.unit}</div>
-            <div className="text-xs font-medium text-outer-space-500 dark:text-platinum-500">{metric.title}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts Placeholder */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500 mb-4">Project Progress</h3>
-          <div className="h-64 bg-platinum-800 dark:bg-outer-space-400 rounded-lg flex items-center justify-center">
-            <div className="text-center text-paynes-gray-500 dark:text-french-gray-400">
-              <BarChart3 size={48} className="mx-auto mb-2" />
-              <p>Chart Component Placeholder</p>
-              <p className="text-sm">TODO: Implement with Chart.js or Recharts</p>
+            <div>
+              <h1 className="font-bold text-3xl text-white">Analytics</h1>
+              <p className="mt-1 text-cyan-100/70">Track real project progress, completions, and team activity.</p>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 p-6">
-          <h3 className="text-lg font-semibold text-outer-space-500 dark:text-platinum-500 mb-4">Team Activity</h3>
-          <div className="h-64 bg-platinum-800 dark:bg-outer-space-400 rounded-lg flex items-center justify-center">
-            <div className="text-center text-paynes-gray-500 dark:text-french-gray-400">
-              <TrendingUp size={48} className="mx-auto mb-2" />
-              <p>Activity Chart Placeholder</p>
-              <p className="text-sm">TODO: Implement activity timeline</p>
-            </div>
-          </div>
-        </div>
+          </header>
+        </TechFrameCard>
+        <AnalyticsDashboard data={data} />
       </div>
     </div>
   )
