@@ -115,8 +115,10 @@ describe("checkout service", () => {
     expect(mocks.createPaymongoCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({
         target: "user",
-        successUrl: "https://projectflow.example/subscription?checkout=success",
-        cancelUrl: "https://projectflow.example/subscription?checkout=cancelled",
+        successUrl:
+          "https://projectflow.example/subscription?checkout=success&purchase=23c77a0c-049f-47ba-ad40-cae4f08d07f2",
+        cancelUrl:
+          "https://projectflow.example/subscription?checkout=cancelled&purchase=23c77a0c-049f-47ba-ad40-cae4f08d07f2",
         idempotencyKey: expect.stringMatching(/^checkout:PF-TEST-/),
       }),
     )

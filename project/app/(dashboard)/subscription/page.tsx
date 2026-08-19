@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
 import {
@@ -9,11 +11,13 @@ import { getSubscriptionPageData } from "@/features/billing/server/subscription-
 export default async function SubscriptionPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkout?: string | string[] }>
+  searchParams: Promise<{ checkout?: string | string[]; purchase?: string | string[] }>
 }) {
   const [data, query] = await Promise.all([getSubscriptionPageData(), searchParams])
   const checkoutReturn: CheckoutReturnState =
     query.checkout === "success" || query.checkout === "cancelled" ? query.checkout : null
+  const purchaseResult = z.uuid().safeParse(query.purchase)
+  const checkoutPurchaseId = purchaseResult.success ? purchaseResult.data : null
 
   return (
     <div className="relative isolate -mx-4 -my-8 min-h-[calc(100vh-4rem)] overflow-hidden px-4 py-8 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -30,7 +34,11 @@ export default async function SubscriptionPage({
             </p>
           </header>
         </TechFrameCard>
-        <SubscriptionPageController data={data} checkoutReturn={checkoutReturn} />
+        <SubscriptionPageController
+          data={data}
+          checkoutReturn={checkoutReturn}
+          checkoutPurchaseId={checkoutPurchaseId}
+        />
       </div>
     </div>
   )

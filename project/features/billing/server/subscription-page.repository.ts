@@ -30,6 +30,23 @@ export async function findLatestUserCheckoutPurchase(userId: string) {
   return row ?? null
 }
 
+export async function findLatestPaidUserCheckoutPurchase(userId: string) {
+  const [row] = await db
+    .select({ purchase: billingCheckoutPurchases, plan: billingPlans })
+    .from(billingCheckoutPurchases)
+    .innerJoin(billingPlans, eq(billingPlans.id, billingCheckoutPurchases.planId))
+    .where(
+      and(
+        eq(billingCheckoutPurchases.target, "user"),
+        eq(billingCheckoutPurchases.userId, userId),
+        eq(billingCheckoutPurchases.status, "paid"),
+      ),
+    )
+    .orderBy(desc(billingCheckoutPurchases.paidAt), desc(billingCheckoutPurchases.createdAt))
+    .limit(1)
+  return row ?? null
+}
+
 export async function findLatestWorkspaceCheckoutPurchase(workspaceId: string) {
   const [row] = await db
     .select({ purchase: billingCheckoutPurchases, plan: billingPlans })
@@ -37,6 +54,23 @@ export async function findLatestWorkspaceCheckoutPurchase(workspaceId: string) {
     .innerJoin(billingPlans, eq(billingPlans.id, billingCheckoutPurchases.planId))
     .where(and(eq(billingCheckoutPurchases.target, "workspace"), eq(billingCheckoutPurchases.workspaceId, workspaceId)))
     .orderBy(desc(billingCheckoutPurchases.createdAt))
+    .limit(1)
+  return row ?? null
+}
+
+export async function findLatestPaidWorkspaceCheckoutPurchase(workspaceId: string) {
+  const [row] = await db
+    .select({ purchase: billingCheckoutPurchases, plan: billingPlans })
+    .from(billingCheckoutPurchases)
+    .innerJoin(billingPlans, eq(billingPlans.id, billingCheckoutPurchases.planId))
+    .where(
+      and(
+        eq(billingCheckoutPurchases.target, "workspace"),
+        eq(billingCheckoutPurchases.workspaceId, workspaceId),
+        eq(billingCheckoutPurchases.status, "paid"),
+      ),
+    )
+    .orderBy(desc(billingCheckoutPurchases.paidAt), desc(billingCheckoutPurchases.createdAt))
     .limit(1)
   return row ?? null
 }

@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   countWorkspaceCapacity: vi.fn(),
   listActiveOwnedWorkspaces: vi.fn(),
   findLatestUserCheckoutPurchase: vi.fn(),
+  findLatestPaidUserCheckoutPurchase: vi.fn(),
+  findLatestPaidWorkspaceCheckoutPurchase: vi.fn(),
   findLatestWorkspaceCheckoutPurchase: vi.fn(),
 }))
 
@@ -27,6 +29,8 @@ vi.mock("@/features/billing/server/billing.repository", () => ({
 vi.mock("@/features/billing/server/subscription-page.repository", () => ({
   listActiveOwnedWorkspaces: mocks.listActiveOwnedWorkspaces,
   findLatestUserCheckoutPurchase: mocks.findLatestUserCheckoutPurchase,
+  findLatestPaidUserCheckoutPurchase: mocks.findLatestPaidUserCheckoutPurchase,
+  findLatestPaidWorkspaceCheckoutPurchase: mocks.findLatestPaidWorkspaceCheckoutPurchase,
   findLatestWorkspaceCheckoutPurchase: mocks.findLatestWorkspaceCheckoutPurchase,
 }))
 
@@ -94,6 +98,8 @@ describe("subscription page service", () => {
       id === "workspace-pro" ? { projectCount: 8, memberCount: 10 } : { projectCount: 3, memberCount: 2 },
     )
     mocks.findLatestUserCheckoutPurchase.mockResolvedValue(null)
+    mocks.findLatestPaidUserCheckoutPurchase.mockResolvedValue(null)
+    mocks.findLatestPaidWorkspaceCheckoutPurchase.mockResolvedValue(null)
     mocks.findLatestWorkspaceCheckoutPurchase.mockResolvedValue(null)
   })
 
@@ -103,6 +109,8 @@ describe("subscription page service", () => {
     expect(result.user).toEqual({
       tier: "pro",
       periodEndsAt: "2026-09-18T00:00:00.000Z",
+      proAccessSource: "manual",
+      proExpired: false,
       latestPurchase: null,
     })
     expect(result.catalog.user).toMatchObject({
@@ -132,5 +140,26 @@ describe("subscription page service", () => {
     expect(mocks.listActiveOwnedWorkspaces).toHaveBeenCalledWith("user-1")
     expect(mocks.listActiveBillingPlans).toHaveBeenCalledWith("user", false)
     expect(mocks.listActiveBillingPlans).toHaveBeenCalledWith("workspace", false)
+  })
+
+  it("distinguishes purchased and expired Pro access from manual assignments", async () => {
+    const accessEndsAt = new Date("2026-09-18T00:00:00.000Z")
+    mocks.findLatestPaidUserCheckoutPurchase.mockResolvedValue({
+      purchase: { accessEndsAt },
+    })
+
+    await expect(getSubscriptionPageData()).resolves.toMatchObject({
+      user: { tier: "pro", proAccessSource: "purchase", proExpired: false },
+    })
+
+    mocks.findUserSubscriptionTier.mockResolvedValue({
+      tier: "free",
+      endsAt: new Date("2026-07-18T00:00:00.000Z"),
+    })
+    mocks.findLatestPaidUserCheckoutPurchase.mockResolvedValue(null)
+
+    await expect(getSubscriptionPageData()).resolves.toMatchObject({
+      user: { tier: "free", proAccessSource: "manual", proExpired: true },
+    })
   })
 })

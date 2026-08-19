@@ -128,14 +128,20 @@ export async function startCheckout(input: unknown): Promise<StartCheckoutResult
     return { purchaseId: purchase.id, checkoutUrl: purchase.checkoutUrl }
 
   const appUrl = applicationUrl()
+  const successUrl = new URL("/subscription", appUrl)
+  successUrl.searchParams.set("checkout", "success")
+  successUrl.searchParams.set("purchase", purchase.id)
+  const cancelUrl = new URL("/subscription", appUrl)
+  cancelUrl.searchParams.set("checkout", "cancelled")
+  cancelUrl.searchParams.set("purchase", purchase.id)
   try {
     const provider = await createPaymongoCheckoutSession({
       target: plan.target,
       amount: plan.amount,
       currency: "PHP",
       referenceNumber,
-      successUrl: new URL("/subscription?checkout=success", appUrl).toString(),
-      cancelUrl: new URL("/subscription?checkout=cancelled", appUrl).toString(),
+      successUrl: successUrl.toString(),
+      cancelUrl: cancelUrl.toString(),
       idempotencyKey: `checkout:${referenceNumber}`,
     })
     const saved = await attachCheckoutSession({

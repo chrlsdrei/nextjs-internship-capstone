@@ -1,5 +1,6 @@
 export type BillingTarget = "user" | "workspace"
 export type SubscriptionTier = "free" | "pro"
+export type ProAccessSource = "manual" | "purchase" | null
 
 export const checkoutPurchaseStatuses = ["pending", "paid", "cancelled", "expired", "failed"] as const
 export type CheckoutPurchaseStatus = (typeof checkoutPurchaseStatuses)[number]
@@ -64,6 +65,8 @@ export type SubscriptionCatalogDto = {
 export type SubscriptionAccessSummaryDto = {
   tier: SubscriptionTier
   periodEndsAt: string | null
+  proAccessSource: ProAccessSource
+  proExpired: boolean
   latestPurchase: CheckoutPurchaseDto | null
 }
 

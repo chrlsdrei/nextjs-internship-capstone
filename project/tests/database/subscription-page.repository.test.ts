@@ -6,6 +6,8 @@ import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 
 import {
+  findLatestPaidUserCheckoutPurchase,
+  findLatestPaidWorkspaceCheckoutPurchase,
   findLatestUserCheckoutPurchase,
   findLatestWorkspaceCheckoutPurchase,
   listActiveOwnedWorkspaces,
@@ -145,5 +147,7 @@ describe("subscription page persistence", () => {
       purchase: { referenceNumber: `subscription-workspace-${suffix}` },
       plan: { id: workspacePlan.id },
     })
+    await expect(findLatestPaidUserCheckoutPurchase(owner.id)).resolves.toBeNull()
+    await expect(findLatestPaidWorkspaceCheckoutPurchase(ownedWorkspaceId)).resolves.toBeNull()
   })
 })

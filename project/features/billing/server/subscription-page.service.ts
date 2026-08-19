@@ -5,6 +5,7 @@ import { DEFAULT_SUBSCRIPTION_LIMITS } from "@/features/billing/billing.policy"
 import type {
   BillingPlanDto,
   CheckoutPurchaseDto,
+  ProAccessSource,
   SubscriptionCatalogDto,
   SubscriptionPageDto,
   SubscriptionTier,
@@ -17,6 +18,8 @@ import {
 } from "@/features/billing/server/billing.repository"
 import { paymongoLivemode } from "@/features/billing/server/paymongo.gateway"
 import {
+  findLatestPaidUserCheckoutPurchase,
+  findLatestPaidWorkspaceCheckoutPurchase,
   findLatestUserCheckoutPurchase,
   findLatestWorkspaceCheckoutPurchase,
   listActiveOwnedWorkspaces,
@@ -75,25 +78,40 @@ function limitsForTier(tier: SubscriptionTier, catalog: SubscriptionCatalogDto) 
   }
 }
 
+function proAccessSource(
+  periodEndsAt: Date | null | undefined,
+  latestPaidPurchase: CheckoutPurchaseRow | null,
+): ProAccessSource {
+  if (!periodEndsAt) return null
+  return latestPaidPurchase?.purchase.accessEndsAt?.getTime() === periodEndsAt.getTime() ? "purchase" : "manual"
+}
+
+function proExpired(tier: SubscriptionTier, periodEndsAt: Date | null | undefined) {
+  return tier === "free" && Boolean(periodEndsAt && periodEndsAt <= new Date())
+}
+
 export async function getSubscriptionPageData(): Promise<SubscriptionPageDto> {
   const user = await getCurrentDatabaseUser()
   const livemode = paymongoLivemode()
-  const [userAccess, userPlans, workspacePlans, ownedWorkspaces, latestUserPurchase] = await Promise.all([
-    findUserSubscriptionTier(user.id),
-    listActiveBillingPlans("user", livemode),
-    listActiveBillingPlans("workspace", livemode),
-    listActiveOwnedWorkspaces(user.id),
-    findLatestUserCheckoutPurchase(user.id),
-  ])
+  const [userAccess, userPlans, workspacePlans, ownedWorkspaces, latestUserPurchase, latestPaidUserPurchase] =
+    await Promise.all([
+      findUserSubscriptionTier(user.id),
+      listActiveBillingPlans("user", livemode),
+      listActiveBillingPlans("workspace", livemode),
+      listActiveOwnedWorkspaces(user.id),
+      findLatestUserCheckoutPurchase(user.id),
+      findLatestPaidUserCheckoutPurchase(user.id),
+    ])
   const userCatalog = toCatalog(userPlans)
   const workspaceCatalog = toCatalog(workspacePlans)
 
   const workspaceData = await Promise.all(
     ownedWorkspaces.map(async (workspace) => {
-      const [access, usage, latestPurchase] = await Promise.all([
+      const [access, usage, latestPurchase, latestPaidPurchase] = await Promise.all([
         findWorkspaceSubscriptionTier(workspace.id),
         countWorkspaceCapacity(workspace.id),
         findLatestWorkspaceCheckoutPurchase(workspace.id),
+        findLatestPaidWorkspaceCheckoutPurchase(workspace.id),
       ])
       const tier = access?.tier ?? "free"
       const capacity = limitsForTier(tier, workspaceCatalog)
@@ -102,6 +120,8 @@ export async function getSubscriptionPageData(): Promise<SubscriptionPageDto> {
         name: workspace.name,
         tier,
         periodEndsAt: access?.endsAt?.toISOString() ?? null,
+        proAccessSource: proAccessSource(access?.endsAt, latestPaidPurchase),
+        proExpired: proExpired(tier, access?.endsAt),
         capacity,
         usage,
         readOnly:
@@ -115,6 +135,8 @@ export async function getSubscriptionPageData(): Promise<SubscriptionPageDto> {
     user: {
       tier: userAccess?.tier ?? "free",
       periodEndsAt: userAccess?.endsAt?.toISOString() ?? null,
+      proAccessSource: proAccessSource(userAccess?.endsAt, latestPaidUserPurchase),
+      proExpired: proExpired(userAccess?.tier ?? "free", userAccess?.endsAt),
       latestPurchase: toPurchaseDto(latestUserPurchase),
     },
     catalog: { user: userCatalog, workspace: workspaceCatalog },

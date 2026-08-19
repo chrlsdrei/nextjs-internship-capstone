@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
 import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
-import type { BillingPlanDto, SubscriptionPageDto } from "@/features/billing/billing.types"
+import type {
+  BillingPlanDto,
+  SubscriptionAccessSummaryDto,
+  SubscriptionPageDto,
+} from "@/features/billing/billing.types"
 import { CheckoutController } from "@/features/billing/controllers/checkout.controller"
 
 export type CheckoutReturnState = "success" | "cancelled" | null
@@ -24,12 +28,33 @@ function formatPrice(plan: BillingPlanDto | null) {
   })} for 30 days`
 }
 
+function accessStatus(access: SubscriptionAccessSummaryDto) {
+  const end = formatAccessEnd(access.periodEndsAt)
+  if (access.tier === "pro") {
+    return {
+      label: access.proAccessSource === "purchase" ? "Active purchased Pro" : "Active manually assigned Pro",
+      detail: end ? `Access is available through ${end}.` : "Pro access is active.",
+    }
+  }
+  if (access.proExpired) {
+    return {
+      label: "Pro access expired",
+      detail: end
+        ? `The previous Pro period ended on ${end}. Free access is now active.`
+        : "Free access is now active.",
+    }
+  }
+  return { label: "Free access", detail: "Upgrade at any time with a one-time 30-day purchase." }
+}
+
 export function SubscriptionPageController({
   data,
   checkoutReturn,
+  checkoutPurchaseId,
 }: {
   data: SubscriptionPageDto
   checkoutReturn: CheckoutReturnState
+  checkoutPurchaseId: string | null
 }) {
   const router = useRouter()
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(data.ownedWorkspaces[0]?.id ?? "")
@@ -43,6 +68,23 @@ export function SubscriptionPageController({
   const userPro = data.catalog.user.pro
   const workspaceFree = data.catalog.workspace.free
   const workspacePro = data.catalog.workspace.pro
+  const returnedPurchase = useMemo(
+    () =>
+      checkoutPurchaseId
+        ? ([data.user.latestPurchase, ...data.ownedWorkspaces.map((workspace) => workspace.latestPurchase)].find(
+            (purchase) => purchase?.id === checkoutPurchaseId,
+          ) ?? null)
+        : null,
+    [checkoutPurchaseId, data.ownedWorkspaces, data.user.latestPurchase],
+  )
+  const userStatus = accessStatus(data.user)
+  const workspaceStatus = selectedWorkspace ? accessStatus(selectedWorkspace) : null
+  const cancelledPurchaseId = checkoutReturn === "cancelled" ? checkoutPurchaseId : null
+  const userCheckoutPending =
+    data.user.latestPurchase?.status === "pending" && data.user.latestPurchase.id !== cancelledPurchaseId
+  const workspaceCheckoutPending =
+    selectedWorkspace?.latestPurchase?.status === "pending" &&
+    selectedWorkspace.latestPurchase.id !== cancelledPurchaseId
 
   useEffect(() => {
     if (selectedWorkspaceId && data.ownedWorkspaces.some((workspace) => workspace.id === selectedWorkspaceId)) return
@@ -50,7 +92,7 @@ export function SubscriptionPageController({
   }, [data.ownedWorkspaces, selectedWorkspaceId])
 
   useEffect(() => {
-    if (checkoutReturn !== "success") return
+    if (checkoutReturn !== "success" || returnedPurchase?.status === "paid") return
     let attempts = 0
     router.refresh()
     const interval = window.setInterval(() => {
@@ -59,17 +101,25 @@ export function SubscriptionPageController({
       if (attempts >= 8) window.clearInterval(interval)
     }, 2_500)
     return () => window.clearInterval(interval)
-  }, [checkoutReturn, router])
+  }, [checkoutReturn, returnedPurchase?.status, router])
 
   return (
     <div className="space-y-10">
-      {checkoutReturn === "success" && (
+      {checkoutReturn === "success" && returnedPurchase?.status !== "paid" && (
         <div
           role="status"
           className="rounded-xl border border-cyan-300/40 bg-cyan-950/75 px-5 py-4 text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.16)]"
         >
           You returned from PayMongo. Payment is not considered complete until the verified webhook confirms it;
           ProjectFlow is refreshing your access status now.
+        </div>
+      )}
+      {checkoutReturn === "success" && returnedPurchase?.status === "paid" && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-300/40 bg-emerald-950/55 px-5 py-4 text-emerald-100"
+        >
+          Payment confirmed. The verified PayMongo webhook granted the new Pro access period shown below.
         </div>
       )}
       {checkoutReturn === "cancelled" && (
@@ -119,11 +169,26 @@ export function SubscriptionPageController({
                 Current access{accessEnd ? ` through ${accessEnd}` : ""}
               </p>
             )}
+            <div className="mt-5 rounded-lg border border-cyan-300/20 bg-blue-950/55 p-4 text-sm">
+              <p className="font-semibold text-cyan-200">{userStatus.label}</p>
+              <p className="mt-1 text-cyan-100/65">{userStatus.detail}</p>
+              {userCheckoutPending && (
+                <p className="mt-2 text-amber-200">A checkout is awaiting payment confirmation.</p>
+              )}
+            </div>
             <CheckoutController
               plan={userPro}
               subjectName="Your ProjectFlow account"
-              label={data.user.tier === "pro" ? "Purchase 30 more days" : "Purchase User Pro"}
-              disabledReason={userPro ? undefined : "User Pro is currently unavailable"}
+              label={
+                data.user.tier === "pro"
+                  ? "Purchase 30 more days"
+                  : data.user.proExpired
+                    ? "Restore User Pro"
+                    : "Purchase User Pro"
+              }
+              disabledReason={
+                userCheckoutPending ? "Checkout awaiting confirmation" : userPro ? undefined : "User Pro is unavailable"
+              }
             />
           </OrnamentalFrame>
         </div>
@@ -202,17 +267,34 @@ export function SubscriptionPageController({
                 {workspaceAccessEnd ? ` through ${workspaceAccessEnd}` : ""}
               </p>
             )}
+            {workspaceStatus && (
+              <div className="mt-5 rounded-lg border border-cyan-300/20 bg-blue-950/55 p-4 text-sm">
+                <p className="font-semibold text-cyan-200">{workspaceStatus.label}</p>
+                <p className="mt-1 text-cyan-100/65">{workspaceStatus.detail}</p>
+                {workspaceCheckoutPending && (
+                  <p className="mt-2 text-amber-200">A checkout is awaiting payment confirmation.</p>
+                )}
+              </div>
+            )}
             <CheckoutController
               plan={selectedWorkspace ? workspacePro : null}
               workspaceId={selectedWorkspace?.id}
               subjectName={selectedWorkspace?.name ?? "No workspace selected"}
-              label={selectedWorkspace?.tier === "pro" ? "Purchase 30 more days" : "Purchase Workspace Pro"}
+              label={
+                selectedWorkspace?.tier === "pro"
+                  ? "Purchase 30 more days"
+                  : selectedWorkspace?.proExpired
+                    ? "Restore Workspace Pro"
+                    : "Purchase Workspace Pro"
+              }
               disabledReason={
                 !selectedWorkspace
                   ? "Select an owned workspace"
-                  : workspacePro
-                    ? undefined
-                    : "Workspace Pro is currently unavailable"
+                  : workspaceCheckoutPending
+                    ? "Checkout awaiting confirmation"
+                    : workspacePro
+                      ? undefined
+                      : "Workspace Pro is currently unavailable"
               }
             />
           </OrnamentalFrame>
