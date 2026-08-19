@@ -1,25 +1,23 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
 import { generateBoardAction } from "@/features/ai/actions/ai.actions"
 import { BuildAiDialog } from "@/features/ai/components/build-ai-dialog"
-import type { BillingPlanDto, UserAiEntitlementDto } from "@/features/billing/billing.types"
-import { SubscriptionUpgradeController } from "@/features/billing/controllers/subscription-upgrade.controller"
+import type { UserAiEntitlementDto } from "@/features/billing/billing.types"
 import { type ActionState, initialActionState } from "@/lib/action-state"
 
 export function BuildAiController({
   collapsed,
   entitlement,
   workspaces,
-  plan,
 }: {
   collapsed: boolean
   entitlement: UserAiEntitlementDto
   workspaces: Array<{ id: string; name: string }>
-  plan: BillingPlanDto | null
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -29,13 +27,21 @@ export function BuildAiController({
 
   if (!entitlement.subscribed) {
     return (
-      <SubscriptionUpgradeController
-        plan={plan}
-        label="Build with AI 🔒"
-        icon={<Image src="/Quest-Board-av.png" alt="" width={24} height={24} className="mr-2" />}
-        labelClassName={collapsed ? "lg:sr-only" : undefined}
+      <Link
+        href="/subscription"
+        aria-label="Build with AI requires User Pro. View subscription options."
+        title={collapsed ? "Build with AI — User Pro required" : undefined}
         className={buttonClass}
-      />
+      >
+        <Image
+          src="/Quest-Board-av.png"
+          alt=""
+          width={24}
+          height={24}
+          className={collapsed ? "mr-2 lg:mr-0" : "mr-2"}
+        />
+        <span className={collapsed ? "lg:sr-only" : undefined}>Build with AI 🔒</span>
+      </Link>
     )
   }
 

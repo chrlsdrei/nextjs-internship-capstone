@@ -1,6 +1,7 @@
 "use client"
 
 import { ListTodo, ScrollText } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 
@@ -8,8 +9,7 @@ import { ActionFeedback } from "@/components/ui/action-feedback"
 import { Modal } from "@/components/ui/modal"
 import { generateBoardSummaryAction, generateTasksAction } from "@/features/ai/actions/ai.actions"
 import type { BoardSummaryDto } from "@/features/ai/ai-usage.types"
-import type { BillingPlanDto, UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
-import { SubscriptionUpgradeController } from "@/features/billing/controllers/subscription-upgrade.controller"
+import type { UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
 import type { BoardListDto } from "@/features/board/board.types"
 import { type ActionState, initialActionState } from "@/lib/action-state"
 
@@ -18,24 +18,18 @@ const controlClass =
 
 export function BoardAiControlsController({
   projectId,
-  workspaceId,
   lists,
   canEdit,
   userEntitlement,
   workspaceEntitlement,
   initialSummaries,
-  userPlan,
-  workspacePlan,
 }: {
   projectId: string
-  workspaceId: string
   lists: BoardListDto[]
   canEdit: boolean
   userEntitlement: UserAiEntitlementDto
   workspaceEntitlement: WorkspaceEntitlementDto
   initialSummaries: BoardSummaryDto[]
-  userPlan: BillingPlanDto | null
-  workspacePlan: BillingPlanDto | null
 }) {
   const router = useRouter()
   const [tasksOpen, setTasksOpen] = useState(false)
@@ -58,28 +52,25 @@ export function BoardAiControlsController({
             <ListTodo size={16} /> AI Tasks
           </button>
         ) : (
-          <SubscriptionUpgradeController plan={userPlan} label="AI Tasks 🔒" className={controlClass} />
+          <Link href="/subscription" className={controlClass} aria-label="AI Tasks requires User Pro">
+            <ListTodo size={16} /> AI Tasks 🔒
+          </Link>
         ))}
       {workspaceEntitlement.subscribed ? (
         <button type="button" onClick={() => setSummaryOpen(true)} className={controlClass}>
           <ScrollText size={16} /> AI Summary
         </button>
-      ) : workspaceEntitlement.canManageBilling ? (
-        <SubscriptionUpgradeController
-          workspaceId={workspaceId}
-          plan={workspacePlan}
-          label="AI Summary 🔒"
-          className={controlClass}
-        />
       ) : (
-        <button
-          type="button"
-          disabled
-          title="Ask the workspace owner to upgrade"
-          className={`${controlClass} cursor-not-allowed opacity-55`}
+        <Link
+          href="/subscription"
+          title={
+            workspaceEntitlement.canManageBilling ? "Workspace Pro required" : "Ask the workspace owner to upgrade"
+          }
+          aria-label="AI Summary requires Workspace Pro"
+          className={controlClass}
         >
           <ScrollText size={16} /> AI Summary 🔒
-        </button>
+        </Link>
       )}
 
       <Modal

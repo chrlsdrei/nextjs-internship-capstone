@@ -23,7 +23,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { BoardSummaryDto } from "@/features/ai/ai-usage.types"
 import { BoardAiControlsController } from "@/features/ai/controllers/board-ai-controls.controller"
-import type { BillingPlanDto, UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
+import type { UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
 import type { BoardListDto, BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
 import {
   retainActiveMemberSelections,
@@ -138,23 +138,17 @@ export function BoardController({
   projectTitle,
   projectDescription,
   serverBoard,
-  workspaceId,
   aiData,
-  userAiPlan,
-  workspacePlan,
 }: {
   projectId: string
   projectTitle: string
   projectDescription: string | null
   serverBoard: ProjectBoardDto
-  workspaceId: string
   aiData: {
     userEntitlement: UserAiEntitlementDto
     workspaceEntitlement: WorkspaceEntitlementDto
     summaries: BoardSummaryDto[]
   }
-  userAiPlan: BillingPlanDto | null
-  workspacePlan: BillingPlanDto | null
 }) {
   const [search, setSearch] = useState("")
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -306,14 +300,11 @@ export function BoardController({
         aiControls={
           <BoardAiControlsController
             projectId={projectId}
-            workspaceId={workspaceId}
             lists={board.lists}
             canEdit={canEdit}
             userEntitlement={aiData.userEntitlement}
             workspaceEntitlement={aiData.workspaceEntitlement}
             initialSummaries={aiData.summaries}
-            userPlan={userAiPlan}
-            workspacePlan={workspacePlan}
           />
         }
       />

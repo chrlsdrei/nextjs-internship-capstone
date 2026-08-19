@@ -6,6 +6,7 @@ import {
   Bell,
   Building2,
   Calendar,
+  CreditCard,
   FolderOpen,
   Home,
   Menu,
@@ -23,7 +24,7 @@ import { useState } from "react"
 
 import { TaskFrame } from "@/components/ui/task-frame"
 import { BuildAiController } from "@/features/ai/controllers/build-ai.controller"
-import type { BillingPlanDto, UserAiEntitlementDto } from "@/features/billing/billing.types"
+import type { UserAiEntitlementDto } from "@/features/billing/billing.types"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -32,17 +33,16 @@ const navigation = [
   { name: "Team", href: "/team", icon: Users },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Subscription", href: "/subscription", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function DashboardLayout({
   children,
   ai,
-  userAiPlan,
 }: Readonly<{
   children: React.ReactNode
   ai: { entitlement: UserAiEntitlementDto; workspaces: Array<{ id: string; name: string }> }
-  userAiPlan: BillingPlanDto | null
 }>) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -123,12 +123,7 @@ export function DashboardLayout({
             </ul>
           </nav>
           <div className={`mt-auto px-3 pb-5 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
-            <BuildAiController
-              collapsed={sidebarCollapsed}
-              entitlement={ai.entitlement}
-              workspaces={ai.workspaces}
-              plan={userAiPlan}
-            />
+            <BuildAiController collapsed={sidebarCollapsed} entitlement={ai.entitlement} workspaces={ai.workspaces} />
           </div>
         </TaskFrame>
       </aside>
