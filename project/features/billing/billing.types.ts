@@ -55,3 +55,37 @@ export type WorkspaceEntitlementDto = {
   canManageBilling: boolean
   periodEndsAt: string | null
 }
+
+export type SubscriptionCatalogDto = {
+  free: BillingPlanDto | null
+  pro: BillingPlanDto | null
+}
+
+export type SubscriptionAccessSummaryDto = {
+  tier: SubscriptionTier
+  periodEndsAt: string | null
+  latestPurchase: CheckoutPurchaseDto | null
+}
+
+export type OwnedWorkspaceSubscriptionDto = SubscriptionAccessSummaryDto & {
+  id: string
+  name: string
+  capacity: {
+    maxProjects: number
+    maxMembers: number
+  }
+  usage: {
+    projectCount: number
+    memberCount: number
+  }
+  readOnly: boolean
+}
+
+export type SubscriptionPageDto = {
+  user: SubscriptionAccessSummaryDto
+  catalog: {
+    user: SubscriptionCatalogDto
+    workspace: SubscriptionCatalogDto
+  }
+  ownedWorkspaces: OwnedWorkspaceSubscriptionDto[]
+}
