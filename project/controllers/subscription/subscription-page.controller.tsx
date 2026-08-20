@@ -1,10 +1,11 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { SubscriptionAccessCard } from "@/components/subscription/subscription-access-card"
 import { CheckoutController } from "@/controllers/subscription/checkout.controller"
+import { cancelCheckoutAction } from "@/features/billing/actions/cancel-checkout"
 import type {
   CheckoutPurchaseDto,
   SubscriptionAccessSummaryDto,
@@ -41,7 +42,7 @@ function purchaseStatusMessage(purchase: CheckoutPurchaseDto | null) {
   if (!purchase) return null
   switch (purchase.status) {
     case "pending":
-      return "A checkout is awaiting payment or verified webhook confirmation."
+      return "A checkout is still awaiting payment confirmation. Resume it or start a new attempt if the payment failed or was abandoned."
     case "failed":
       return "The previous checkout failed. No access was granted, and you may safely try again."
     case "cancelled":
@@ -65,6 +66,7 @@ export function SubscriptionPageController({
   const router = useRouter()
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(data.ownedWorkspaces[0]?.id ?? "")
   const [confirmationTimedOut, setConfirmationTimedOut] = useState(false)
+  const cancellationHandled = useRef<string | null>(null)
   const selectedWorkspace = useMemo(
     () => data.ownedWorkspaces.find((workspace) => workspace.id === selectedWorkspaceId) ?? null,
     [data.ownedWorkspaces, selectedWorkspaceId],
@@ -86,14 +88,15 @@ export function SubscriptionPageController({
   )
   const userStatus = accessStatus(data.user)
   const workspaceStatus = selectedWorkspace ? accessStatus(selectedWorkspace) : null
-  const cancelledPurchaseId = checkoutReturn === "cancelled" ? checkoutPurchaseId : null
-  const userCheckoutPending =
-    data.user.latestPurchase?.status === "pending" && data.user.latestPurchase.id !== cancelledPurchaseId
-  const workspaceCheckoutPending =
-    selectedWorkspace?.latestPurchase?.status === "pending" &&
-    selectedWorkspace.latestPurchase.id !== cancelledPurchaseId
   const userPurchaseMessage = purchaseStatusMessage(data.user.latestPurchase)
   const workspacePurchaseMessage = purchaseStatusMessage(selectedWorkspace?.latestPurchase ?? null)
+
+  useEffect(() => {
+    if (checkoutReturn !== "cancelled" || !checkoutPurchaseId || cancellationHandled.current === checkoutPurchaseId)
+      return
+    cancellationHandled.current = checkoutPurchaseId
+    void cancelCheckoutAction({ purchaseId: checkoutPurchaseId }).then(() => router.refresh())
+  }, [checkoutPurchaseId, checkoutReturn, router])
 
   useEffect(() => {
     if (selectedWorkspaceId && data.ownedWorkspaces.some((workspace) => workspace.id === selectedWorkspaceId)) return
@@ -192,7 +195,12 @@ export function SubscriptionPageController({
             currentAccess={
               data.user.tier === "pro" ? `Current access${accessEnd ? ` through ${accessEnd}` : ""}` : undefined
             }
-            status={{ ...userStatus, purchaseMessage: userPurchaseMessage }}
+            status={{
+              ...userStatus,
+              purchaseMessage: userPurchaseMessage,
+              resumeUrl:
+                data.user.latestPurchase?.status === "pending" ? data.user.latestPurchase.checkoutUrl : undefined,
+            }}
             checkout={
               <CheckoutController
                 plan={userPro}
@@ -207,11 +215,9 @@ export function SubscriptionPageController({
                 disabledReason={
                   !data.checkout.available
                     ? "Checkout unavailable"
-                    : userCheckoutPending
-                      ? "Checkout awaiting confirmation"
-                      : userPro
-                        ? undefined
-                        : `No User Pro product matches the ${data.checkout.mode ?? "current"} environment`
+                    : userPro
+                      ? undefined
+                      : `No User Pro product matches the ${data.checkout.mode ?? "current"} environment`
                 }
               />
             }
@@ -287,7 +293,18 @@ export function SubscriptionPageController({
                 ? `Current access for ${selectedWorkspace.name}${workspaceAccessEnd ? ` through ${workspaceAccessEnd}` : ""}`
                 : undefined
             }
-            status={workspaceStatus ? { ...workspaceStatus, purchaseMessage: workspacePurchaseMessage } : undefined}
+            status={
+              workspaceStatus
+                ? {
+                    ...workspaceStatus,
+                    purchaseMessage: workspacePurchaseMessage,
+                    resumeUrl:
+                      selectedWorkspace?.latestPurchase?.status === "pending"
+                        ? selectedWorkspace.latestPurchase.checkoutUrl
+                        : undefined,
+                  }
+                : undefined
+            }
             checkout={
               <CheckoutController
                 plan={selectedWorkspace ? workspacePro : null}
@@ -305,11 +322,9 @@ export function SubscriptionPageController({
                     ? "Select an owned workspace"
                     : !data.checkout.available
                       ? "Checkout unavailable"
-                      : workspaceCheckoutPending
-                        ? "Checkout awaiting confirmation"
-                        : workspacePro
-                          ? undefined
-                          : `No Workspace Pro product matches the ${data.checkout.mode ?? "current"} environment`
+                      : workspacePro
+                        ? undefined
+                        : `No Workspace Pro product matches the ${data.checkout.mode ?? "current"} environment`
                 }
               />
             }

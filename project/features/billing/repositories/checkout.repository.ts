@@ -95,3 +95,18 @@ export async function markCheckoutPurchaseFailed(purchaseId: string, failureCode
     .returning()
   return failed ?? null
 }
+
+export async function cancelPendingCheckoutPurchase(purchaseId: string, payerUserId: string) {
+  const [cancelled] = await db
+    .update(billingCheckoutPurchases)
+    .set({ status: "cancelled", failureCode: "CHECKOUT_CANCELLED", updatedAt: new Date() })
+    .where(
+      and(
+        eq(billingCheckoutPurchases.id, purchaseId),
+        eq(billingCheckoutPurchases.payerUserId, payerUserId),
+        eq(billingCheckoutPurchases.status, "pending"),
+      ),
+    )
+    .returning()
+  return cancelled ?? null
+}

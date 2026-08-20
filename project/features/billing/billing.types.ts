@@ -27,6 +27,7 @@ export type CheckoutPurchaseDto = {
   currency: string
   paidAt: string | null
   accessEndsAt: string | null
+  checkoutUrl: string | null
 }
 
 export type StartCheckoutResult = {

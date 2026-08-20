@@ -104,6 +104,27 @@ describe("checkout webhook service", () => {
     })
   })
 
+  it("fulfills a verified payment even after the browser marked its checkout cancelled", async () => {
+    mocks.findCheckoutPurchaseForWebhook.mockResolvedValue({ purchase: { ...purchase, status: "cancelled" }, plan })
+
+    await expect(processCheckoutWebhook(payload(), JSON.stringify(payload()))).resolves.toMatchObject({
+      duplicate: false,
+      purchaseId: purchase.id,
+    })
+    expect(mocks.fulfillCheckoutPurchase).toHaveBeenCalledOnce()
+  })
+
+  it("acknowledges a paid purchase without extending access twice", async () => {
+    mocks.findCheckoutPurchaseForWebhook.mockResolvedValue({ purchase: { ...purchase, status: "paid" }, plan })
+
+    await expect(processCheckoutWebhook(payload(), JSON.stringify(payload()))).resolves.toEqual({
+      ignored: false,
+      duplicate: true,
+      purchaseId: purchase.id,
+    })
+    expect(mocks.fulfillCheckoutPurchase).not.toHaveBeenCalled()
+  })
+
   it("rejects amount mismatches before fulfillment and records the failure", async () => {
     const mismatched = payload()
     mismatched.data.attributes.data.attributes.payments[0].attributes.amount = 39_900

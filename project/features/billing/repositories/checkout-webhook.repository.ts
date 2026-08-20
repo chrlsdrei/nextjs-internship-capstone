@@ -78,7 +78,7 @@ export async function fulfillCheckoutPurchase(input: {
         AND purchase."user_id" IS NOT DISTINCT FROM ${input.userId}
         AND purchase."workspace_id" IS NOT DISTINCT FROM ${input.workspaceId}
         AND (purchase."paymongo_checkout_session_id" IS NULL OR purchase."paymongo_checkout_session_id" = ${input.checkoutSessionId})
-        AND purchase."status" IN ('pending', 'failed')
+        AND purchase."status" IN ('pending', 'failed', 'cancelled', 'expired')
     ), user_update AS (
       UPDATE "users" AS account
       SET

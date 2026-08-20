@@ -14,3 +14,7 @@ export const startCheckoutSchema = z
   .strict()
 
 export type StartCheckoutInput = z.infer<typeof startCheckoutSchema>
+
+export const cancelCheckoutSchema = z.object({ purchaseId: z.uuid("Purchase ID must be a valid UUID") }).strict()
+
+export type CancelCheckoutInput = z.infer<typeof cancelCheckoutSchema>

@@ -4,7 +4,7 @@ import { createHash } from "node:crypto"
 
 import { getCurrentDatabaseUser } from "@/features/auth/services/session.service"
 import { BillingError } from "@/features/billing/billing.error"
-import { startCheckoutSchema } from "@/features/billing/billing.schema"
+import { cancelCheckoutSchema, startCheckoutSchema } from "@/features/billing/billing.schema"
 import type { StartCheckoutResult } from "@/features/billing/billing.types"
 import {
   createPaymongoCheckoutSession,
@@ -13,11 +13,18 @@ import {
 } from "@/features/billing/gateways/paymongo.gateway"
 import {
   attachCheckoutSession,
+  cancelPendingCheckoutPurchase,
   findActiveWorkspaceOwnerUserId,
   findCheckoutPlan,
   markCheckoutPurchaseFailed,
   reserveCheckoutPurchase,
 } from "@/features/billing/repositories/checkout.repository"
+
+export async function cancelCheckout(input: unknown) {
+  const values = cancelCheckoutSchema.parse(input)
+  const user = await getCurrentDatabaseUser()
+  return cancelPendingCheckoutPurchase(values.purchaseId, user.id)
+}
 
 function applicationUrl() {
   const value = process.env.NEXT_PUBLIC_APP_URL
