@@ -20,6 +20,7 @@ import {
   softDeleteTaskCommentRecord,
   updateTaskCommentRecord,
 } from "@/features/comments/server/comment.repository"
+import { publishTaskCommentNotifications } from "@/features/notifications/server/notification.service"
 import { findProjectById } from "@/features/projects/server/project.repository"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
 import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
@@ -101,6 +102,7 @@ export async function createTaskComment(input: unknown) {
     name: comment.authorName,
     workspaceMemberId: comment.authorWorkspaceMemberId,
   })
+  await publishTaskCommentNotifications(comment.id)
   return toTaskCommentDto(comment, viewer(access))
 }
 

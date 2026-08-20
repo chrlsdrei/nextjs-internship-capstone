@@ -30,6 +30,7 @@ import {
   hashInvitationToken,
   invitationExpiry,
 } from "@/features/invitations/server/invitation-token"
+import { publishInvitationNotification } from "@/features/notifications/server/notification.service"
 import { requireProjectPermission } from "@/features/projects/server/project-access.service"
 import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
 import { findActiveWorkspaceAccess } from "@/features/workspaces/server/workspace.repository"
@@ -173,6 +174,7 @@ export async function createWorkspaceInvitation(input: unknown): Promise<Invitat
     },
   })
   await deliver(invitation, token)
+  await publishInvitationNotification(invitation.id)
   return toDto({ ...invitation, deliveryStatus: "sent" })
 }
 
@@ -230,6 +232,7 @@ export async function createProjectInvitation(input: unknown): Promise<Invitatio
     },
   })
   await deliver(invitation, token)
+  await publishInvitationNotification(invitation.id)
   return toDto({ ...invitation, deliveryStatus: "sent" })
 }
 

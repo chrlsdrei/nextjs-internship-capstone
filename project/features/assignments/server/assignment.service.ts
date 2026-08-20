@@ -9,6 +9,7 @@ import {
 } from "@/features/assignments/server/assignment.repository"
 import { requireWorkspaceWritable } from "@/features/billing/server/entitlement.service"
 import { changeTaskAssigneeSchema, setTaskAssigneesSchema } from "@/features/board/board.schema"
+import { publishTaskAssignmentNotifications } from "@/features/notifications/server/notification.service"
 import { findProjectById } from "@/features/projects/server/project.repository"
 import { ProjectAccessError, requireProjectPermission } from "@/features/projects/server/project-access.service"
 import { enforceRateLimit } from "@/features/rate-limits/server/rate-limit.service"
@@ -39,6 +40,7 @@ export async function recordTaskAssignmentActivity(projectId: string, taskId: st
       },
     },
   })
+  await publishTaskAssignmentNotifications(taskId)
 }
 
 async function assignmentAccess(projectId: string, allowCleanup = false) {

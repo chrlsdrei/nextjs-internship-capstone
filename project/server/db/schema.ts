@@ -774,6 +774,40 @@ export const activityLogs = pgTable(
   ],
 )
 
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    recipientUserId: uuid("recipient_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "set null" }),
+    type: text("type").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    href: text("href"),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("notifications_recipient_dedupe_unique").on(table.recipientUserId, table.dedupeKey),
+    index("notifications_recipient_created_idx").on(table.recipientUserId, table.createdAt),
+    index("notifications_recipient_unread_idx")
+      .on(table.recipientUserId, table.createdAt)
+      .where(sql`${table.readAt} is null`),
+    index("notifications_project_idx").on(table.projectId),
+    index("notifications_task_idx").on(table.taskId),
+    check("notifications_type_nonempty", sql`length(trim(${table.type})) > 0`),
+    check("notifications_dedupe_key_nonempty", sql`length(trim(${table.dedupeKey})) > 0`),
+    check("notifications_title_nonempty", sql`length(trim(${table.title})) > 0`),
+    check("notifications_message_nonempty", sql`length(trim(${table.message})) > 0`),
+  ],
+)
+
 export const usersRelations = relations(users, ({ many }) => ({
   workspaceMemberships: many(workspaceMembers),
   rateLimitBuckets: many(rateLimitBuckets),
@@ -782,6 +816,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   paidCheckoutPurchases: many(billingCheckoutPurchases, { relationName: "checkoutPurchasePayer" }),
   acceptedInvitations: many(workspaceInvitations, { relationName: "acceptedInvitationUser" }),
   revokedInvitations: many(workspaceInvitations, { relationName: "revokedInvitationUser" }),
+  receivedNotifications: many(notifications, { relationName: "notificationRecipient" }),
+  sentNotifications: many(notifications, { relationName: "notificationActor" }),
 }))
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
@@ -797,6 +833,7 @@ export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
   aiUsageLogs: many(aiUsageLogs),
   invitations: many(workspaceInvitations),
   activityLogs: many(activityLogs),
+  notifications: many(notifications),
   checkoutPurchases: many(billingCheckoutPurchases),
 }))
 
@@ -865,6 +902,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   aiUsageLogs: many(aiUsageLogs),
   invitations: many(workspaceInvitations),
   activityLogs: many(activityLogs),
+  notifications: many(notifications),
 }))
 
 export const rateLimitBucketsRelations = relations(rateLimitBuckets, ({ one }) => ({
@@ -937,6 +975,31 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }))
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  recipient: one(users, {
+    fields: [notifications.recipientUserId],
+    references: [users.id],
+    relationName: "notificationRecipient",
+  }),
+  actor: one(users, {
+    fields: [notifications.actorUserId],
+    references: [users.id],
+    relationName: "notificationActor",
+  }),
+  workspace: one(workspaces, {
+    fields: [notifications.workspaceId],
+    references: [workspaces.id],
+  }),
+  project: one(projects, {
+    fields: [notifications.projectId],
+    references: [projects.id],
+  }),
+  task: one(tasks, {
+    fields: [notifications.taskId],
+    references: [tasks.id],
+  }),
+}))
+
 export const projectSettingsRelations = relations(projectSettings, ({ one }) => ({
   project: one(projects, {
     fields: [projectSettings.projectId],
@@ -973,6 +1036,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   comments: many(taskComments),
   labels: many(taskLabels),
   activityLogs: many(activityLogs),
+  notifications: many(notifications),
 }))
 
 export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
@@ -1073,6 +1137,8 @@ export type WorkspaceInvitation = typeof workspaceInvitations.$inferSelect
 export type NewWorkspaceInvitation = typeof workspaceInvitations.$inferInsert
 export type ActivityLog = typeof activityLogs.$inferSelect
 export type NewActivityLog = typeof activityLogs.$inferInsert
+export type Notification = typeof notifications.$inferSelect
+export type NewNotification = typeof notifications.$inferInsert
 export type TaskPriority = (typeof taskPriority.enumValues)[number]
 export type BoardRole = (typeof boardRole.enumValues)[number]
 export type SystemRole = (typeof systemRole.enumValues)[number]

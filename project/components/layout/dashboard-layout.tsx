@@ -3,7 +3,6 @@
 import { UserButton } from "@clerk/nextjs"
 import {
   BarChart3,
-  Bell,
   Building2,
   Calendar,
   CreditCard,
@@ -25,6 +24,8 @@ import { useState } from "react"
 import { TaskFrame } from "@/components/ui/task-frame"
 import { BuildAiController } from "@/features/ai/controllers/build-ai.controller"
 import type { UserAiEntitlementDto } from "@/features/billing/billing.types"
+import { NotificationCenterController } from "@/features/notifications/controllers/notification-center.controller"
+import type { NotificationCenterDto } from "@/features/notifications/notification.types"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -40,9 +41,11 @@ const navigation = [
 export function DashboardLayout({
   children,
   ai,
+  notifications,
 }: Readonly<{
   children: React.ReactNode
   ai: { entitlement: UserAiEntitlementDto; workspaces: Array<{ id: string; name: string }> }
+  notifications: NotificationCenterDto
 }>) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -159,13 +162,7 @@ export function DashboardLayout({
               </div>
 
               <div className="ml-auto flex items-center gap-x-4">
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  className="rounded-lg p-2 text-cyan-100/75 hover:bg-cyan-300/15 hover:text-white"
-                >
-                  <Bell size={20} />
-                </button>
+                <NotificationCenterController initialData={notifications} />
                 <UserButton />
               </div>
             </div>
