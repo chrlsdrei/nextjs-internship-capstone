@@ -4,9 +4,9 @@ import { neon } from "@neondatabase/serverless"
 import { and, eq, inArray } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
-import { reserveAiUsage } from "../../features/ai/server/ai-usage.repository"
+import { reserveAiUsage } from "../../features/ai/repositories/ai-usage.repository"
 import type { RateLimitRequirement } from "../../features/rate-limits/rate-limit.types"
-import { consumeRateLimitBuckets } from "../../features/rate-limits/server/rate-limit.repository"
+import { consumeRateLimitBuckets } from "../../features/rate-limits/repositories/rate-limit.repository"
 import * as schema from "../../server/db/schema"
 import {
   aiUsageLogs,

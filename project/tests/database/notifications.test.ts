@@ -13,7 +13,7 @@ import {
   materializeNotificationsForUser,
   materializeTaskAssignmentNotifications,
   materializeTaskCommentNotifications,
-} from "../../features/notifications/server/notification.repository"
+} from "../../features/notifications/repositories/notification.repository"
 import * as schema from "../../server/db/schema"
 import {
   lists,

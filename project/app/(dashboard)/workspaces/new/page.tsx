@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
-import { CreateWorkspaceController } from "@/features/workspaces/controllers/create-workspace.controller"
+import { CreateWorkspaceController } from "@/controllers/workspaces/create-workspace.controller"
 
 export default function NewWorkspacePage() {
   return (

@@ -5,8 +5,8 @@ import { TechFrameCard } from "@/components/ui/tech-frame-card"
 import {
   type CheckoutReturnState,
   SubscriptionPageController,
-} from "@/features/billing/controllers/subscription-page.controller"
-import { getSubscriptionPageData } from "@/features/billing/server/subscription-page.service"
+} from "@/controllers/subscription/subscription-page.controller"
+import { getSubscriptionPageData } from "@/features/billing/queries/get-subscription-page-data"
 
 export default async function SubscriptionPage({
   searchParams,

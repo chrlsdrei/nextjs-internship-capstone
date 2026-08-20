@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { parsePaymongoWebhook } from "@/features/billing/server/checkout-webhook.schema"
+import { parsePaymongoWebhook } from "@/features/billing/checkout-webhook.schema"
 
 const session = {
   id: "cs_test_123",

@@ -1,6 +1,6 @@
+import { TeamDirectory } from "@/components/team/team-directory"
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
-import { TeamDirectory } from "@/features/workspaces/components/team-directory"
-import { listWorkspaceTeamDetails } from "@/features/workspaces/server/workspace.service"
+import { listWorkspaceTeamDetails } from "@/features/workspaces/queries/list-workspace-team-details"
 
 export default async function TeamPage() {
   const workspaces = await listWorkspaceTeamDetails()

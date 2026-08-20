@@ -5,10 +5,10 @@ const mocks = vi.hoisted(() => ({
   processCheckoutWebhook: vi.fn(),
 }))
 
-vi.mock("@/features/billing/server/paymongo.gateway", () => ({
+vi.mock("@/features/billing/gateways/paymongo.gateway", () => ({
   verifyPaymongoSignature: mocks.verifyPaymongoSignature,
 }))
-vi.mock("@/features/billing/server/checkout-webhook.service", () => ({
+vi.mock("@/features/billing/services/checkout-webhook.service", () => ({
   CheckoutWebhookError: class CheckoutWebhookError extends Error {},
   processCheckoutWebhook: mocks.processCheckoutWebhook,
 }))

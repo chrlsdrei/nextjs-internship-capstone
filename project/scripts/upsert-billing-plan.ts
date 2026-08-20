@@ -10,7 +10,7 @@ import {
   checkoutProductCatalog,
   checkoutProductCodes,
 } from "../features/billing/billing.catalog"
-import { paymongoLivemode } from "../features/billing/server/paymongo.gateway"
+import { paymongoLivemode } from "../features/billing/gateways/paymongo.gateway"
 import { db } from "../server/db/client"
 import { billingPlans } from "../server/db/schema"
 

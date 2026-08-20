@@ -11,7 +11,7 @@ import {
   findLatestUserCheckoutPurchase,
   findLatestWorkspaceCheckoutPurchase,
   listActiveOwnedWorkspaces,
-} from "@/features/billing/server/subscription-page.repository"
+} from "@/features/billing/repositories/subscription-page.repository"
 import * as schema from "@/server/db/schema"
 import { billingCheckoutPurchases, billingPlans, users, workspaceMembers, workspaces } from "@/server/db/schema"
 

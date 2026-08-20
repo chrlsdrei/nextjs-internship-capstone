@@ -5,8 +5,8 @@ import { eq, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { recordActivity } from "../../features/activity/server/activity.service"
-import { findProjectAccess } from "../../features/members/server/member.repository"
+import { recordActivity } from "../../features/activity/services/activity.service"
+import { findProjectAccess } from "../../features/members/repositories/member.repository"
 import * as schema from "../../server/db/schema"
 import {
   activityLogs,

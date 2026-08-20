@@ -3,8 +3,8 @@ import { config } from "dotenv"
 config({ path: ".env.local" })
 
 import { checkoutProductCatalog, checkoutProductCodes } from "../features/billing/billing.catalog"
-import { listActiveBillingPlans } from "../features/billing/server/billing.repository"
-import { paymongoLivemode } from "../features/billing/server/paymongo.gateway"
+import { paymongoLivemode } from "../features/billing/gateways/paymongo.gateway"
+import { listActiveBillingPlans } from "../features/billing/repositories/billing.repository"
 
 async function main() {
   const livemode = paymongoLivemode()

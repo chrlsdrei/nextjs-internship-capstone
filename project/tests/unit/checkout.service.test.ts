@@ -13,17 +13,17 @@ const mocks = vi.hoisted(() => ({
   createPaymongoCheckoutSession: vi.fn(),
 }))
 
-vi.mock("@/features/auth/server/session.service", () => ({
+vi.mock("@/features/auth/services/session.service", () => ({
   getCurrentDatabaseUser: mocks.getCurrentDatabaseUser,
 }))
-vi.mock("@/features/billing/server/checkout.repository", () => ({
+vi.mock("@/features/billing/repositories/checkout.repository", () => ({
   findCheckoutPlan: mocks.findCheckoutPlan,
   findActiveWorkspaceOwnerUserId: mocks.findActiveWorkspaceOwnerUserId,
   reserveCheckoutPurchase: mocks.reserveCheckoutPurchase,
   attachCheckoutSession: mocks.attachCheckoutSession,
   markCheckoutPurchaseFailed: mocks.markCheckoutPurchaseFailed,
 }))
-vi.mock("@/features/billing/server/paymongo.gateway", () => ({
+vi.mock("@/features/billing/gateways/paymongo.gateway", () => ({
   PaymongoGatewayError: class PaymongoGatewayError extends Error {
     constructor(
       message: string,
@@ -36,7 +36,7 @@ vi.mock("@/features/billing/server/paymongo.gateway", () => ({
   createPaymongoCheckoutSession: mocks.createPaymongoCheckoutSession,
 }))
 
-import { startCheckout } from "@/features/billing/server/checkout.service"
+import { startCheckout } from "@/features/billing/services/checkout.service"
 
 const user = { id: "c21b65cb-66e1-4b6c-9088-feb6057e9184" }
 const plan = {

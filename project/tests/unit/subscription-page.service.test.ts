@@ -14,19 +14,19 @@ const mocks = vi.hoisted(() => ({
   findLatestWorkspaceCheckoutPurchase: vi.fn(),
 }))
 
-vi.mock("@/features/auth/server/session.service", () => ({
+vi.mock("@/features/auth/services/session.service", () => ({
   getCurrentDatabaseUser: mocks.getCurrentDatabaseUser,
 }))
-vi.mock("@/features/billing/server/paymongo.gateway", () => ({
+vi.mock("@/features/billing/gateways/paymongo.gateway", () => ({
   paymongoLivemode: mocks.paymongoLivemode,
 }))
-vi.mock("@/features/billing/server/billing.repository", () => ({
+vi.mock("@/features/billing/repositories/billing.repository", () => ({
   findUserSubscriptionTier: mocks.findUserSubscriptionTier,
   findWorkspaceSubscriptionTier: mocks.findWorkspaceSubscriptionTier,
   listActiveBillingPlans: mocks.listActiveBillingPlans,
   countWorkspaceCapacity: mocks.countWorkspaceCapacity,
 }))
-vi.mock("@/features/billing/server/subscription-page.repository", () => ({
+vi.mock("@/features/billing/repositories/subscription-page.repository", () => ({
   listActiveOwnedWorkspaces: mocks.listActiveOwnedWorkspaces,
   findLatestUserCheckoutPurchase: mocks.findLatestUserCheckoutPurchase,
   findLatestPaidUserCheckoutPurchase: mocks.findLatestPaidUserCheckoutPurchase,
@@ -34,7 +34,7 @@ vi.mock("@/features/billing/server/subscription-page.repository", () => ({
   findLatestWorkspaceCheckoutPurchase: mocks.findLatestWorkspaceCheckoutPurchase,
 }))
 
-import { getSubscriptionPageData } from "@/features/billing/server/subscription-page.service"
+import { getSubscriptionPageData } from "@/features/billing/services/subscription-page.service"
 
 const userFreePlan = {
   id: "00000000-0000-4000-8000-000000000001",

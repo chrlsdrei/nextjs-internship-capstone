@@ -1,18 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest"
-
+import {
+  invitationDeliveryIdempotencyKey,
+  sendInvitationEmail,
+} from "../../features/invitations/gateways/invitation-email.gateway"
 import {
   createProjectInvitationSchema,
   createWorkspaceInvitationSchema,
 } from "../../features/invitations/invitation.schema"
 import {
-  invitationDeliveryIdempotencyKey,
-  sendInvitationEmail,
-} from "../../features/invitations/server/invitation-email.gateway"
-import {
   createInvitationToken,
   hashInvitationToken,
   invitationExpiry,
-} from "../../features/invitations/server/invitation-token"
+} from "../../features/invitations/services/invitation-token"
 
 const originalEnvironment = {
   RESEND_API_KEY: process.env.RESEND_API_KEY,

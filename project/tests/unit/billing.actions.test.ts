@@ -6,9 +6,9 @@ const mocks = vi.hoisted(() => ({
 }))
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }))
-vi.mock("@/features/billing/server/checkout.service", () => ({ startCheckout: mocks.startCheckout }))
+vi.mock("@/features/billing/services/checkout.service", () => ({ startCheckout: mocks.startCheckout }))
 
-import { startCheckoutAction } from "@/features/billing/actions/billing.actions"
+import { startCheckoutAction } from "@/features/billing/actions/start-checkout"
 
 describe("checkout actions", () => {
   beforeEach(() => vi.clearAllMocks())

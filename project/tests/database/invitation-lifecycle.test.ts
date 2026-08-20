@@ -11,8 +11,8 @@ import {
   findInvitationByTokenHash,
   revokeInvitationRecord,
   rotateInvitationToken,
-} from "../../features/invitations/server/invitation.repository"
-import { hashInvitationToken, invitationExpiry } from "../../features/invitations/server/invitation-token"
+} from "../../features/invitations/repositories/invitation.repository"
+import { hashInvitationToken, invitationExpiry } from "../../features/invitations/services/invitation-token"
 import * as schema from "../../server/db/schema"
 import {
   projectMembers,

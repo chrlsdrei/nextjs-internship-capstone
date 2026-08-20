@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto"
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { verifyPaymongoSignature } from "@/features/billing/server/paymongo.gateway"
+import { verifyPaymongoSignature } from "@/features/billing/gateways/paymongo.gateway"
 
 describe("PayMongo webhook signatures", () => {
   beforeEach(() => {

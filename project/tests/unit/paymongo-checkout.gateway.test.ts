@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { createPaymongoCheckoutSession, PaymongoGatewayError } from "@/features/billing/server/paymongo.gateway"
+import { createPaymongoCheckoutSession, PaymongoGatewayError } from "@/features/billing/gateways/paymongo.gateway"
 
 const input = {
   target: "user" as const,

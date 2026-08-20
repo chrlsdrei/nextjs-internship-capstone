@@ -7,16 +7,16 @@ const mocks = vi.hoisted(() => ({
   recordCheckoutWebhookFailure: vi.fn(),
 }))
 
-vi.mock("@/features/billing/server/paymongo.gateway", () => ({
+vi.mock("@/features/billing/gateways/paymongo.gateway", () => ({
   paymongoLivemode: mocks.paymongoLivemode,
 }))
-vi.mock("@/features/billing/server/checkout-webhook.repository", () => ({
+vi.mock("@/features/billing/repositories/checkout-webhook.repository", () => ({
   findCheckoutPurchaseForWebhook: mocks.findCheckoutPurchaseForWebhook,
   fulfillCheckoutPurchase: mocks.fulfillCheckoutPurchase,
   recordCheckoutWebhookFailure: mocks.recordCheckoutWebhookFailure,
 }))
 
-import { processCheckoutWebhook } from "@/features/billing/server/checkout-webhook.service"
+import { processCheckoutWebhook } from "@/features/billing/services/checkout-webhook.service"
 
 const purchase = {
   id: "807621bd-c8e0-4b2f-b73d-89603e851f35",

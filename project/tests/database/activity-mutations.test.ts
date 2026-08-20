@@ -10,21 +10,21 @@ const mocks = vi.hoisted(() => ({
   sendInvitationEmail: vi.fn().mockResolvedValue("resend-message-id"),
 }))
 
-vi.mock("@/features/auth/server/session.service", () => ({
+vi.mock("@/features/auth/services/session.service", () => ({
   getCurrentDatabaseUser: mocks.currentDatabaseUser,
   getVerifiedPrimaryEmail: vi.fn(),
 }))
 
-vi.mock("@/features/invitations/server/invitation-email.gateway", () => ({
+vi.mock("@/features/invitations/gateways/invitation-email.gateway", () => ({
   sendInvitationEmail: mocks.sendInvitationEmail,
 }))
 
-import { listProjectActivity } from "../../features/activity/server/activity.service"
-import { createList, createTask } from "../../features/board/server/board.service"
-import { createProjectInvitation } from "../../features/invitations/server/invitation.service"
-import { addProjectMember } from "../../features/members/server/member.service"
-import { createProject } from "../../features/projects/server/project.service"
-import { createWorkspace } from "../../features/workspaces/server/workspace.service"
+import { listProjectActivity } from "../../features/activity/services/activity.service"
+import { createList, createTask } from "../../features/board/services/board.service"
+import { createProjectInvitation } from "../../features/invitations/services/invitation.service"
+import { addProjectMember } from "../../features/members/services/member.service"
+import { createProject } from "../../features/projects/services/project.service"
+import { createWorkspace } from "../../features/workspaces/services/workspace.service"
 import * as schema from "../../server/db/schema"
 import { activityLogs, users, workspaceMembers, workspaces } from "../../server/db/schema"
 

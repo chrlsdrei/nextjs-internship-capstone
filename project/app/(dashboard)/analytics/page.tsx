@@ -1,9 +1,8 @@
 import { BarChart3 } from "lucide-react"
-
+import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
-import { AnalyticsDashboard } from "@/features/analytics/components/analytics-dashboard"
-import { getAnalyticsDashboard } from "@/features/analytics/server/analytics.service"
+import { getAnalyticsDashboard } from "@/features/analytics/queries/get-analytics-dashboard"
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   const requestedYear = Number.parseInt((await searchParams).year ?? "", 10)

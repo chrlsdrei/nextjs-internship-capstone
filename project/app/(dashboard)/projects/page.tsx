@@ -1,9 +1,9 @@
+import { ProjectDirectory } from "@/components/projects/project-directory"
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
-import { ProjectDirectory } from "@/features/projects/components/project-directory"
-import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
-import { getAccessibleProjectSummaries } from "@/features/projects/server/project.service"
-import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
+import { CreateProjectController } from "@/controllers/projects/create-project.controller"
+import { getAccessibleProjectSummaries } from "@/features/projects/queries/get-accessible-project-summaries"
+import { listWorkspaces } from "@/features/workspaces/queries/list-workspaces"
 import { canCreateProjectInWorkspace } from "@/features/workspaces/workspace.policy"
 
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ workspace?: string }> }) {

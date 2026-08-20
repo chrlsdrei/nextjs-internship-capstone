@@ -10,7 +10,7 @@ import {
   readCompletionContributions,
   readProjectProgress,
   readRecentActivity,
-} from "../../features/analytics/server/analytics.repository"
+} from "../../features/analytics/repositories/analytics.repository"
 import * as schema from "../../server/db/schema"
 import {
   activityLogs,

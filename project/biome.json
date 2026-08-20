@@ -48,7 +48,7 @@
   },
   "overrides": [
     {
-      "includes": ["components/**/*.tsx", "features/**/components/**/*.tsx"],
+      "includes": ["components/**/*.ts", "components/**/*.tsx"],
       "linter": {
         "rules": {
           "style": {
@@ -57,7 +57,15 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["@/features/**/actions/**", "@/features/**/server/**", "@/server/**"],
+                    "group": [
+                      "@/features/**/actions/**",
+                      "@/features/**/queries/**",
+                      "@/features/**/services/**",
+                      "@/features/**/repositories/**",
+                      "@/features/**/gateways/**",
+                      "@/controllers/**",
+                      "@/server/**"
+                    ],
                     "message": "Presentational components must receive data and callbacks through props."
                   }
                 ]
@@ -68,7 +76,7 @@
       }
     },
     {
-      "includes": ["features/**/controllers/**/*.tsx", "features/**/controllers/**/*.ts"],
+      "includes": ["controllers/**/*.tsx", "controllers/**/*.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -77,7 +85,13 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["@/features/**/server/**", "@/server/**"],
+                    "group": [
+                      "@/features/**/queries/**",
+                      "@/features/**/services/**",
+                      "@/features/**/repositories/**",
+                      "@/features/**/gateways/**",
+                      "@/server/**"
+                    ],
                     "message": "Client controllers may call actions but cannot import server infrastructure."
                   }
                 ]
@@ -88,7 +102,7 @@
       }
     },
     {
-      "includes": ["features/**/actions/**/*.ts", "app/api/**/route.ts"],
+      "includes": ["features/**/actions/**/*.ts", "features/**/queries/**/*.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -97,8 +111,8 @@
               "options": {
                 "patterns": [
                   {
-                    "group": ["@/features/**/server/*.repository", "@/server/**"],
-                    "message": "Transport adapters must call services instead of repositories or database infrastructure."
+                    "group": ["@/features/**/repositories/**", "@/features/**/gateways/**", "@/server/**"],
+                    "message": "Actions and queries must call services instead of repositories, gateways, or database infrastructure."
                   }
                 ]
               }
@@ -108,7 +122,7 @@
       }
     },
     {
-      "includes": ["features/**/server/*.service.ts"],
+      "includes": ["features/**/services/**/*.ts"],
       "linter": {
         "rules": {
           "style": {
@@ -119,6 +133,52 @@
                   {
                     "group": ["@/server/**"],
                     "message": "Business services must use repositories instead of database infrastructure."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["app/**/page.tsx", "app/**/layout.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@/features/**/actions/**",
+                      "@/features/**/services/**",
+                      "@/features/**/repositories/**",
+                      "@/features/**/gateways/**",
+                      "@/server/**"
+                    ],
+                    "message": "Pages must compose components and controllers and load data through feature queries."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["features/**/*.ts", "features/**/*.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/components/**", "@/controllers/**"],
+                    "message": "Backend feature modules cannot depend on frontend components or controllers."
                   }
                 ]
               }

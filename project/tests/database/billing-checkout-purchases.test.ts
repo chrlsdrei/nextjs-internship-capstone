@@ -4,8 +4,8 @@ import { neon } from "@neondatabase/serverless"
 import { eq, inArray } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import { reserveCheckoutPurchase } from "@/features/billing/server/checkout.repository"
-import { fulfillCheckoutPurchase } from "@/features/billing/server/checkout-webhook.repository"
+import { reserveCheckoutPurchase } from "@/features/billing/repositories/checkout.repository"
+import { fulfillCheckoutPurchase } from "@/features/billing/repositories/checkout-webhook.repository"
 import * as schema from "@/server/db/schema"
 import {
   billingCheckoutPurchases,

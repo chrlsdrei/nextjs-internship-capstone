@@ -5,7 +5,7 @@ import { eq, inArray, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { insertGeneratedBoard, insertGeneratedTasks } from "@/features/ai/server/ai-generation.repository"
+import { insertGeneratedBoard, insertGeneratedTasks } from "@/features/ai/repositories/ai-generation.repository"
 import * as schema from "@/server/db/schema"
 import { aiUsageLogs, lists, projects, tasks, users, workspaceMembers, workspaces } from "@/server/db/schema"
 

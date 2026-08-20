@@ -9,20 +9,20 @@ const mocks = vi.hoisted(() => ({
   countRecentContributors: vi.fn(),
 }))
 
-vi.mock("@/features/auth/server/session.service", () => ({
+vi.mock("@/features/auth/services/session.service", () => ({
   getCurrentDatabaseUser: mocks.getCurrentDatabaseUser,
 }))
-vi.mock("@/features/projects/server/project.repository", () => ({
+vi.mock("@/features/projects/repositories/project.repository", () => ({
   listAccessibleProjects: mocks.listAccessibleProjects,
 }))
-vi.mock("@/features/analytics/server/analytics.repository", () => ({
+vi.mock("@/features/analytics/repositories/analytics.repository", () => ({
   readProjectProgress: mocks.readProjectProgress,
   readCompletionContributions: mocks.readCompletionContributions,
   readRecentActivity: mocks.readRecentActivity,
   countRecentContributors: mocks.countRecentContributors,
 }))
 
-import { getAnalyticsDashboard } from "@/features/analytics/server/analytics.service"
+import { getAnalyticsDashboard } from "@/features/analytics/services/analytics.service"
 
 describe("analytics service", () => {
   beforeEach(() => {

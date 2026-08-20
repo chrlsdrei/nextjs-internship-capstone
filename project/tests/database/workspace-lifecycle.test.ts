@@ -5,13 +5,13 @@ import { and, eq, inArray } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { softDeleteUserByClerkId, upsertUser } from "../../features/auth/server/user.repository"
+import { softDeleteUserByClerkId, upsertUser } from "../../features/auth/repositories/user.repository"
 import {
   createWorkspaceWithOwner,
   findActiveWorkspaceAccess,
   softRemoveWorkspaceMemberById,
   transferWorkspaceOwnership,
-} from "../../features/workspaces/server/workspace.repository"
+} from "../../features/workspaces/repositories/workspace.repository"
 import * as schema from "../../server/db/schema"
 import { users, workspaceMembers, workspaceSettings, workspaces } from "../../server/db/schema"
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-
-import { CheckoutWebhookError, processCheckoutWebhook } from "@/features/billing/server/checkout-webhook.service"
-import { verifyPaymongoSignature } from "@/features/billing/server/paymongo.gateway"
+import { verifyPaymongoSignature } from "@/features/billing/gateways/paymongo.gateway"
+import { CheckoutWebhookError, processCheckoutWebhook } from "@/features/billing/services/checkout-webhook.service"
 
 export async function POST(request: Request) {
   const rawBody = await request.text()

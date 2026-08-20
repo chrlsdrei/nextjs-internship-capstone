@@ -4,10 +4,13 @@ import { neon } from "@neondatabase/serverless"
 import { eq, inArray, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
-import { insertList } from "../../features/board/server/list.repository"
-import { insertTask } from "../../features/board/server/task.repository"
-import { findProjectAccess, softRemoveMemberAndUnassignTasks } from "../../features/members/server/member.repository"
-import { insertProject, updateProjectSettingsAsManager } from "../../features/projects/server/project.repository"
+import { insertList } from "../../features/board/repositories/list.repository"
+import { insertTask } from "../../features/board/repositories/task.repository"
+import {
+  findProjectAccess,
+  softRemoveMemberAndUnassignTasks,
+} from "../../features/members/repositories/member.repository"
+import { insertProject, updateProjectSettingsAsManager } from "../../features/projects/repositories/project.repository"
 import * as schema from "../../server/db/schema"
 import {
   lists,

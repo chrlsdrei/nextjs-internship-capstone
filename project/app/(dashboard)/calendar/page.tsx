@@ -1,6 +1,6 @@
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
-import { CalendarController } from "@/features/calendar/controllers/calendar.controller"
-import { getCalendarPageData } from "@/features/calendar/server/calendar.service"
+import { CalendarController } from "@/controllers/calendar/calendar.controller"
+import { getCalendarPageData } from "@/features/calendar/queries/get-calendar-page-data"
 
 export default async function CalendarPage() {
   const data = await getCalendarPageData()
