@@ -23,8 +23,8 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "tsx scripts/check-db.ts",
     "db:reset:development": "tsx scripts/reset-development-data.ts",
-    "billing:plan:upsert": "tsx scripts/upsert-billing-plan.ts",
-    "billing:plan:check": "tsx scripts/check-billing-plans.ts"
+    "billing:plan:upsert": "tsx --env-file=.env.local --conditions=react-server scripts/upsert-billing-plan.ts",
+    "billing:plan:check": "tsx --env-file=.env.local --conditions=react-server scripts/check-billing-plans.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.6.0",

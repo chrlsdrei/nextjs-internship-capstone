@@ -6,6 +6,9 @@ export type BillingErrorCode =
   | "MEMBER_LIMIT_REACHED"
   | "BILLING_FORBIDDEN"
   | "BILLING_PROVIDER_ERROR"
+  | "CHECKOUT_ALREADY_COMPLETED"
+  | "CHECKOUT_IDEMPOTENCY_CONFLICT"
+  | "CHECKOUT_UNAVAILABLE"
 
 export class BillingError extends Error {
   constructor(

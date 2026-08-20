@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { findUserSubscriptionTier } from "@/features/billing/server/billing.repository"
+import { findUserSubscriptionTier } from "@/features/billing/repositories/billing.repository"
 import * as schema from "@/server/db/schema"
 import { users, workspaceMembers, workspaces } from "@/server/db/schema"
 

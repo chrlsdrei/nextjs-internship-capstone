@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
-import { InvitationAcceptController } from "@/features/invitations/controllers/invitation-accept.controller"
+import { InvitationAcceptController } from "@/controllers/invitations/invitation-accept.controller"
 import { authenticationHref, invitationReturnPath } from "@/features/invitations/invitation-redirect"
-import { getInvitationPreview } from "@/features/invitations/server/invitation.service"
+import { getInvitationPreview } from "@/features/invitations/queries/get-invitation-preview"
 
 export default async function AcceptInvitationPage({
   searchParams,

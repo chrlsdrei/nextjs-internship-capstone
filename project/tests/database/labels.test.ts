@@ -7,14 +7,14 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({ currentDatabaseUser: vi.fn() }))
 
-vi.mock("@/features/auth/server/session.service", () => ({
+vi.mock("@/features/auth/services/session.service", () => ({
   getCurrentDatabaseUser: mocks.currentDatabaseUser,
 }))
 
-import { createTask, getProjectBoard, updateTask } from "../../features/board/server/board.service"
+import { createTask, getProjectBoard, updateTask } from "../../features/board/services/board.service"
 import type { LabelError } from "../../features/labels/label.error"
-import { createLabel, deleteLabel, setTaskLabels, updateLabel } from "../../features/labels/server/label.service"
-import { ProjectAccessError } from "../../features/projects/server/project-access.service"
+import { createLabel, deleteLabel, setTaskLabels, updateLabel } from "../../features/labels/services/label.service"
+import { ProjectAccessError } from "../../features/projects/project.error"
 import * as schema from "../../server/db/schema"
 import {
   activityLogs,

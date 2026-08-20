@@ -1,11 +1,11 @@
+import { DashboardStats } from "@/components/dashboard/dashboard-stats"
+import { RecentProjects } from "@/components/dashboard/recent-projects"
+import { WorkspaceDashboardPanel } from "@/components/dashboard/workspace-dashboard-panel"
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
-import { DashboardStats } from "@/features/dashboard/components/dashboard-stats"
-import { RecentProjects } from "@/features/dashboard/components/recent-projects"
-import { CreateProjectController } from "@/features/projects/controllers/create-project.controller"
-import { getDashboardSummary } from "@/features/projects/server/project.service"
-import { WorkspaceDashboardPanel } from "@/features/workspaces/components/workspace-dashboard-panel"
-import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
+import { CreateProjectController } from "@/controllers/projects/create-project.controller"
+import { getDashboardSummary } from "@/features/projects/queries/get-dashboard-summary"
+import { listWorkspaces } from "@/features/workspaces/queries/list-workspaces"
 import { canCreateProjectInWorkspace } from "@/features/workspaces/workspace.policy"
 
 export default async function DashboardPage() {

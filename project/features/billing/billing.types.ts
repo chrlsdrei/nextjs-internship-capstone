@@ -1,6 +1,9 @@
 export type BillingTarget = "user" | "workspace"
-export type BillingStatus = "incomplete" | "incomplete_cancelled" | "active" | "past_due" | "unpaid" | "cancelled"
 export type SubscriptionTier = "free" | "pro"
+export type ProAccessSource = "manual" | "purchase" | null
+
+export const checkoutPurchaseStatuses = ["pending", "paid", "cancelled", "expired", "failed"] as const
+export type CheckoutPurchaseStatus = (typeof checkoutPurchaseStatuses)[number]
 
 export type BillingPlanDto = {
   id: string
@@ -14,29 +17,32 @@ export type BillingPlanDto = {
   maxMembers: number | null
 }
 
-export type SubscriptionDto = {
+export type CheckoutPurchaseDto = {
   id: string
-  plan: BillingPlanDto
   target: BillingTarget
-  status: BillingStatus
+  plan: BillingPlanDto
   workspaceId: string | null
-  currentPeriodStartsAt: string
-  currentPeriodEndsAt: string
-  nextBillingAt: string | null
-  canManage: boolean
+  status: CheckoutPurchaseStatus
+  amount: number
+  currency: string
+  paidAt: string | null
+  accessEndsAt: string | null
+}
+
+export type StartCheckoutResult = {
+  purchaseId: string
+  checkoutUrl: string
 }
 
 export type UserAiEntitlementDto = {
   tier: SubscriptionTier
   subscribed: boolean
-  status: BillingStatus | null
   periodEndsAt: string | null
 }
 
 export type WorkspaceEntitlementDto = {
   tier: SubscriptionTier
   subscribed: boolean
-  status: BillingStatus | null
   maxProjects: number | null
   maxMembers: number | null
   projectCount: number
@@ -44,4 +50,44 @@ export type WorkspaceEntitlementDto = {
   readOnly: boolean
   canManageBilling: boolean
   periodEndsAt: string | null
+}
+
+export type SubscriptionCatalogDto = {
+  free: BillingPlanDto | null
+  pro: BillingPlanDto | null
+}
+
+export type SubscriptionAccessSummaryDto = {
+  tier: SubscriptionTier
+  periodEndsAt: string | null
+  proAccessSource: ProAccessSource
+  proExpired: boolean
+  latestPurchase: CheckoutPurchaseDto | null
+}
+
+export type OwnedWorkspaceSubscriptionDto = SubscriptionAccessSummaryDto & {
+  id: string
+  name: string
+  capacity: {
+    maxProjects: number
+    maxMembers: number
+  }
+  usage: {
+    projectCount: number
+    memberCount: number
+  }
+  readOnly: boolean
+}
+
+export type SubscriptionPageDto = {
+  checkout: {
+    available: boolean
+    mode: "test" | "live" | null
+  }
+  user: SubscriptionAccessSummaryDto
+  catalog: {
+    user: SubscriptionCatalogDto
+    workspace: SubscriptionCatalogDto
+  }
+  ownedWorkspaces: OwnedWorkspaceSubscriptionDto[]
 }

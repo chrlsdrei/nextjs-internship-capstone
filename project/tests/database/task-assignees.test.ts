@@ -9,9 +9,9 @@ import {
   addTaskAssigneeRecord,
   removeTaskAssigneeRecord,
   replaceTaskAssignees,
-} from "../../features/assignments/server/assignment.repository"
-import { softRemoveMemberAndUnassignTasks } from "../../features/members/server/member.repository"
-import { insertProject } from "../../features/projects/server/project.repository"
+} from "../../features/assignments/repositories/assignment.repository"
+import { softRemoveMemberAndUnassignTasks } from "../../features/members/repositories/member.repository"
+import { insertProject } from "../../features/projects/repositories/project.repository"
 import * as schema from "../../server/db/schema"
 import {
   activityLogs,

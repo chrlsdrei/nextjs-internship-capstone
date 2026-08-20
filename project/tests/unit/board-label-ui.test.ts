@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest"
+import { moveTaskOptimistically, useBoardStore } from "../../controllers/projects/board/board.store"
 import type { BoardMemberDto, BoardTaskDto, ProjectBoardDto } from "../../features/board/board.types"
 import {
   retainActiveMemberSelections,
@@ -6,7 +7,6 @@ import {
   toggleAssigneeFilter,
   toggleLabelFilter,
 } from "../../features/board/board-filtering"
-import { moveTaskOptimistically, useBoardStore } from "../../features/board/stores/board.store"
 import type { LabelDto } from "../../features/labels/label.types"
 import { labelTextColor } from "../../features/labels/label-color"
 

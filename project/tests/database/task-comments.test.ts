@@ -12,8 +12,8 @@ import {
   listTaskCommentRecords,
   softDeleteTaskCommentRecord,
   updateTaskCommentRecord,
-} from "../../features/comments/server/comment.repository"
-import { insertProject } from "../../features/projects/server/project.repository"
+} from "../../features/comments/repositories/comment.repository"
+import { insertProject } from "../../features/projects/repositories/project.repository"
 import * as schema from "../../server/db/schema"
 import {
   lists,

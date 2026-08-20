@@ -5,7 +5,7 @@ import {
   ClerkSyncPayloadError,
   removeSynchronizedClerkUser,
   synchronizeClerkUser,
-} from "@/features/auth/server/clerk-sync.service"
+} from "@/features/auth/services/clerk-sync.service"
 
 export async function POST(request: NextRequest) {
   let event: Awaited<ReturnType<typeof verifyWebhook>>

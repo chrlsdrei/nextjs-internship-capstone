@@ -1,8 +1,8 @@
 import { Plus } from "lucide-react"
 import Link from "next/link"
 
-import { WorkspaceList } from "@/features/workspaces/components/workspace-list"
-import { listWorkspaces } from "@/features/workspaces/server/workspace.service"
+import { WorkspaceList } from "@/components/workspaces/workspace-list"
+import { listWorkspaces } from "@/features/workspaces/queries/list-workspaces"
 
 export default async function WorkspacesPage() {
   const workspaces = await listWorkspaces()

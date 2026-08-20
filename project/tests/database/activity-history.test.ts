@@ -7,11 +7,11 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({ currentDatabaseUser: vi.fn() }))
 
-vi.mock("@/features/auth/server/session.service", () => ({
+vi.mock("@/features/auth/services/session.service", () => ({
   getCurrentDatabaseUser: mocks.currentDatabaseUser,
 }))
 
-import { listProjectActivity } from "../../features/activity/server/activity.service"
+import { listProjectActivity } from "../../features/activity/services/activity.service"
 import * as schema from "../../server/db/schema"
 import {
   activityLogs,
