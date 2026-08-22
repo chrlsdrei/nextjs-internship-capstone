@@ -2,15 +2,28 @@ import "server-only"
 
 import { Resend } from "resend"
 
+import {
+  buildInvitationAcceptanceUrl,
+  buildInvitationEmail,
+} from "@/features/invitations/gateways/invitation-email.template"
 import { InvitationError } from "@/features/invitations/invitation.error"
+import type {
+  InvitationBoardRole,
+  InvitationKind,
+  InvitationWorkspaceRole,
+} from "@/features/invitations/invitation.types"
 
 type InvitationEmail = {
   invitationId: string
   deliveryAttempt: number
   recipient: string
+  kind: InvitationKind
   workspaceName: string
   projectTitle: string | null
+  workspaceRole: InvitationWorkspaceRole | null
+  boardRole: InvitationBoardRole | null
   token: string
+  expiresAt: Date
 }
 
 function requiredEnvironment(name: "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "NEXT_PUBLIC_APP_URL") {
@@ -21,29 +34,42 @@ function requiredEnvironment(name: "RESEND_API_KEY" | "RESEND_FROM_EMAIL" | "NEX
   return value
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>'"]/g, (character) => {
-    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }
-    return entities[character] ?? character
-  })
-}
-
 export async function sendInvitationEmail(input: InvitationEmail) {
   const resend = new Resend(requiredEnvironment("RESEND_API_KEY"))
   const from = requiredEnvironment("RESEND_FROM_EMAIL")
-  const appUrl = requiredEnvironment("NEXT_PUBLIC_APP_URL").replace(/\/$/, "")
-  const invitationUrl = `${appUrl}/invitations/accept?token=${encodeURIComponent(input.token)}`
-  const destination = input.projectTitle
-    ? `${input.workspaceName} and its project ${input.projectTitle}`
-    : input.workspaceName
+  let invitationUrl: string
+  try {
+    invitationUrl = buildInvitationAcceptanceUrl(requiredEnvironment("NEXT_PUBLIC_APP_URL"), input.token)
+  } catch (error) {
+    throw new InvitationError(
+      error instanceof Error ? error.message : "NEXT_PUBLIC_APP_URL is invalid",
+      "INVITATION_CONFIGURATION",
+      503,
+    )
+  }
+  const email = buildInvitationEmail({
+    kind: input.kind,
+    workspaceName: input.workspaceName,
+    projectTitle: input.projectTitle,
+    workspaceRole: input.workspaceRole,
+    boardRole: input.boardRole,
+    invitationUrl,
+    expiresAt: input.expiresAt,
+  })
+  const replyTo = process.env.RESEND_REPLY_TO_EMAIL?.trim()
 
   const result = await resend.emails.send(
     {
       from,
       to: input.recipient,
-      subject: `You are invited to ${input.workspaceName}`,
-      text: `You have been invited to ${destination}. Accept the invitation: ${invitationUrl}`,
-      html: `<p>You have been invited to <strong>${escapeHtml(destination)}</strong>.</p><p><a href="${escapeHtml(invitationUrl)}">Accept invitation</a></p>`,
+      replyTo: replyTo || undefined,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+      tags: [
+        { name: "category", value: "invitation" },
+        { name: "invitation_kind", value: input.kind },
+      ],
     },
     { idempotencyKey: invitationDeliveryIdempotencyKey(input.invitationId, input.deliveryAttempt) },
   )

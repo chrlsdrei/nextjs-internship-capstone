@@ -4,6 +4,10 @@ import {
   sendInvitationEmail,
 } from "../../features/invitations/gateways/invitation-email.gateway"
 import {
+  buildInvitationAcceptanceUrl,
+  buildInvitationEmail,
+} from "../../features/invitations/gateways/invitation-email.template"
+import {
   createProjectInvitationSchema,
   createWorkspaceInvitationSchema,
 } from "../../features/invitations/invitation.schema"
@@ -62,11 +66,40 @@ describe("invitation contracts", () => {
         invitationId: "invitation-id",
         deliveryAttempt: 1,
         recipient: "member@example.com",
+        kind: "workspace",
         workspaceName: "ProjectFlow",
         projectTitle: null,
+        workspaceRole: "member",
+        boardRole: null,
         token: "secret-token",
+        expiresAt: new Date("2026-08-29T00:00:00.000Z"),
       }),
     ).rejects.toMatchObject({ code: "INVITATION_CONFIGURATION", status: 503 })
+  })
+
+  it("builds an absolute acceptance URL without trusting a configured path", () => {
+    expect(buildInvitationAcceptanceUrl("https://projectflow.example/settings", "a+b&c")).toBe(
+      "https://projectflow.example/invitations/accept?token=a%2Bb%26c",
+    )
+  })
+
+  it("renders escaped workspace and board details in HTML and plain text", () => {
+    const email = buildInvitationEmail({
+      kind: "workspace",
+      workspaceName: "Research <Team>",
+      projectTitle: "Launch & Learn",
+      workspaceRole: "member",
+      boardRole: "editor",
+      invitationUrl: "https://projectflow.example/invitations/accept?token=secret",
+      expiresAt: new Date("2026-08-29T00:00:00.000Z"),
+    })
+
+    expect(email.subject).toContain("Launch & Learn")
+    expect(email.text).toContain("Workspace member and Board editor")
+    expect(email.text).toContain("single-use invitation")
+    expect(email.html).toContain("Research &lt;Team&gt;")
+    expect(email.html).toContain("Launch &amp; Learn")
+    expect(email.html).not.toContain("Research <Team>")
   })
 
   it("uses a stable provider idempotency key for the same delivery attempt", () => {
