@@ -18,7 +18,11 @@ export function SortableTaskController({ task, ...props }: SortableTaskControlle
     // biome-ignore lint/a11y/useSemanticElements: the sortable surface contains nested task controls, so it cannot be a button element.
     <div
       ref={sortable.setNodeRef}
-      style={{ transform: CSS.Transform.toString(sortable.transform), transition: sortable.transition }}
+      data-column-drag-ignore
+      style={{
+        transform: CSS.Transform.toString(sortable.transform),
+        transition: sortable.transition ?? "transform 180ms cubic-bezier(0.2, 0, 0, 1)",
+      }}
       className={props.canEdit ? "cursor-grab touch-none active:cursor-grabbing" : "cursor-pointer"}
       {...(props.canEdit ? sortable.attributes : {})}
       {...(props.canEdit ? sortable.listeners : {})}

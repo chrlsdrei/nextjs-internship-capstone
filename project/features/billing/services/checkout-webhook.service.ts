@@ -52,8 +52,7 @@ export async function processCheckoutWebhook(payload: unknown, rawBody: string) 
     if (!row) throw checkoutError("Checkout purchase was not found", "CHECKOUT_PURCHASE_NOT_FOUND", 404)
 
     const { plan, purchase } = row
-    if (purchase.status === "cancelled" || purchase.status === "expired")
-      throw checkoutError("Checkout purchase can no longer be fulfilled", "CHECKOUT_PURCHASE_STATE_INVALID", 409)
+    if (purchase.status === "paid") return { ignored: false, duplicate: true, purchaseId: purchase.id }
     if (plan.target !== purchase.target || plan.livemode !== event.livemode)
       throw checkoutError("Checkout purchase does not match its catalog product", "CHECKOUT_SUBJECT_MISMATCH")
     if (

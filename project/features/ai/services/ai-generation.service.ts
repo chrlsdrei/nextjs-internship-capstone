@@ -130,7 +130,12 @@ export async function generateBoard(input: unknown) {
     throw new Error("This board generation request is already being processed")
   }
   try {
-    const generated = await geminiProvider.generateBoard(values)
+    const generated = await geminiProvider.generateBoard({
+      projectTitle: values.title,
+      goal: values.goal,
+      listCount: values.listCount,
+      taskCount: values.taskCount,
+    })
     const projectId = await insertGeneratedBoard({
       workspaceId: workspace.id,
       workspaceName: workspace.name,
@@ -155,11 +160,14 @@ export async function generateBoard(input: unknown) {
 export async function generateTasks(input: unknown) {
   const values = generateTasksSchema.parse(input)
   const access = await requireProjectPermission(values.projectId, "edit")
-  const [project, workspace] = await Promise.all([
+  const [project, workspace, board] = await Promise.all([
     findProjectById(values.projectId),
     findActiveWorkspaceAccess(access.workspaceId, access.user.id),
+    readProjectBoard(values.projectId),
   ])
   if (!project || !workspace) throw new Error("Project not found")
+  const destinationList = board.listRows.find((list) => list.id === values.listId)
+  if (!destinationList) throw new Error("The selected column is no longer available")
   await enforceRateLimit({ action: "ai.tasks.generate", actorUserId: access.user.id, workspaceId: access.workspaceId })
   const reserved = await reserveUserFeature({
     userId: access.user.id,
@@ -173,7 +181,12 @@ export async function generateTasks(input: unknown) {
     throw new Error("This task generation request is already being processed")
   }
   try {
-    const generated = await geminiProvider.generateTasks(values)
+    const generated = await geminiProvider.generateTasks({
+      projectTitle: project.title,
+      columnName: destinationList.name,
+      goal: values.goal,
+      taskCount: values.taskCount,
+    })
     const ids = await insertGeneratedTasks({
       workspaceId: access.workspaceId,
       workspaceName: workspace.name,

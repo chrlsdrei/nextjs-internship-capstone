@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   reserveCheckoutPurchase: vi.fn(),
   attachCheckoutSession: vi.fn(),
   markCheckoutPurchaseFailed: vi.fn(),
+  cancelPendingCheckoutPurchase: vi.fn(),
   paymongoLivemode: vi.fn(),
   createPaymongoCheckoutSession: vi.fn(),
 }))
@@ -22,6 +23,7 @@ vi.mock("@/features/billing/repositories/checkout.repository", () => ({
   reserveCheckoutPurchase: mocks.reserveCheckoutPurchase,
   attachCheckoutSession: mocks.attachCheckoutSession,
   markCheckoutPurchaseFailed: mocks.markCheckoutPurchaseFailed,
+  cancelPendingCheckoutPurchase: mocks.cancelPendingCheckoutPurchase,
 }))
 vi.mock("@/features/billing/gateways/paymongo.gateway", () => ({
   PaymongoGatewayError: class PaymongoGatewayError extends Error {
@@ -36,7 +38,7 @@ vi.mock("@/features/billing/gateways/paymongo.gateway", () => ({
   createPaymongoCheckoutSession: mocks.createPaymongoCheckoutSession,
 }))
 
-import { startCheckout } from "@/features/billing/services/checkout.service"
+import { cancelCheckout, startCheckout } from "@/features/billing/services/checkout.service"
 
 const user = { id: "c21b65cb-66e1-4b6c-9088-feb6057e9184" }
 const plan = {
@@ -92,6 +94,7 @@ describe("checkout service", () => {
       }),
     )
     mocks.markCheckoutPurchaseFailed.mockResolvedValue(null)
+    mocks.cancelPendingCheckoutPurchase.mockResolvedValue(null)
   })
 
   it("reserves a user purchase, creates the provider session, and returns safe redirect data", async () => {
@@ -174,5 +177,13 @@ describe("checkout service", () => {
       "23c77a0c-049f-47ba-ad40-cae4f08d07f2",
       "CHECKOUT_PROVIDER_FAILURE",
     )
+  })
+
+  it("cancels only through the authenticated payer context", async () => {
+    mocks.cancelPendingCheckoutPurchase.mockResolvedValue(purchase({ status: "cancelled" }))
+
+    await cancelCheckout({ purchaseId: "23c77a0c-049f-47ba-ad40-cae4f08d07f2" })
+
+    expect(mocks.cancelPendingCheckoutPurchase).toHaveBeenCalledWith("23c77a0c-049f-47ba-ad40-cae4f08d07f2", user.id)
   })
 })

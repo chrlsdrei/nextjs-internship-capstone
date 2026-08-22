@@ -4,7 +4,10 @@ import { neon } from "@neondatabase/serverless"
 import { eq, inArray } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import { reserveCheckoutPurchase } from "@/features/billing/repositories/checkout.repository"
+import {
+  cancelPendingCheckoutPurchase,
+  reserveCheckoutPurchase,
+} from "@/features/billing/repositories/checkout.repository"
 import { fulfillCheckoutPurchase } from "@/features/billing/repositories/checkout-webhook.repository"
 import * as schema from "@/server/db/schema"
 import {
@@ -200,6 +203,67 @@ describe("billing checkout purchase persistence", () => {
 
     expect(new Set(purchases.map((purchase) => purchase?.id)).size).toBe(1)
     expect(purchases.every((purchase) => purchase?.referenceNumber === referenceNumber)).toBe(true)
+  })
+
+  it("cancels only a pending checkout owned by the authenticated payer", async () => {
+    const [purchase] = await database
+      .insert(billingCheckoutPurchases)
+      .values({
+        planId,
+        target: "user",
+        userId,
+        payerUserId: userId,
+        referenceNumber: `cancel-${randomUUID()}`,
+        amount: 29_900,
+      })
+      .returning()
+
+    await expect(cancelPendingCheckoutPurchase(purchase.id, randomUUID())).resolves.toBeNull()
+    await expect(cancelPendingCheckoutPurchase(purchase.id, userId)).resolves.toMatchObject({
+      id: purchase.id,
+      status: "cancelled",
+    })
+  })
+
+  it("still fulfills a cancelled checkout when a verified payment arrives later", async () => {
+    const referenceNumber = `cancelled-paid-${randomUUID()}`
+    const sessionId = `cs_${randomUUID()}`
+    const [purchase] = await database
+      .insert(billingCheckoutPurchases)
+      .values({
+        planId,
+        target: "user",
+        userId,
+        payerUserId: userId,
+        referenceNumber,
+        paymongoCheckoutSessionId: sessionId,
+        amount: 29_900,
+        status: "cancelled",
+      })
+      .returning()
+    const providerEventId = `evt_${randomUUID()}`
+    webhookEventIds.push(providerEventId)
+
+    const result = await fulfillCheckoutPurchase({
+      purchaseId: purchase.id,
+      target: "user",
+      userId,
+      workspaceId: null,
+      providerEventId,
+      providerCreatedAt: new Date(),
+      rawBody: JSON.stringify({ id: providerEventId }),
+      checkoutSessionId: sessionId,
+      referenceNumber,
+      paidAt: new Date(),
+    })
+
+    const [updated] = await database
+      .select()
+      .from(billingCheckoutPurchases)
+      .where(eq(billingCheckoutPurchases.id, purchase.id))
+      .limit(1)
+    expect(result).toMatchObject({ claimed: true, fulfilled: true })
+    expect(updated?.status).toBe("paid")
   })
 
   it("fulfills a user purchase once and extends an active entitlement from its existing end", async () => {

@@ -13,6 +13,7 @@ type SubscriptionAccessCardProps = {
     label: string
     detail: string
     purchaseMessage?: string | null
+    resumeUrl?: string | null
   }
   checkout?: ReactNode
 }
@@ -54,6 +55,16 @@ export function SubscriptionAccessCard({
           <p className="font-semibold text-cyan-200">{status.label}</p>
           <p className="mt-1 text-cyan-100/65">{status.detail}</p>
           {status.purchaseMessage && <p className="mt-2 text-amber-200">{status.purchaseMessage}</p>}
+          {status.resumeUrl && (
+            <a
+              href={status.resumeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex font-semibold text-cyan-300 underline decoration-cyan-300/45 underline-offset-4 hover:text-cyan-100"
+            >
+              Resume pending checkout
+            </a>
+          )}
         </div>
       )}
       {checkout}

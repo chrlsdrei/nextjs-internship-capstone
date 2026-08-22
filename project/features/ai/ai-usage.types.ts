@@ -23,8 +23,18 @@ export type AiProviderResult<T> = {
   outputTokens: number
 }
 
-export type BoardGenerationPrompt = { goal: string; listCount: number; taskCount: number }
-export type TaskGenerationPrompt = { goal: string; taskCount: number }
+export type BoardGenerationPrompt = {
+  projectTitle: string
+  goal: string
+  listCount: number
+  taskCount: number
+}
+export type TaskGenerationPrompt = {
+  projectTitle: string
+  columnName: string
+  goal: string
+  taskCount: number
+}
 
 export type BoardSummaryMetricsDto = {
   projectTitle: string

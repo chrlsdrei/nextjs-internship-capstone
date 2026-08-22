@@ -66,6 +66,7 @@ function toPurchaseDto(row: CheckoutPurchaseRow | null): CheckoutPurchaseDto | n
     currency: row.purchase.currency,
     paidAt: row.purchase.paidAt?.toISOString() ?? null,
     accessEndsAt: row.purchase.accessEndsAt?.toISOString() ?? null,
+    checkoutUrl: row.purchase.checkoutUrl,
   }
 }
 

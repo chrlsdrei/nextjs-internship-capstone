@@ -20,6 +20,12 @@ type BoardState = {
     targetListId: string,
     targetIndex: number,
   ) => void
+  reorderListsOptimistically: (
+    projectId: string,
+    fallbackBoard: ProjectBoardDto,
+    activeListId: string,
+    targetListId: string,
+  ) => void
   setTaskLabelsOptimistically: (
     projectId: string,
     fallbackBoard: ProjectBoardDto,
@@ -79,6 +85,18 @@ export function moveTaskOptimistically(
   }
 }
 
+export function reorderBoardLists(board: ProjectBoardDto, activeListId: string, targetListId: string): ProjectBoardDto {
+  const activeIndex = board.lists.findIndex((list) => list.id === activeListId)
+  const targetIndex = board.lists.findIndex((list) => list.id === targetListId)
+  if (activeIndex < 0 || targetIndex < 0 || activeIndex === targetIndex) return board
+  return {
+    ...board,
+    lists: arrayMove(board.lists, activeIndex, targetIndex).map((list, position) =>
+      list.position === position ? list : { ...list, position },
+    ),
+  }
+}
+
 export function updateTaskLabelsOptimistically(board: ProjectBoardDto, taskId: string, labels: LabelDto[]) {
   return {
     ...board,
@@ -115,6 +133,13 @@ export const useBoardStore = create<BoardState>((set) => ({
     set((state) => {
       const board = state.projectId === projectId && state.board ? state.board : fallbackBoard
       const nextBoard = moveTaskOptimistically(board, taskId, targetListId, targetIndex)
+      if (state.projectId === projectId && nextBoard === board) return state
+      return { projectId, board: nextBoard }
+    }),
+  reorderListsOptimistically: (projectId, fallbackBoard, activeListId, targetListId) =>
+    set((state) => {
+      const board = state.projectId === projectId && state.board ? state.board : fallbackBoard
+      const nextBoard = reorderBoardLists(board, activeListId, targetListId)
       if (state.projectId === projectId && nextBoard === board) return state
       return { projectId, board: nextBoard }
     }),
