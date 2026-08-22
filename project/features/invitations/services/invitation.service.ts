@@ -91,9 +91,13 @@ async function deliver(invitation: InvitationRecord, token: string) {
       invitationId: invitation.id,
       deliveryAttempt: invitation.deliveryAttempt,
       recipient: invitation.email,
+      kind: invitation.kind,
       workspaceName: invitation.workspaceName,
       projectTitle: invitation.projectTitle,
+      workspaceRole: invitation.workspaceRole,
+      boardRole: invitation.boardRole,
       token,
+      expiresAt: invitation.expiresAt,
     })
     await recordInvitationDelivery(invitation.id, messageId)
   } catch (error) {

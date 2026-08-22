@@ -36,7 +36,7 @@ Configure the values described in `.env.example`. Never commit `.env.local`.
 
 The Clerk webhook endpoint is `/api/webhooks/clerk` and subscribes to `user.created`, `user.updated`, and `user.deleted`. For local webhook delivery, expose the application using a trusted tunnel and configure `CLERK_WEBHOOK_SIGNING_SECRET`.
 
-Workspace and board invitation delivery uses Resend. Configure `RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, and `NEXT_PUBLIC_APP_URL`; invitation links expire after seven days, are single-use, and are matched to the signed-in user's verified primary Clerk email.
+Workspace and board invitation delivery uses Resend. Configure `RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, optional `RESEND_REPLY_TO_EMAIL`, and `NEXT_PUBLIC_APP_URL`; invitation links expire after seven days, are single-use, and are matched to the signed-in user's verified primary Clerk email. See the [Resend invitation email setup guide](../docs/RESEND_INVITATION_EMAIL_SETUP.md) for domain and DNS configuration.
 
 Gemini and PayMongo secrets remain server-only; billing access is activated by verified PayMongo webhooks.
 
