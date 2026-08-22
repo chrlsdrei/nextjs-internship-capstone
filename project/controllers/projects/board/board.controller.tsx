@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  type CollisionDetection,
   closestCenter,
   DndContext,
   DragOverlay,
@@ -9,9 +10,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable"
+import { horizontalListSortingStrategy, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable"
 import { useEffect, useState } from "react"
 import { BoardFilterModal } from "@/components/modals/board/board-filter-modal"
+import { BoardColumn } from "@/components/projects/board/board-column"
 import { BoardToolbar } from "@/components/projects/board/board-toolbar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useBoardStore } from "@/controllers/projects/board/board.store"
@@ -22,11 +24,21 @@ import { TaskCardController } from "@/controllers/projects/board/task-card.contr
 import { TaskDialogController } from "@/controllers/projects/board/task-dialog.controller"
 import { useBoardFilters } from "@/controllers/projects/board/use-board-filters"
 import { locateTask, useBoardTaskPreview } from "@/controllers/projects/board/use-board-task-preview"
+import { useListDrag } from "@/controllers/projects/board/use-list-drag"
 import { useTaskDrag } from "@/controllers/projects/board/use-task-drag"
 import type { BoardSummaryDto } from "@/features/ai/ai-usage.types"
 import type { UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
 import type { BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
 import { toggleAssigneeFilter, toggleLabelFilter } from "@/features/board/board-filtering"
+
+const boardCollisionDetection: CollisionDetection = (args) => {
+  if (!String(args.active.id).startsWith("list-sort:")) return closestCenter(args)
+
+  return closestCenter({
+    ...args,
+    droppableContainers: args.droppableContainers.filter((container) => String(container.id).startsWith("list-sort:")),
+  })
+}
 
 export function BoardController({
   projectId,
@@ -54,6 +66,7 @@ export function BoardController({
   const board = storedProjectId === projectId && storedBoard ? storedBoard : serverBoard
   const setBoard = useBoardStore((state) => state.setBoard)
   const { previewTaskMove, commitTaskMove, cancelTaskMove, isSaving, error } = useTaskDrag(projectId, board)
+  const { activeListId, beginListDrag, previewListDrag, commitListDrag, cancelListDrag } = useListDrag(projectId, board)
   const {
     search,
     setSearch,
@@ -88,6 +101,9 @@ export function BoardController({
   const listIds = board.lists.map((list) => list.id)
   const overlayLocation = activeDrag
     ? (locateTask(board, activeDrag.taskId) ?? locateTask(activeDrag.initialBoard, activeDrag.taskId))
+    : null
+  const activeListOverlay = activeListId
+    ? (visibleLists.find((list) => list.id === activeListId) ?? board.lists.find((list) => list.id === activeListId))
     : null
 
   return (
@@ -138,7 +154,7 @@ export function BoardController({
         }}
       />
       <p className="sr-only" role="status" aria-live="polite">
-        {isSaving ? "Saving task movement" : (error ?? "")}
+        {isSaving ? "Saving board movement" : (error ?? "")}
       </p>
       {board.lists.length === 0 ? (
         <div className="rounded-lg border border-dashed border-french-gray-300 p-8 text-center dark:border-paynes-gray-400">
@@ -157,18 +173,25 @@ export function BoardController({
       ) : (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={boardCollisionDetection}
           onDragStart={({ active }) => {
+            if (canManage && beginListDrag(active.id)) return
             if (!canEdit || !locateTask(board, active.id)) return
             useBoardStore.getState().setError(null)
             beginPreview(board)
             setActiveDrag({ taskId: String(active.id), initialBoard: board })
           }}
           onDragOver={({ active, over }) => {
+            if (over && previewListDrag(active.id, over.id)) return
             if (!canEdit || !over) return
             previewAtTarget(active.id, over.id, active.rect.current.translated?.top, over.rect.top, over.rect.height)
           }}
           onDragEnd={({ active, over }) => {
+            if (activeListId) {
+              if (over) void commitListDrag(active.id, over.id)
+              else cancelListDrag()
+              return
+            }
             if (!activeDrag) return
             cancelScheduledPreview()
             if (!over) {
@@ -184,6 +207,7 @@ export function BoardController({
             void commitTaskMove(String(active.id), initialBoard)
           }}
           onDragCancel={() => {
+            if (cancelListDrag()) return
             if (activeDrag) cancelTaskMove(activeDrag.initialBoard)
             cancelScheduledPreview()
             finishPreview()
@@ -191,27 +215,50 @@ export function BoardController({
           }}
         >
           <ScrollArea orientation="horizontal" className="flex items-start gap-4 px-1 pb-4 pt-5">
-            {visibleLists.map((list) => {
-              const originalList = board.lists.find((candidate) => candidate.id === list.id)
-              if (!originalList) return null
-              return (
-                <DroppableBoardColumnController
-                  key={list.id}
-                  projectId={projectId}
-                  list={list}
-                  originalList={originalList}
-                  listIds={listIds}
-                  canManage={canManage}
-                  canEdit={canEdit}
-                  onAddTask={() => setCreateListId(list.id)}
-                  onEditTask={setEditingTask}
-                />
-              )
-            })}
+            <SortableContext items={listIds.map((id) => `list-sort:${id}`)} strategy={horizontalListSortingStrategy}>
+              {visibleLists.map((list) => {
+                const originalList = board.lists.find((candidate) => candidate.id === list.id)
+                if (!originalList) return null
+                return (
+                  <DroppableBoardColumnController
+                    key={list.id}
+                    projectId={projectId}
+                    list={list}
+                    originalList={originalList}
+                    listIds={listIds}
+                    canManage={canManage}
+                    canEdit={canEdit}
+                    onAddTask={() => setCreateListId(list.id)}
+                    onEditTask={setEditingTask}
+                  />
+                )
+              })}
+            </SortableContext>
             {canManage && <CreateListController projectId={projectId} />}
           </ScrollArea>
           <DragOverlay>
-            {overlayLocation?.task ? (
+            {activeListOverlay ? (
+              <div className="pointer-events-none scale-[1.01] opacity-95 drop-shadow-[0_20px_28px_rgb(0_0_0/0.55)]">
+                <BoardColumn
+                  list={activeListOverlay}
+                  totalTasks={board.lists.find((list) => list.id === activeListOverlay.id)?.tasks.length ?? 0}
+                  isDropTarget
+                  dropRef={() => undefined}
+                >
+                  <div className="space-y-3">
+                    {activeListOverlay.tasks.map((task) => (
+                      <TaskCardController
+                        key={task.id}
+                        task={task}
+                        canEdit={false}
+                        onEdit={() => undefined}
+                        isOverlay
+                      />
+                    ))}
+                  </div>
+                </BoardColumn>
+              </div>
+            ) : overlayLocation?.task ? (
               <div className="pointer-events-none w-[min(19rem,calc(100vw-3rem))] scale-[1.015] opacity-95 drop-shadow-[0_18px_25px_rgb(0_0_0/0.5)]">
                 <TaskCardController task={overlayLocation.task} canEdit={canEdit} onEdit={() => undefined} isOverlay />
               </div>

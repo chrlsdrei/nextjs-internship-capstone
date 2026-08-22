@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest"
-import { moveTaskOptimistically, useBoardStore } from "../../controllers/projects/board/board.store"
+import { moveTaskOptimistically, reorderBoardLists, useBoardStore } from "../../controllers/projects/board/board.store"
 import type { BoardMemberDto, BoardTaskDto, ProjectBoardDto } from "../../features/board/board.types"
 import {
   retainActiveMemberSelections,
@@ -69,6 +69,21 @@ const board: ProjectBoardDto = {
 describe("board label UI behavior", () => {
   beforeEach(() => {
     useBoardStore.setState({ projectId: null, board: null, isSaving: false, error: null })
+  })
+
+  it("swaps list positions optimistically before persistence", () => {
+    const lists = [
+      board.lists[0],
+      { id: "00000000-0000-4000-8000-000000000041", name: "Doing", position: 1, tasks: [] },
+      { id: "00000000-0000-4000-8000-000000000042", name: "Done", position: 2, tasks: [] },
+    ]
+    const reordered = reorderBoardLists({ ...board, lists }, lists[0].id, lists[2].id)
+
+    expect(reordered.lists.map((list) => [list.name, list.position])).toEqual([
+      ["Doing", 0],
+      ["Done", 1],
+      ["Todo", 2],
+    ])
   })
 
   it("uses OR semantics for labels and AND semantics with the other filters", () => {
