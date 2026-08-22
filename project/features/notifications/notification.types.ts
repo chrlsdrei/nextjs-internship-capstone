@@ -22,3 +22,7 @@ export type NotificationCenterDto = {
   items: NotificationDto[]
   unreadCount: number
 }
+
+export type EmailNotificationPreferenceDto = {
+  enabled: boolean
+}

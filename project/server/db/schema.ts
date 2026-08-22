@@ -34,6 +34,13 @@ export const workspaceMemberRole = pgEnum("workspace_member_role", ["admin", "me
 export const rateLimitScope = pgEnum("rate_limit_scope", ["actor", "workspace"])
 export const invitationKind = pgEnum("invitation_kind", ["workspace", "project"])
 export const invitationDeliveryStatus = pgEnum("invitation_delivery_status", ["pending", "sent", "failed"])
+export const notificationEmailDeliveryStatus = pgEnum("notification_email_delivery_status", [
+  "pending",
+  "sending",
+  "sent",
+  "failed",
+  "skipped",
+])
 export const subscriptionTier = pgEnum("subscription_tier", ["free", "pro"])
 export const billingTarget = pgEnum("billing_target", ["user", "workspace"])
 export const billingInterval = pgEnum("billing_interval", ["monthly", "yearly"])
@@ -68,6 +75,7 @@ export const users = pgTable(
     subscriptionTier: subscriptionTier("subscription_tier").default("free").notNull(),
     subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
     subscriptionEndsAt: timestamp("subscription_ends_at", { withTimezone: true }),
+    emailNotificationsEnabled: boolean("email_notifications_enabled").default(true).notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps,
   },
@@ -791,6 +799,10 @@ export const notifications = pgTable(
     message: text("message").notNull(),
     href: text("href"),
     readAt: timestamp("read_at", { withTimezone: true }),
+    emailDeliveryStatus: notificationEmailDeliveryStatus("email_delivery_status").default("pending").notNull(),
+    emailDeliveryAttempt: integer("email_delivery_attempt").default(0).notNull(),
+    emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
+    emailDeliveryErrorCode: text("email_delivery_error_code"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -801,10 +813,12 @@ export const notifications = pgTable(
       .where(sql`${table.readAt} is null`),
     index("notifications_project_idx").on(table.projectId),
     index("notifications_task_idx").on(table.taskId),
+    index("notifications_email_delivery_idx").on(table.emailDeliveryStatus, table.createdAt),
     check("notifications_type_nonempty", sql`length(trim(${table.type})) > 0`),
     check("notifications_dedupe_key_nonempty", sql`length(trim(${table.dedupeKey})) > 0`),
     check("notifications_title_nonempty", sql`length(trim(${table.title})) > 0`),
     check("notifications_message_nonempty", sql`length(trim(${table.message})) > 0`),
+    check("notifications_email_delivery_attempt_nonnegative", sql`${table.emailDeliveryAttempt} >= 0`),
   ],
 )
 

@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/neon-http"
 import { afterEach, describe, expect, it } from "vitest"
 
 import {
+  getEmailNotificationPreferenceRecord,
   listNotificationRecords,
   markAllNotificationsReadRecords,
   markNotificationReadRecord,
@@ -13,6 +14,8 @@ import {
   materializeNotificationsForUser,
   materializeTaskAssignmentNotifications,
   materializeTaskCommentNotifications,
+  skipPendingNotificationEmailsForUser,
+  updateEmailNotificationPreferenceRecord,
 } from "../../features/notifications/repositories/notification.repository"
 import * as schema from "../../server/db/schema"
 import {
@@ -184,5 +187,21 @@ describe("notifications", () => {
     expect((await listNotificationRecords(recipientUserId)).unreadCount).toBe(4)
     await markAllNotificationsReadRecords(recipientUserId)
     expect((await listNotificationRecords(recipientUserId)).unreadCount).toBe(0)
+
+    expect(await getEmailNotificationPreferenceRecord(recipientUserId)).toEqual({ enabled: true })
+    expect(await updateEmailNotificationPreferenceRecord(recipientUserId, false)).toEqual({ enabled: false })
+    await database.insert(notifications).values({
+      recipientUserId,
+      type: "task_assigned",
+      dedupeKey: `preference-${randomUUID()}`,
+      title: "Preference test",
+      message: "This should be skipped.",
+    })
+    await skipPendingNotificationEmailsForUser(recipientUserId)
+    const afterPreferenceChange = await database
+      .select({ status: notifications.emailDeliveryStatus })
+      .from(notifications)
+      .where(eq(notifications.recipientUserId, recipientUserId))
+    expect(afterPreferenceChange.some((notification) => notification.status === "skipped")).toBe(true)
   })
 })

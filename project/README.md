@@ -11,6 +11,7 @@ Implemented capabilities include:
 - Authenticated Server-Sent Events for local board refresh.
 - Separate user and workspace subscriptions with PayMongo webhook reconciliation.
 - Gemini-powered board generation, task generation, and persisted board summaries.
+- In-app and optional Resend email notifications for assignments, comments, and approaching deadlines.
 - Responsive light and dark interfaces.
 
 See the [architecture guide](../docs/ARCHITECTURE.md) for the directory map, dependency boundaries, data flows, and the process for adding a feature. See [development setup](../docs/DEVELOPMENT_SETUP.md) for local environment and service configuration.
@@ -37,6 +38,8 @@ Configure the values described in `.env.example`. Never commit `.env.local`.
 The Clerk webhook endpoint is `/api/webhooks/clerk` and subscribes to `user.created`, `user.updated`, and `user.deleted`. For local webhook delivery, expose the application using a trusted tunnel and configure `CLERK_WEBHOOK_SIGNING_SECRET`.
 
 Workspace and board invitation delivery uses Resend. Configure `RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, optional `RESEND_REPLY_TO_EMAIL`, and `NEXT_PUBLIC_APP_URL`; invitation links expire after seven days, are single-use, and are matched to the signed-in user's verified primary Clerk email. See the [Resend invitation email setup guide](../docs/RESEND_INVITATION_EMAIL_SETUP.md) for domain and DNS configuration.
+
+Optional account notification emails use the same sender. A protected daily Vercel Cron job materializes deadline reminders; configure `CRON_SECRET` in Vercel before deploying `vercel.json`. Users can disable optional email notifications under `/settings` without disabling the in-app notification center or required invitation emails.
 
 Gemini and PayMongo secrets remain server-only; billing access is activated by verified PayMongo webhooks.
 
