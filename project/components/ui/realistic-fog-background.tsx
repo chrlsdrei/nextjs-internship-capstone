@@ -1,7 +1,12 @@
 "use client"
 
-import { type ComponentProps, useEffect, useRef } from "react"
-
+import { type ComponentProps, useEffect, useRef, useState } from "react"
+import {
+  applyReduceMotionPreference,
+  MOTION_PREFERENCE_EVENT,
+  REDUCE_MOTION_STORAGE_KEY,
+  readReduceMotionPreference,
+} from "@/lib/motion-preference"
 import { cn } from "@/lib/utils"
 
 type RealisticFogBackgroundProps = Omit<ComponentProps<"canvas">, "ref"> & {
@@ -115,8 +120,37 @@ function activateShaderProgram(gl: WebGLRenderingContext, program: WebGLProgram)
 
 export function RealisticFogBackground({ className, speed = 1, ...props }: RealisticFogBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [disabled, setDisabled] = useState(true)
 
   useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 767px)")
+    const systemMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+
+    const update = () => {
+      const preference = readReduceMotionPreference()
+      applyReduceMotionPreference(preference)
+      setDisabled(mobileQuery.matches || systemMotionQuery.matches || preference)
+    }
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === REDUCE_MOTION_STORAGE_KEY) update()
+    }
+
+    update()
+    mobileQuery.addEventListener("change", update)
+    systemMotionQuery.addEventListener("change", update)
+    window.addEventListener(MOTION_PREFERENCE_EVENT, update)
+    window.addEventListener("storage", handleStorage)
+
+    return () => {
+      mobileQuery.removeEventListener("change", update)
+      systemMotionQuery.removeEventListener("change", update)
+      window.removeEventListener(MOTION_PREFERENCE_EVENT, update)
+      window.removeEventListener("storage", handleStorage)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (disabled) return
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -183,7 +217,6 @@ export function RealisticFogBackground({ className, speed = 1, ...props }: Reali
       pointer.y = (bounds.bottom - event.clientY) * ratioY
     }
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(canvas)
     window.addEventListener("pointermove", handlePointerMove, { passive: true })
@@ -195,7 +228,7 @@ export function RealisticFogBackground({ className, speed = 1, ...props }: Reali
       gl.uniform2f(resolutionLocation, canvas.width, canvas.height)
       gl.uniform2f(mouseLocation, pointer.x, pointer.y)
       gl.drawArrays(gl.TRIANGLES, 0, 6)
-      if (!reducedMotion) animationFrame = requestAnimationFrame(render)
+      animationFrame = requestAnimationFrame(render)
     }
     animationFrame = requestAnimationFrame(render)
 
@@ -208,7 +241,9 @@ export function RealisticFogBackground({ className, speed = 1, ...props }: Reali
       gl.deleteShader(vertexShader)
       gl.deleteShader(fragmentShader)
     }
-  }, [speed])
+  }, [disabled, speed])
+
+  if (disabled) return null
 
   return (
     <canvas

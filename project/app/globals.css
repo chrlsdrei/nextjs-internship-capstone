@@ -389,3 +389,31 @@ html::-webkit-scrollbar-thumb:hover {
 html::-webkit-scrollbar-corner {
   background: var(--scroll-track);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    animation-delay: 0ms;
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+    transition-delay: 0ms;
+    transition-duration: 1ms;
+  }
+}
+
+html[data-reduce-motion="true"] {
+  scroll-behavior: auto;
+}
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  scroll-behavior: auto;
+  animation-delay: 0ms;
+  animation-duration: 1ms;
+  animation-iteration-count: 1;
+  transition-delay: 0ms;
+  transition-duration: 1ms;
+}

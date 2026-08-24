@@ -1,5 +1,5 @@
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
-import { EmailNotificationSettingsController } from "@/controllers/settings/email-notification-settings.controller"
+import { AccountPreferencesController } from "@/controllers/settings/account-preferences.controller"
 import { getEmailNotificationPreference } from "@/features/notifications/queries/get-email-notification-preference"
 
 export default async function SettingsPage() {
@@ -10,7 +10,7 @@ export default async function SettingsPage() {
         <h1 className="font-bold text-3xl text-white">Account settings</h1>
         <p className="mt-2 text-cyan-100/70">Manage your account preferences.</p>
       </TechFrameCard>
-      <EmailNotificationSettingsController preference={preference} />
+      <AccountPreferencesController preference={preference} />
     </div>
   )
 }
