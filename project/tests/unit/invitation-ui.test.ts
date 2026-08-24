@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { invitationDisplayState } from "../../features/invitations/invitation.presenter"
+import { invitationDisplayState, isPendingInvitation } from "../../features/invitations/invitation.presenter"
 import type { InvitationDto } from "../../features/invitations/invitation.types"
 import {
   authenticationHref,
@@ -37,6 +37,15 @@ describe("invitation UI state", () => {
     expect(invitationDisplayState({ ...activeInvitation, declinedAt: now.toISOString() }, now).key).toBe("declined")
     expect(invitationDisplayState({ ...activeInvitation, acceptedAt: now.toISOString() }, now).key).toBe("accepted")
     expect(invitationDisplayState({ ...activeInvitation, deliveryStatus: "failed" }, now).key).toBe("failed")
+  })
+
+  it("shows only active, unexpired invitations as pending", () => {
+    const now = new Date("2030-01-02T00:00:00.000Z")
+    expect(isPendingInvitation(activeInvitation, now)).toBe(true)
+    expect(isPendingInvitation({ ...activeInvitation, acceptedAt: now.toISOString() }, now)).toBe(false)
+    expect(isPendingInvitation({ ...activeInvitation, declinedAt: now.toISOString() }, now)).toBe(false)
+    expect(isPendingInvitation({ ...activeInvitation, revokedAt: now.toISOString() }, now)).toBe(false)
+    expect(isPendingInvitation({ ...activeInvitation, expiresAt: now.toISOString() }, now)).toBe(false)
   })
 })
 

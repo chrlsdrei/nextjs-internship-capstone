@@ -9,3 +9,9 @@ export function invitationDisplayState(invitation: InvitationDto, now = new Date
   if (invitation.deliveryStatus === "pending") return { key: "pending", label: "Sending" } as const
   return { key: "active", label: "Awaiting acceptance" } as const
 }
+
+export function isPendingInvitation(invitation: InvitationDto, now = new Date()) {
+  return (
+    !invitation.acceptedAt && !invitation.revokedAt && !invitation.declinedAt && new Date(invitation.expiresAt) > now
+  )
+}

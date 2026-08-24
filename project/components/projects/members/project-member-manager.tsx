@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
+import { PendingProjectInvitations } from "@/components/projects/members/pending-project-invitations"
 import { ActionFeedback } from "@/components/ui/action-feedback"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
-import { invitationDisplayState } from "@/features/invitations/invitation.presenter"
 import type { ProjectManagementDto } from "@/features/members/member.types"
 import { boardRoleLabel } from "@/features/projects/project.policy"
 import type { ActionState } from "@/lib/action-state"
@@ -189,63 +189,23 @@ export function ProjectMemberManager({
           )}
           <ActionFeedback state={inviteMember.state} />
 
-          {invitations.length > 0 && (
-            <div className="mt-6 border-french-gray-300 border-t pt-5 dark:border-paynes-gray-400">
-              <h3 className="font-medium">Pending and previous invitations</h3>
-              <div className="mt-3 divide-y divide-french-gray-300 dark:divide-paynes-gray-400">
-                {invitations.map((invitation) => {
-                  const display = invitationDisplayState(invitation)
-                  const manageable = !invitation.acceptedAt && !invitation.revokedAt && !invitation.declinedAt
-                  return (
-                    <div
-                      key={invitation.id}
-                      className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <p className="text-sm">{invitation.email}</p>
-                        <p className="text-paynes-gray-500 text-xs dark:text-french-gray-400">
-                          {invitation.boardRole ? boardRoleLabel(invitation.boardRole) : "Board access"} ·{" "}
-                          {display.label}
-                        </p>
-                      </div>
-                      {manageable && (
-                        <div className="flex gap-2">
-                          <form action={resendInvitation.action}>
-                            <input type="hidden" name="invitationId" value={invitation.id} />
-                            <button
-                              type="submit"
-                              disabled={resendInvitation.pending}
-                              className="rounded border px-3 py-1 text-sm"
-                            >
-                              Resend
-                            </button>
-                          </form>
-                          <form action={revokeInvitation.action}>
-                            <input type="hidden" name="invitationId" value={invitation.id} />
-                            <button
-                              type="submit"
-                              disabled={revokeInvitation.pending}
-                              className="rounded border border-red-500 px-3 py-1 text-red-600 text-sm"
-                            >
-                              Revoke
-                            </button>
-                          </form>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-              <ActionFeedback state={resendInvitation.state} />
-              <ActionFeedback state={revokeInvitation.state} />
-            </div>
-          )}
-          <div className="mt-5 divide-y divide-french-gray-300 dark:divide-paynes-gray-400">
+          <div className="mt-6 border-cyan-300/20 border-t pt-5">
+            <h3 className="font-semibold text-cyan-50">Board members</h3>
+          </div>
+          <div className="mt-2 divide-y divide-french-gray-300 dark:divide-paynes-gray-400">
             {members.map((member) => (
               <div key={member.id}>{renderMember(member)}</div>
             ))}
           </div>
         </TechFrameCard>
+      )}
+
+      {capabilities.canManageMembers && (
+        <PendingProjectInvitations
+          invitations={invitations}
+          resendInvitation={resendInvitation}
+          revokeInvitation={revokeInvitation}
+        />
       )}
 
       {capabilities.canDeleteProject && (
