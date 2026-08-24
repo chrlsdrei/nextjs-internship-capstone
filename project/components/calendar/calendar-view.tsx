@@ -14,7 +14,11 @@ import {
 import type { CalendarItemDto } from "@/features/calendar/calendar.types"
 
 type CalendarEvent = CalendarItemDto & { start: Date; end: Date }
-type CalendarViewProps = { items: CalendarItemDto[]; onSelectSlot: (slot: SlotInfo) => void }
+type CalendarViewProps = {
+  items: CalendarItemDto[]
+  onSelectSlot: (slot: SlotInfo) => void
+  onSelectEvent: (event: CalendarItemDto) => void
+}
 
 const localizer = dateFnsLocalizer({
   format,
@@ -26,20 +30,34 @@ const localizer = dateFnsLocalizer({
 
 const sourceLabels = { event: "Event", project: "Project deadline", task: "Task deadline" } as const
 
+export function calendarDisplayDate(value: string, allDay: boolean) {
+  if (!allDay) return new Date(value)
+
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number)
+  return new Date(year, month - 1, day)
+}
+
 function EventLabel({ event }: EventProps<CalendarEvent>) {
   return (
-    <span className="block min-w-0">
-      <span className="block truncate font-semibold">{event.title}</span>
-      <span className="block truncate text-[0.68rem] opacity-75">{sourceLabels[event.source]}</span>
+    <span className="calendar-event-content block min-w-0" title={`${event.title} — ${sourceLabels[event.source]}`}>
+      <span className="calendar-event-title block truncate font-semibold">{event.title}</span>
+      <span className="calendar-event-source block truncate text-[0.68rem] opacity-75">
+        {sourceLabels[event.source]}
+      </span>
     </span>
   )
 }
 
-export function CalendarView({ items, onSelectSlot }: CalendarViewProps) {
+export function CalendarView({ items, onSelectSlot, onSelectEvent }: CalendarViewProps) {
   const [date, setDate] = useState(new Date())
   const [view, setView] = useState<View>("month")
   const events = useMemo<CalendarEvent[]>(
-    () => items.map((item) => ({ ...item, start: new Date(item.startsAt), end: new Date(item.endsAt) })),
+    () =>
+      items.map((item) => ({
+        ...item,
+        start: calendarDisplayDate(item.startsAt, item.allDay),
+        end: calendarDisplayDate(item.endsAt, item.allDay),
+      })),
     [items],
   )
 
@@ -60,6 +78,7 @@ export function CalendarView({ items, onSelectSlot }: CalendarViewProps) {
         onNavigate={setDate}
         onView={setView}
         onSelectSlot={onSelectSlot}
+        onSelectEvent={onSelectEvent}
         components={{ event: EventLabel }}
         eventPropGetter={(event) => ({ className: `calendar-event calendar-event--${event.source}` })}
         messages={{ showMore: (count) => `+ ${count} more` }}

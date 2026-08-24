@@ -132,10 +132,44 @@
 
 .projectflow-calendar .rbc-event {
   min-height: 1.45rem;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
   border: 1px solid rgb(108 232 255 / 58%);
   background: #07508a;
   color: #f1fbff;
   box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+  cursor: pointer;
+}
+
+.projectflow-calendar .calendar-event-content {
+  padding: 0.2rem 0.38rem;
+  line-height: 1.15;
+}
+
+.projectflow-calendar .rbc-month-view .rbc-event {
+  box-sizing: border-box;
+  height: 1.55rem;
+  min-height: 1.55rem;
+}
+
+.projectflow-calendar .rbc-month-view .calendar-event-content {
+  padding: 0.25rem 0.38rem;
+  line-height: 1rem;
+}
+
+.projectflow-calendar .rbc-month-view .calendar-event-source {
+  display: none;
+}
+
+.projectflow-calendar .rbc-month-view .rbc-row-content {
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.projectflow-calendar .rbc-row-segment {
+  min-width: 0;
+  padding: 0 2px 2px;
 }
 
 .projectflow-calendar .rbc-event--project {
@@ -155,8 +189,11 @@
 }
 
 .projectflow-calendar .rbc-show-more {
+  min-height: 1.3rem;
+  padding: 0.15rem 0.3rem;
   color: #67e8f9;
   background: transparent;
+  line-height: 1rem;
 }
 
 .projectflow-calendar .rbc-overlay {
@@ -176,6 +213,15 @@
     order: -1;
     padding: 0.25rem;
     text-align: left;
+  }
+
+  .projectflow-calendar .rbc-month-view .rbc-event {
+    min-height: 1.25rem;
+    font-size: 0.7rem;
+  }
+
+  .projectflow-calendar .rbc-month-view .calendar-event-content {
+    padding: 0.2rem 0.25rem;
   }
 }
 
