@@ -83,6 +83,7 @@ async function detailDto(
       role: memberRole,
       joinedAt: member.joinedAt.toISOString(),
       lastSeenAt: member.lastSeenAt?.toISOString() ?? null,
+      isCurrentUser: member.userId === currentUserId,
       capabilities: {
         canChangeRole: canChangeWorkspaceMemberRole(role, memberRole),
         canRemove: canRemoveWorkspaceMember(role, memberRole, member.userId === currentUserId),
@@ -252,6 +253,29 @@ export async function removeWorkspaceMember(workspaceId: string, input: unknown)
       metadata: { actorName: user.name, workspaceName: access.name, memberName: targetSnapshot.name },
     },
   })
+  return { workspaceId: access.id, removedMemberId: member.id }
+}
+
+export async function leaveWorkspace(workspaceId: string) {
+  const { access, role, user } = await requireWorkspaceAccess(workspaceId)
+  requireActiveWorkspace(access)
+  if (role === "owner") {
+    throw new WorkspaceAccessError("Transfer workspace ownership before leaving", 409)
+  }
+
+  await enforceRateLimit({ action: "workspace.admin", actorUserId: user.id, workspaceId: access.id })
+  const member = await softRemoveWorkspaceMemberById(access.membershipId)
+  if (!member) throw new WorkspaceAccessError("Your workspace membership is no longer active", 409)
+
+  await recordActivity({
+    workspaceId: access.id,
+    actorWorkspaceMemberId: access.membershipId,
+    event: {
+      action: "workspace.member_removed",
+      metadata: { actorName: user.name, workspaceName: access.name, memberName: user.name },
+    },
+  })
+
   return { workspaceId: access.id, removedMemberId: member.id }
 }
 

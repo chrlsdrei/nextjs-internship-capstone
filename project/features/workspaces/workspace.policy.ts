@@ -29,6 +29,7 @@ export function workspaceCapabilities(role: WorkspaceRole): WorkspaceCapabilitie
     canRemoveMembers: role !== "member",
     canTransferOwnership: isOwner,
     canInviteWorkspaceMembers: canInviteWorkspaceOutsiders(role),
+    canLeaveWorkspace: !isOwner,
   }
 }
 

@@ -12,6 +12,8 @@ import { updateWorkspaceMemberRoleAction } from "@/features/workspaces/actions/u
 import type { WorkspaceDetailDto } from "@/features/workspaces/workspace.types"
 import { initialActionState } from "@/lib/action-state"
 
+import { LeaveWorkspaceController } from "./leave-workspace.controller"
+
 export function WorkspaceMembersController({
   workspace,
   invitations,
@@ -39,6 +41,11 @@ export function WorkspaceMembersController({
       updateRole={{ action: roleAction, pending: updatingRole, state: roleState }}
       removeMember={{ action: removeAction, pending: removing, state: removeState }}
       transferOwnership={{ action: transferAction, pending: transferring, state: transferState }}
+      leaveWorkspaceControl={
+        workspace.capabilities.canLeaveWorkspace ? (
+          <LeaveWorkspaceController workspaceId={workspace.id} workspaceName={workspace.name} />
+        ) : undefined
+      }
     />
   )
 }

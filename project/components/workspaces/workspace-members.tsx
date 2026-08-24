@@ -1,4 +1,5 @@
 import { Mail, RefreshCw, ShieldCheck, UserMinus } from "lucide-react"
+import type { ReactNode } from "react"
 
 import { ActionFeedback } from "@/components/ui/action-feedback"
 import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
@@ -26,6 +27,7 @@ type WorkspaceMembersProps = {
   updateRole: FormController
   removeMember: FormController
   transferOwnership: FormController
+  leaveWorkspaceControl?: ReactNode
 }
 
 const framedSectionContentClass =
@@ -40,6 +42,7 @@ export function WorkspaceMembers({
   updateRole,
   removeMember,
   transferOwnership,
+  leaveWorkspaceControl,
 }: WorkspaceMembersProps) {
   return (
     <div className="space-y-6">
@@ -134,7 +137,7 @@ export function WorkspaceMembers({
                       </button>
                     </form>
                   )}
-                  {member.capabilities.canRemove && (
+                  {member.capabilities.canRemove && !member.isCurrentUser && (
                     <form action={removeMember.action}>
                       <input type="hidden" name="workspaceId" value={workspace.id} />
                       <input type="hidden" name="memberId" value={member.id} />
@@ -210,6 +213,17 @@ export function WorkspaceMembers({
           <ActionFeedback state={resendInvitation.state} />
           <ActionFeedback state={revokeInvitation.state} />
         </OrnamentalFrame>
+      )}
+
+      {leaveWorkspaceControl && (
+        <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
+          <h2 className="font-semibold text-cyan-50 text-lg">Workspace access</h2>
+          <p className="mt-1 text-cyan-100/65 text-sm">
+            Leaving removes your access to this workspace and its projects. You can only return through a new
+            invitation.
+          </p>
+          <div className="mt-5">{leaveWorkspaceControl}</div>
+        </TechFrameCard>
       )}
     </div>
   )
