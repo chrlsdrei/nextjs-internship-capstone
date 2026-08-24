@@ -159,7 +159,7 @@ export function WorkspaceMembers({
             )}
             {invitations.map((invitation) => {
               const display = invitationDisplayState(invitation)
-              const manageable = !invitation.acceptedAt && !invitation.revokedAt
+              const manageable = !invitation.acceptedAt && !invitation.revokedAt && !invitation.declinedAt
               return (
                 <article
                   key={invitation.id}

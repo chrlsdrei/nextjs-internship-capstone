@@ -32,6 +32,7 @@ export type BoardCapabilitiesDto = {
   canEditTasks: boolean
   canAssignTasks: boolean
   canDeleteTasks: boolean
+  canLeaveBoard: boolean
 }
 
 export type ProjectBoardDto = {

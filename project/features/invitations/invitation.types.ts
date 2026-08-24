@@ -17,6 +17,7 @@ export type InvitationDto = {
   expiresAt: string
   acceptedAt: string | null
   revokedAt: string | null
+  declinedAt: string | null
   createdAt: string
 }
 
@@ -26,7 +27,7 @@ export type InvitationAcceptanceDto = {
   projectId: string | null
 }
 
-export type InvitationPreviewState = "active" | "expired" | "revoked" | "accepted" | "invalid"
+export type InvitationPreviewState = "active" | "expired" | "revoked" | "declined" | "accepted" | "invalid"
 
 export type InvitationPreviewDto = {
   state: InvitationPreviewState

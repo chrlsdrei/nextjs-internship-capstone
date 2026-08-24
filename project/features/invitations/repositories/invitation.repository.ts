@@ -40,6 +40,8 @@ const invitationSelection = {
   expiresAt: workspaceInvitations.expiresAt,
   acceptedAt: workspaceInvitations.acceptedAt,
   revokedAt: workspaceInvitations.revokedAt,
+  declinedAt: workspaceInvitations.declinedAt,
+  declinedByUserId: workspaceInvitations.declinedByUserId,
   createdAt: workspaceInvitations.createdAt,
 }
 
@@ -97,6 +99,7 @@ export async function rotateInvitationToken(invitationId: string, tokenHash: str
         eq(workspaceInvitations.id, invitationId),
         isNull(workspaceInvitations.acceptedAt),
         isNull(workspaceInvitations.revokedAt),
+        isNull(workspaceInvitations.declinedAt),
       ),
     )
     .returning({ id: workspaceInvitations.id })
@@ -132,6 +135,25 @@ export async function revokeInvitationRecord(invitationId: string, userId: strin
         eq(workspaceInvitations.id, invitationId),
         isNull(workspaceInvitations.acceptedAt),
         isNull(workspaceInvitations.revokedAt),
+        isNull(workspaceInvitations.declinedAt),
+      ),
+    )
+    .returning({ id: workspaceInvitations.id })
+  return updated ? findInvitationById(updated.id) : null
+}
+
+export async function declineInvitationRecord(tokenHash: string, userId: string, normalizedEmail: string) {
+  const [updated] = await db
+    .update(workspaceInvitations)
+    .set({ declinedAt: new Date(), declinedByUserId: userId, updatedAt: new Date() })
+    .where(
+      and(
+        eq(workspaceInvitations.tokenHash, tokenHash),
+        eq(workspaceInvitations.normalizedEmail, normalizedEmail),
+        isNull(workspaceInvitations.acceptedAt),
+        isNull(workspaceInvitations.revokedAt),
+        isNull(workspaceInvitations.declinedAt),
+        sql`${workspaceInvitations.expiresAt} > NOW()`,
       ),
     )
     .returning({ id: workspaceInvitations.id })
@@ -187,6 +209,7 @@ export async function acceptInvitationRecord(
         AND invitation."normalized_email" = ${normalizedEmail}
         AND invitation."accepted_at" IS NULL
         AND invitation."revoked_at" IS NULL
+        AND invitation."declined_at" IS NULL
         AND invitation."expires_at" > NOW()
         AND (
           invitation."kind" = 'workspace'

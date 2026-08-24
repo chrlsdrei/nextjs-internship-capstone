@@ -11,6 +11,8 @@ type AcceptController = {
   state: ActionState<InvitationAcceptanceDto>
 }
 
+type DeclineController = AcceptController
+
 type InvitationAcceptViewProps = {
   preview: InvitationPreviewDto
   token: string
@@ -18,6 +20,7 @@ type InvitationAcceptViewProps = {
   signInHref: string
   signUpHref: string
   accept: AcceptController
+  decline: DeclineController
 }
 
 const stateCopy = {
@@ -36,6 +39,11 @@ const stateCopy = {
     title: "Invitation revoked",
     message: "This invitation is no longer active. Contact the sender if you still need access.",
   },
+  declined: {
+    icon: ShieldX,
+    title: "Invitation declined",
+    message: "You declined this invitation. Ask the sender for a new invitation if you change your mind.",
+  },
   accepted: {
     icon: CheckCircle2,
     title: "Invitation already accepted",
@@ -50,7 +58,26 @@ export function InvitationAcceptView({
   signInHref,
   signUpHref,
   accept,
+  decline,
 }: InvitationAcceptViewProps) {
+  if (decline.state.status === "success") {
+    return (
+      <InvitationCard>
+        <ShieldX className="mx-auto size-10 text-cyan-400" aria-hidden="true" />
+        <h1 className="mt-4 font-bold text-2xl text-outer-space-500 dark:text-platinum-500">Invitation declined</h1>
+        <p className="mt-2 text-paynes-gray-500 dark:text-french-gray-400">
+          No workspace or board access was added to your account.
+        </p>
+        <Link
+          href="/dashboard"
+          className="mt-6 inline-flex rounded-lg bg-blue-munsell-500 px-4 py-2 font-medium text-white"
+        >
+          Return to dashboard
+        </Link>
+      </InvitationCard>
+    )
+  }
+
   if (preview.state !== "active") {
     const copy = stateCopy[preview.state]
     const Icon = copy.icon
@@ -91,15 +118,29 @@ export function InvitationAcceptView({
       )}
 
       {signedIn ? (
-        <form action={accept.action} className="mt-6">
-          <input type="hidden" name="token" value={token} />
-          <button
-            type="submit"
-            disabled={accept.pending}
-            className="w-full rounded-lg bg-blue-munsell-500 px-4 py-2.5 font-medium text-white disabled:opacity-60"
-          >
-            {accept.pending ? "Accepting…" : "Accept invitation"}
-          </button>
+        <div className="mt-6">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <form action={decline.action}>
+              <input type="hidden" name="token" value={token} />
+              <button
+                type="submit"
+                disabled={accept.pending || decline.pending}
+                className="w-full rounded-lg border border-cyan-300/45 px-4 py-2.5 font-medium text-cyan-100 transition hover:bg-cyan-300/10 disabled:opacity-60"
+              >
+                {decline.pending ? "Declining…" : "Decline"}
+              </button>
+            </form>
+            <form action={accept.action}>
+              <input type="hidden" name="token" value={token} />
+              <button
+                type="submit"
+                disabled={accept.pending || decline.pending}
+                className="w-full rounded-lg bg-blue-munsell-500 px-4 py-2.5 font-medium text-white disabled:opacity-60"
+              >
+                {accept.pending ? "Accepting…" : "Accept invitation"}
+              </button>
+            </form>
+          </div>
           {mismatch && (
             <p className="mt-3 rounded-lg border border-red-300 bg-red-50 p-3 text-left text-red-700 text-sm dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
               You are signed in with a different account. Sign out, then return to this link and use the invited email
@@ -107,7 +148,8 @@ export function InvitationAcceptView({
             </p>
           )}
           {!mismatch && <ActionFeedback state={accept.state} />}
-        </form>
+          <ActionFeedback state={decline.state} />
+        </div>
       ) : (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link href={signInHref} className="rounded-lg bg-blue-munsell-500 px-4 py-2.5 font-medium text-white">

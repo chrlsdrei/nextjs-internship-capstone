@@ -22,17 +22,19 @@ const activeInvitation: InvitationDto = {
   expiresAt: "2030-01-08T00:00:00.000Z",
   acceptedAt: null,
   revokedAt: null,
+  declinedAt: null,
   createdAt: "2030-01-01T00:00:00.000Z",
 }
 
 describe("invitation UI state", () => {
-  it("distinguishes active, expired, revoked, accepted, and failed delivery states", () => {
+  it("distinguishes active, expired, revoked, declined, accepted, and failed delivery states", () => {
     const now = new Date("2030-01-02T00:00:00.000Z")
     expect(invitationDisplayState(activeInvitation, now).key).toBe("active")
     expect(invitationDisplayState({ ...activeInvitation, expiresAt: "2030-01-01T00:00:00.000Z" }, now).key).toBe(
       "expired",
     )
     expect(invitationDisplayState({ ...activeInvitation, revokedAt: now.toISOString() }, now).key).toBe("revoked")
+    expect(invitationDisplayState({ ...activeInvitation, declinedAt: now.toISOString() }, now).key).toBe("declined")
     expect(invitationDisplayState({ ...activeInvitation, acceptedAt: now.toISOString() }, now).key).toBe("accepted")
     expect(invitationDisplayState({ ...activeInvitation, deliveryStatus: "failed" }, now).key).toBe("failed")
   })

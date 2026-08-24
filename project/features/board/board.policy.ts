@@ -9,5 +9,6 @@ export function boardCapabilities(role: BoardRole, editorsCanAssignTasks: boolea
     canEditTasks,
     canAssignTasks: isBoardAdministrator || (role === "editor" && editorsCanAssignTasks),
     canDeleteTasks: isBoardAdministrator,
+    canLeaveBoard: false,
   }
 }

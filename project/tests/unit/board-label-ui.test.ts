@@ -60,6 +60,7 @@ const board: ProjectBoardDto = {
     canEditTasks: true,
     canAssignTasks: true,
     canDeleteTasks: true,
+    canLeaveBoard: false,
   },
   labels: [redLabel, blueLabel],
   members: [charles, ada],

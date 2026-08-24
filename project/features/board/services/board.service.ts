@@ -132,7 +132,10 @@ export async function getProjectBoard(projectId: string): Promise<ProjectBoardDt
 
   return {
     role: access.role,
-    capabilities: boardCapabilities(access.role, settings.editorsCanAssignTasks),
+    capabilities: {
+      ...boardCapabilities(access.role, settings.editorsCanAssignTasks),
+      canLeaveBoard: Boolean(access.projectMemberId) && !access.isWorkspaceOwner,
+    },
     members: memberRows,
     labels: labelRows.map((label) => ({
       id: label.id,

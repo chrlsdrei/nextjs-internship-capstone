@@ -45,7 +45,12 @@ export const activityEventSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("project.deleted"), metadata: projectSnapshot }),
   z.object({
-    action: z.enum(["project.member_added", "project.member_role_updated", "project.member_removed"]),
+    action: z.enum([
+      "project.member_added",
+      "project.member_role_updated",
+      "project.member_removed",
+      "project.member_left",
+    ]),
     metadata: projectSnapshot.extend({ memberName: snapshotName, memberEmail: emailSnapshot, role }),
   }),
   z.object({

@@ -26,6 +26,7 @@ import { useBoardFilters } from "@/controllers/projects/board/use-board-filters"
 import { locateTask, useBoardTaskPreview } from "@/controllers/projects/board/use-board-task-preview"
 import { useListDrag } from "@/controllers/projects/board/use-list-drag"
 import { useTaskDrag } from "@/controllers/projects/board/use-task-drag"
+import { LeaveBoardController } from "@/controllers/projects/leave-board.controller"
 import type { BoardSummaryDto } from "@/features/ai/ai-usage.types"
 import type { UserAiEntitlementDto, WorkspaceEntitlementDto } from "@/features/billing/billing.types"
 import type { BoardTaskDto, ProjectBoardDto } from "@/features/board/board.types"
@@ -126,6 +127,11 @@ export function BoardController({
             workspaceEntitlement={aiData.workspaceEntitlement}
             initialSummaries={aiData.summaries}
           />
+        }
+        membershipControls={
+          board.capabilities.canLeaveBoard ? (
+            <LeaveBoardController projectId={projectId} projectTitle={projectTitle} />
+          ) : undefined
         }
       />
       <BoardFilterModal
