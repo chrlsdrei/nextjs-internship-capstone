@@ -11,7 +11,6 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   Settings,
   Users,
   X,
@@ -139,7 +138,7 @@ export function DashboardLayout({
         <header className="sticky top-0 z-30 h-20 p-1.5">
           <TaskFrame
             className="h-full w-full rounded-xl"
-            contentClassName="flex h-full items-center gap-x-4 px-4 py-0 sm:gap-x-6 sm:px-6 lg:px-8"
+            contentClassName="flex h-full items-center gap-x-4 px-4 py-0 sm:px-6 lg:px-8"
           >
             <button
               type="button"
@@ -149,26 +148,9 @@ export function DashboardLayout({
             >
               <Menu size={20} />
             </button>
-
-            <div className="flex flex-1 items-center gap-x-4 lg:gap-x-6">
-              <div className="relative hidden max-w-md flex-1 sm:block">
-                <Search
-                  aria-hidden="true"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-100/55"
-                  size={16}
-                />
-                <input
-                  type="search"
-                  aria-label="Search projects and tasks"
-                  placeholder="Search projects, tasks..."
-                  className="w-full rounded-lg border border-cyan-300/35 bg-blue-950/65 py-2 pr-4 pl-10 text-white placeholder:text-cyan-100/45 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-                />
-              </div>
-
-              <div className="ml-auto flex items-center gap-x-4">
-                <NotificationCenterController initialData={notifications} />
-                <UserButton />
-              </div>
+            <div className="ml-auto flex items-center gap-x-4">
+              <NotificationCenterController initialData={notifications} />
+              <UserButton />
             </div>
           </TaskFrame>
         </header>
