@@ -31,9 +31,11 @@ function heatmapWeeks(year: number, contributions: AnalyticsContributionDto[]) {
   const firstDay = new Date(Date.UTC(year, 0, 1))
   const lastDay = new Date(Date.UTC(year, 11, 31))
   const gridStart = new Date(firstDay)
-  gridStart.setUTCDate(gridStart.getUTCDate() - gridStart.getUTCDay())
+  const firstDayOffset = (gridStart.getUTCDay() + 6) % 7
+  gridStart.setUTCDate(gridStart.getUTCDate() - firstDayOffset)
   const gridEnd = new Date(lastDay)
-  gridEnd.setUTCDate(gridEnd.getUTCDate() + (6 - gridEnd.getUTCDay()))
+  const lastDayOffset = (gridEnd.getUTCDay() + 6) % 7
+  gridEnd.setUTCDate(gridEnd.getUTCDate() + (6 - lastDayOffset))
   const days: Array<{ date: Date; key: string; count: number; isInYear: boolean }> = []
 
   for (const cursor = new Date(gridStart); cursor <= gridEnd; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
@@ -64,9 +66,6 @@ export function ContributionHeatmap({ year, availableYears, contributions }: Con
           <h2 className="font-bold text-2xl text-white">
             {total.toLocaleString()} completion {total === 1 ? "contribution" : "contributions"} in {year}
           </h2>
-          <p className="mt-1 text-cyan-100/65 text-sm">
-            Each task move into Done, Complete, Completed, or Finished counts once.
-          </p>
         </div>
         <nav aria-label="Contribution year" className="flex flex-wrap gap-2">
           {availableYears.map((availableYear) => (
@@ -88,8 +87,8 @@ export function ContributionHeatmap({ year, availableYears, contributions }: Con
       </div>
 
       <ScrollArea orientation="horizontal" className="pb-3">
-        <div className="min-w-[760px] rounded-xl border border-cyan-300/20 bg-[#03172d]/80 p-5">
-          <div className="mb-2 ml-10 flex gap-1">
+        <div className="min-w-[980px] rounded-xl border border-cyan-300/20 bg-[#03172d]/80 p-5">
+          <div className="mb-2 ml-[5.5rem] flex gap-1">
             {weeks.map((week, index) => {
               const firstOfMonth = week.find((day) => day.isInYear && day.date.getUTCDate() === 1)
               return (
@@ -100,14 +99,12 @@ export function ContributionHeatmap({ year, availableYears, contributions }: Con
             })}
           </div>
           <div className="flex gap-2">
-            <div aria-hidden="true" className="grid w-8 shrink-0 grid-rows-7 gap-1 text-cyan-100/55 text-xs">
-              <span />
-              <span>Mon</span>
-              <span />
-              <span>Wed</span>
-              <span />
-              <span>Fri</span>
-              <span />
+            <div aria-hidden="true" className="grid w-20 shrink-0 grid-rows-7 gap-1 text-cyan-100/55 text-xs">
+              {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((weekday) => (
+                <span key={weekday} className="flex h-3 items-center justify-end leading-none">
+                  {weekday}
+                </span>
+              ))}
             </div>
             <div className="flex gap-1" role="img" aria-label={`${year} task completion contribution calendar`}>
               {weeks.map((week, index) => (

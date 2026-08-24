@@ -12,7 +12,7 @@ function FrameDecoration() {
   return (
     <svg
       aria-hidden="true"
-      className="pointer-events-none absolute inset-0 size-full overflow-visible"
+      className="pointer-events-none absolute inset-0 hidden size-full overflow-visible sm:block"
       fill="none"
       preserveAspectRatio="none"
       viewBox="0 0 1000 360"
@@ -71,6 +71,19 @@ function FrameDecoration() {
   )
 }
 
+function MobileFrameDecoration() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-[6px] sm:hidden">
+      <div className="absolute inset-0 rounded-xl border-[3px] border-[var(--tech-frame-edge)] shadow-[0_0_12px_var(--tech-frame-aura)]" />
+      <div className="absolute inset-[4px] rounded-lg border border-[var(--tech-frame-glow)] shadow-[inset_0_0_10px_rgba(25,237,255,0.2)]" />
+      <div className="absolute top-0 left-1/2 h-[5px] w-16 -translate-x-1/2 rounded-b bg-[var(--tech-frame-glow)] shadow-[0_0_8px_var(--tech-frame-glow)]" />
+      <div className="absolute bottom-0 left-1/2 h-[5px] w-16 -translate-x-1/2 rounded-t bg-[var(--tech-frame-glow)] shadow-[0_0_8px_var(--tech-frame-glow)]" />
+      <div className="absolute top-1/2 left-0 h-10 w-[5px] -translate-y-1/2 rounded-r bg-[var(--tech-frame-glow)]" />
+      <div className="absolute top-1/2 right-0 h-10 w-[5px] -translate-y-1/2 rounded-l bg-[var(--tech-frame-glow)]" />
+    </div>
+  )
+}
+
 function TechFrameCard({ className, contentClassName, isHighlighted = false, children, ...props }: TechFrameCardProps) {
   return (
     <div
@@ -84,12 +97,13 @@ function TechFrameCard({ className, contentClassName, isHighlighted = false, chi
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[10px] bg-[radial-gradient(circle_at_50%_10%,var(--tech-card-surface-bright),transparent_48%),linear-gradient(145deg,var(--tech-card-surface),var(--tech-card-surface-deep))] [clip-path:polygon(4%_0,96%_0,100%_12%,100%_88%,96%_100%,4%_100%,0_88%,0_12%)] sm:inset-[14px]"
+        className="pointer-events-none absolute inset-[9px] rounded-lg bg-[radial-gradient(circle_at_50%_10%,var(--tech-card-surface-bright),transparent_48%),linear-gradient(145deg,var(--tech-card-surface),var(--tech-card-surface-deep))] sm:inset-[14px] sm:rounded-none sm:[clip-path:polygon(4%_0,96%_0,100%_12%,100%_88%,96%_100%,4%_100%,0_88%,0_12%)]"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[14px] opacity-70 shadow-[inset_0_0_38px_rgba(0,217,255,0.16),inset_0_-24px_48px_rgba(0,22,115,0.35)] [clip-path:polygon(4%_0,96%_0,100%_12%,100%_88%,96%_100%,4%_100%,0_88%,0_12%)] sm:inset-[18px]"
+        className="pointer-events-none absolute inset-[13px] rounded-md opacity-70 shadow-[inset_0_0_38px_rgba(0,217,255,0.16),inset_0_-24px_48px_rgba(0,22,115,0.35)] sm:inset-[18px] sm:rounded-none sm:[clip-path:polygon(4%_0,96%_0,100%_12%,100%_88%,96%_100%,4%_100%,0_88%,0_12%)]"
       />
+      <MobileFrameDecoration />
       <FrameDecoration />
       <div
         aria-hidden="true"
