@@ -1,4 +1,5 @@
 import { ActionFeedback } from "@/components/ui/action-feedback"
+import { TechFrameCard } from "@/components/ui/tech-frame-card"
 import type { WorkspaceDetailDto } from "@/features/workspaces/workspace.types"
 import type { ActionState } from "@/lib/action-state"
 
@@ -14,68 +15,73 @@ type WorkspaceSettingsProps = {
   rules: FormController
 }
 
+const framedSectionContentClass =
+  "min-h-0 gap-0 px-[clamp(2.5rem,5vw,6rem)] py-6 sm:min-h-0 sm:px-[clamp(2.5rem,5vw,6rem)] sm:py-8"
+
 export function WorkspaceSettings({ workspace, details, rules }: WorkspaceSettingsProps) {
   if (!workspace.capabilities.canManageSettings) {
     return (
-      <section className="rounded-xl border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
-        <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Workspace settings</h2>
-        <p className="mt-2 text-paynes-gray-500 text-sm dark:text-french-gray-400">
+      <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
+        <h2 className="font-semibold text-cyan-50 text-lg">Workspace settings</h2>
+        <p className="mt-2 text-cyan-100/65 text-sm">
           Only the workspace owner can change workspace details and project-creation rules.
         </p>
         <dl className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-paynes-gray-500 text-sm dark:text-french-gray-400">Name</dt>
-            <dd className="mt-1 font-medium">{workspace.name}</dd>
+            <dt className="text-cyan-100/60 text-sm">Name</dt>
+            <dd className="mt-1 font-medium text-white">{workspace.name}</dd>
           </div>
           <div>
-            <dt className="text-paynes-gray-500 text-sm dark:text-french-gray-400">Members can create projects</dt>
-            <dd className="mt-1 font-medium">{workspace.membersCanCreateProjects ? "Enabled" : "Disabled"}</dd>
+            <dt className="text-cyan-100/60 text-sm">Members can create projects</dt>
+            <dd className="mt-1 font-medium text-white">
+              {workspace.membersCanCreateProjects ? "Enabled" : "Disabled"}
+            </dd>
           </div>
         </dl>
-      </section>
+      </TechFrameCard>
     )
   }
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
-        <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Workspace details</h2>
+      <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
+        <h2 className="font-semibold text-cyan-50 text-lg">Workspace details</h2>
         <form action={details.action} className="mt-5 space-y-4">
           <input type="hidden" name="workspaceId" value={workspace.id} />
-          <label className="block font-medium text-sm">
+          <label className="block font-medium text-cyan-50 text-sm">
             Name
             <input
               name="name"
               required
               maxLength={100}
               defaultValue={workspace.name}
-              className="mt-2 w-full rounded-lg border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
+              className="mt-2 w-full rounded-lg border border-cyan-300/30 bg-blue-950/65 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
             />
           </label>
-          <label className="block font-medium text-sm">
+          <label className="block font-medium text-cyan-50 text-sm">
             Description
             <textarea
               name="description"
               maxLength={500}
               rows={4}
               defaultValue={workspace.description ?? ""}
-              className="mt-2 w-full rounded-lg border border-french-gray-300 bg-white px-3 py-2 dark:border-paynes-gray-400 dark:bg-outer-space-400"
+              className="mt-2 w-full rounded-lg border border-cyan-300/30 bg-blue-950/65 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
             />
           </label>
           <button
             type="submit"
             disabled={details.pending}
-            className="rounded-lg bg-blue-munsell-500 px-4 py-2 font-medium text-white hover:bg-blue-munsell-600 disabled:opacity-60"
+            className="rounded-lg bg-cyan-500 px-4 py-2 font-medium text-blue-950 hover:bg-cyan-300 disabled:opacity-60"
           >
             {details.pending ? "Saving…" : "Save details"}
           </button>
           <ActionFeedback state={details.state} />
         </form>
-      </section>
+      </TechFrameCard>
 
-      <section className="rounded-xl border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
-        <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Project creation</h2>
-        <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
+      <TechFrameCard className="w-full" contentClassName={framedSectionContentClass}>
+        <h2 className="font-semibold text-cyan-50 text-lg">Project creation</h2>
+        <p className="mt-1 text-cyan-100/65 text-sm">
           Choose whether regular workspace members may create projects. Workspace administrators are governed by the
           same explicit project-access rules.
         </p>
@@ -91,7 +97,7 @@ export function WorkspaceSettings({ workspace, details, rules }: WorkspaceSettin
             />
             <span>
               <span className="block font-medium text-sm">Allow members to create projects</span>
-              <span className="mt-1 block text-paynes-gray-500 text-sm dark:text-french-gray-400">
+              <span className="mt-1 block text-cyan-100/65 text-sm">
                 Members may select this workspace when creating a project. Administrators and the owner always may.
               </span>
             </span>
@@ -99,13 +105,13 @@ export function WorkspaceSettings({ workspace, details, rules }: WorkspaceSettin
           <button
             type="submit"
             disabled={rules.pending}
-            className="mt-5 rounded-lg bg-blue-munsell-500 px-4 py-2 font-medium text-white hover:bg-blue-munsell-600 disabled:opacity-60"
+            className="mt-5 rounded-lg bg-cyan-500 px-4 py-2 font-medium text-blue-950 hover:bg-cyan-300 disabled:opacity-60"
           >
             {rules.pending ? "Saving…" : "Save rule"}
           </button>
           <ActionFeedback state={rules.state} />
         </form>
-      </section>
+      </TechFrameCard>
     </div>
   )
 }

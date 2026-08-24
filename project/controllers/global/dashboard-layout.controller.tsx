@@ -21,6 +21,7 @@ import { usePathname } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
 
+import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TaskFrame } from "@/components/ui/task-frame"
 import { BuildAiController } from "@/controllers/global/build-ai.controller"
 import { NotificationCenterController } from "@/controllers/global/notification-center.controller"
@@ -53,7 +54,8 @@ export function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
-    <div className="min-h-screen bg-platinum-900 dark:bg-outer-space-600">
+    <div className="relative isolate min-h-screen overflow-x-clip bg-[#020617]">
+      <RealisticFogBackground className="fixed inset-0 z-0" />
       <PresenceHeartbeatController />
       {sidebarOpen && (
         <button
@@ -133,7 +135,7 @@ export function DashboardLayout({
         </TaskFrame>
       </aside>
 
-      <div className={`transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
+      <div className={`relative z-10 transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <header className="sticky top-0 z-30 h-20 p-1.5">
           <TaskFrame
             className="h-full w-full rounded-xl"

@@ -1,6 +1,8 @@
 import { CalendarDays, FolderKanban, ShieldCheck, Users } from "lucide-react"
 import Link from "next/link"
 
+import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
+import { TaskFrame } from "@/components/ui/task-frame"
 import type { WorkspaceDetailDto } from "@/features/workspaces/workspace.types"
 
 export function WorkspaceOverview({ workspace }: { workspace: WorkspaceDetailDto }) {
@@ -15,33 +17,33 @@ export function WorkspaceOverview({ workspace }: { workspace: WorkspaceDetailDto
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-3">
         {facts.map((fact) => (
-          <div
-            key={fact.label}
-            className="rounded-xl border border-french-gray-300 bg-white p-5 dark:border-paynes-gray-400 dark:bg-outer-space-500"
-          >
-            <fact.icon className="text-blue-munsell-500" size={20} />
-            <p className="mt-3 text-paynes-gray-500 text-sm dark:text-french-gray-400">{fact.label}</p>
-            <p className="mt-1 font-semibold text-outer-space-500 capitalize dark:text-platinum-500">{fact.value}</p>
-          </div>
+          <TaskFrame key={fact.label} className="min-h-36" contentClassName="flex h-full flex-col justify-center px-6">
+            <fact.icon className="text-cyan-300" size={20} />
+            <p className="mt-3 text-cyan-100/65 text-sm">{fact.label}</p>
+            <p className="mt-1 font-semibold text-white capitalize">{fact.value}</p>
+          </TaskFrame>
         ))}
       </div>
-      <section className="rounded-xl border border-french-gray-300 bg-white p-6 dark:border-paynes-gray-400 dark:bg-outer-space-500">
-        <div className="flex items-start gap-3">
-          <FolderKanban className="text-blue-munsell-500" size={22} />
+      <OrnamentalFrame
+        title="Workspace projects"
+        className="w-full"
+        contentClassName="px-[clamp(2.75rem,6vw,6rem)] pb-10 pt-3"
+      >
+        <section className="flex items-start gap-3">
+          <FolderKanban className="shrink-0 text-cyan-300" size={22} />
           <div>
-            <h2 className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500">Workspace projects</h2>
-            <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
+            <p className="text-cyan-100/70 text-sm">
               Projects assigned to this workspace are available in the project directory, grouped by workspace.
             </p>
             <Link
               href={`/projects?workspace=${workspace.id}`}
-              className="mt-4 inline-block font-medium text-blue-munsell-600 text-sm hover:underline dark:text-blue-munsell-400"
+              className="mt-4 inline-block rounded font-medium text-cyan-200 text-sm hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
             >
               View project directory
             </Link>
           </div>
-        </div>
-      </section>
+        </section>
+      </OrnamentalFrame>
     </div>
   )
 }
