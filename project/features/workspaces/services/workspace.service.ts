@@ -82,6 +82,7 @@ async function detailDto(
       email: member.email,
       role: memberRole,
       joinedAt: member.joinedAt.toISOString(),
+      lastSeenAt: member.lastSeenAt?.toISOString() ?? null,
       capabilities: {
         canChangeRole: canChangeWorkspaceMemberRole(role, memberRole),
         canRemove: canRemoveWorkspaceMember(role, memberRole, member.userId === currentUserId),

@@ -86,6 +86,17 @@ export const users = pgTable(
   ],
 )
 
+export const userPresence = pgTable(
+  "user_presence",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("user_presence_last_seen_at_idx").on(table.lastSeenAt)],
+)
+
 export const workspaces = pgTable(
   "workspaces",
   {
@@ -822,7 +833,8 @@ export const notifications = pgTable(
   ],
 )
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
+  presence: one(userPresence),
   workspaceMemberships: many(workspaceMembers),
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
@@ -832,6 +844,13 @@ export const usersRelations = relations(users, ({ many }) => ({
   revokedInvitations: many(workspaceInvitations, { relationName: "revokedInvitationUser" }),
   receivedNotifications: many(notifications, { relationName: "notificationRecipient" }),
   sentNotifications: many(notifications, { relationName: "notificationActor" }),
+}))
+
+export const userPresenceRelations = relations(userPresence, ({ one }) => ({
+  user: one(users, {
+    fields: [userPresence.userId],
+    references: [users.id],
+  }),
 }))
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({

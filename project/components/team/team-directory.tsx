@@ -3,7 +3,7 @@
 import { Building2, CalendarDays, Mail, UserPlus, Users } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-
+import { getPresenceLabel } from "@/components/team/presence-label"
 import { TaskFrame } from "@/components/ui/task-frame"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
 import { WorkspaceRoleBadge } from "@/components/workspaces/workspace-role-badge"
@@ -91,46 +91,63 @@ export function TeamDirectory({ workspaces }: { workspaces: WorkspaceDetailDto[]
           </div>
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {workspace.members.map((member) => (
-              <TaskFrame key={member.id} className="h-full" contentClassName="flex h-full flex-col p-6 sm:p-7">
-                <div className="flex items-start gap-4">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cyan-400 font-bold text-blue-950 ring-2 ring-cyan-100/70">
-                    {memberInitials(member)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate font-semibold text-lg text-white" title={member.name}>
-                      {member.name}
-                    </h3>
-                    <div className="mt-1">
-                      <WorkspaceRoleBadge role={member.role} />
+            {workspace.members.map((member) => {
+              const presence = getPresenceLabel(member.lastSeenAt)
+
+              return (
+                <TaskFrame key={member.id} className="h-full" contentClassName="flex h-full flex-col p-6 sm:p-7">
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-cyan-400 font-bold text-blue-950 ring-2 ring-cyan-100/70">
+                      {memberInitials(member)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-semibold text-lg text-white" title={member.name}>
+                        {member.name}
+                      </h3>
+                      <div className="mt-1">
+                        <WorkspaceRoleBadge role={member.role} />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <a
-                  href={`mailto:${member.email}`}
-                  className="mt-5 flex min-w-0 items-center gap-2 text-cyan-100/75 text-sm hover:text-cyan-100"
-                >
-                  <Mail className="shrink-0" size={16} />
-                  <span className="truncate">{member.email}</span>
-                </a>
+                  <a
+                    href={`mailto:${member.email}`}
+                    className="mt-5 flex min-w-0 items-center gap-2 text-cyan-100/75 text-sm hover:text-cyan-100"
+                  >
+                    <Mail className="shrink-0" size={16} />
+                    <span className="truncate">{member.email}</span>
+                  </a>
 
-                <div className="mt-auto flex items-end justify-between gap-4 pt-6 text-sm">
-                  <span className="rounded-full bg-emerald-500/20 px-2.5 py-1 font-medium text-emerald-300 ring-1 ring-emerald-400/25">
-                    Active
-                  </span>
-                  <span className="flex items-center gap-1.5 text-cyan-100/60">
-                    <CalendarDays size={15} />
-                    Joined{" "}
-                    <time dateTime={member.joinedAt}>
-                      {new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(
-                        new Date(member.joinedAt),
-                      )}
-                    </time>
-                  </span>
-                </div>
-              </TaskFrame>
-            ))}
+                  <div className="mt-auto flex items-end justify-between gap-4 pt-6 text-sm">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-medium ring-1 ${
+                        presence.isOnline
+                          ? "bg-emerald-500/20 text-emerald-300 ring-emerald-400/25"
+                          : "bg-slate-500/15 text-cyan-100/65 ring-cyan-200/15"
+                      }`}
+                      title={member.lastSeenAt ? new Date(member.lastSeenAt).toLocaleString() : undefined}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`size-2 rounded-full ${
+                          presence.isOnline ? "bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,0.9)]" : "bg-slate-400"
+                        }`}
+                      />
+                      {presence.label}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-cyan-100/60">
+                      <CalendarDays size={15} />
+                      Joined{" "}
+                      <time dateTime={member.joinedAt}>
+                        {new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(
+                          new Date(member.joinedAt),
+                        )}
+                      </time>
+                    </span>
+                  </div>
+                </TaskFrame>
+              )
+            })}
           </div>
         </section>
       ) : (

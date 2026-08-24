@@ -30,6 +30,7 @@ export type WorkspaceMemberDto = {
   email: string
   role: WorkspaceRole
   joinedAt: string
+  lastSeenAt: string | null
   capabilities: {
     canChangeRole: boolean
     canRemove: boolean

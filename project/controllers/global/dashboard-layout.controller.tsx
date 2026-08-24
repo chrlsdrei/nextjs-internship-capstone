@@ -24,6 +24,7 @@ import { useState } from "react"
 import { TaskFrame } from "@/components/ui/task-frame"
 import { BuildAiController } from "@/controllers/global/build-ai.controller"
 import { NotificationCenterController } from "@/controllers/global/notification-center.controller"
+import { PresenceHeartbeatController } from "@/controllers/global/presence-heartbeat.controller"
 import type { UserAiEntitlementDto } from "@/features/billing/billing.types"
 import type { NotificationCenterDto } from "@/features/notifications/notification.types"
 
@@ -53,6 +54,7 @@ export function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-platinum-900 dark:bg-outer-space-600">
+      <PresenceHeartbeatController />
       {sidebarOpen && (
         <button
           type="button"
