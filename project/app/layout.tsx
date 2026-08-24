@@ -10,8 +10,16 @@ const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap"
 const oxanium = Oxanium({ subsets: ["latin"], variable: "--font-oxanium", display: "swap" })
 
 export const metadata: Metadata = {
-  title: "ProjectFlow",
-  description: "Team collaboration and project management platform",
+  applicationName: "QuestBoard",
+  title: {
+    default: "QuestBoard",
+    template: "%s | QuestBoard",
+  },
+  description: "AI-powered team collaboration and Kanban project management platform",
+  icons: {
+    icon: "/Quest-Board-av.png",
+    apple: "/Quest-Board-av.png",
+  },
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

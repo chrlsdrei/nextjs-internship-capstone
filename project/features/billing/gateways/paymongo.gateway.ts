@@ -189,7 +189,7 @@ export async function createPaymongoCheckoutSession(
         attributes: {
           line_items: [
             {
-              name: input.target === "user" ? "ProjectFlow User Pro — 30 days" : "ProjectFlow Workspace Pro — 30 days",
+              name: input.target === "user" ? "QuestBoard User Pro — 30 days" : "QuestBoard Workspace Pro — 30 days",
               amount: input.amount,
               currency: input.currency,
               quantity: 1,

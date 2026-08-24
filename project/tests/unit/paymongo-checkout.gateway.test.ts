@@ -76,7 +76,7 @@ describe("PayMongo Checkout Session gateway", () => {
     expect(body.data.attributes).toEqual({
       line_items: [
         {
-          name: "ProjectFlow User Pro — 30 days",
+          name: "QuestBoard User Pro — 30 days",
           amount: 29_900,
           currency: "PHP",
           quantity: 1,

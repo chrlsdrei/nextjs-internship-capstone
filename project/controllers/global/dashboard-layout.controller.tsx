@@ -20,6 +20,7 @@ import { usePathname } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
 
+import { BrandLogo } from "@/components/global/brand-logo"
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { TaskFrame } from "@/components/ui/task-frame"
 import { BuildAiController } from "@/controllers/global/build-ai.controller"
@@ -73,11 +74,11 @@ export function DashboardLayout({
         <TaskFrame className="h-full rounded-l-none" contentClassName="flex h-full flex-col p-0">
           <div
             className={`flex h-16 items-center border-cyan-300/20 border-b ${
-              sidebarCollapsed ? "justify-between px-6 lg:justify-center lg:px-2" : "justify-between px-6"
+              sidebarCollapsed ? "justify-between px-6 lg:justify-center lg:gap-1 lg:px-2" : "justify-between px-6"
             }`}
           >
-            <Link href="/" className={`font-bold text-2xl text-cyan-300 ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-              ProjectFlow
+            <Link href="/" aria-label="QuestBoard home" className={sidebarCollapsed ? "lg:hidden" : undefined}>
+              <BrandLogo priority />
             </Link>
             <button
               type="button"
@@ -85,7 +86,9 @@ export function DashboardLayout({
               aria-expanded={!sidebarCollapsed}
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               onClick={() => setSidebarCollapsed((current) => !current)}
-              className="hidden rounded-lg p-2 text-cyan-100/70 transition-colors hover:bg-cyan-300/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 lg:inline-flex"
+              className={`hidden rounded-lg text-cyan-100/70 transition-colors hover:bg-cyan-300/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 lg:inline-flex ${
+                sidebarCollapsed ? "p-1.5" : "p-2"
+              }`}
             >
               {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
             </button>

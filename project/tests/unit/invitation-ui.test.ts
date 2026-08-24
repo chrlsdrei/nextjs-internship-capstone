@@ -12,7 +12,7 @@ const activeInvitation: InvitationDto = {
   id: "invitation-id",
   kind: "workspace",
   workspaceId: "workspace-id",
-  workspaceName: "ProjectFlow",
+  workspaceName: "QuestBoard",
   projectId: null,
   projectTitle: null,
   email: "member@example.com",

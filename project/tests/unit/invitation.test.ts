@@ -67,7 +67,7 @@ describe("invitation contracts", () => {
         deliveryAttempt: 1,
         recipient: "member@example.com",
         kind: "workspace",
-        workspaceName: "ProjectFlow",
+        workspaceName: "QuestBoard",
         projectTitle: null,
         workspaceRole: "member",
         boardRole: null,

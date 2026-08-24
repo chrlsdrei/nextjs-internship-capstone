@@ -33,14 +33,14 @@ export function buildNotificationActionUrl(appUrl: string, href: string | null) 
 
 export function buildNotificationEmail(input: NotificationEmailTemplateInput) {
   const label = notificationLabels[input.type]
-  const subject = `[ProjectFlow] ${input.title}`
+  const subject = `[QuestBoard] ${input.title}`
   const text = [
     `Hello ${input.recipientName},`,
     "",
     input.title,
     input.message,
     "",
-    `Open ProjectFlow: ${input.actionUrl}`,
+    `Open QuestBoard: ${input.actionUrl}`,
     "",
     "You can turn optional notification emails on or off from Account settings. In-app notifications will remain available.",
   ].join("\n")
@@ -53,7 +53,7 @@ export function buildNotificationEmail(input: NotificationEmailTemplateInput) {
         <p style="margin:0 0 10px;color:#19d7ff;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">${escapeHtml(label)}</p>
         <h1 style="margin:0 0 16px;color:#fff;font-size:26px;line-height:1.3;">${escapeHtml(input.title)}</h1>
         <p style="margin:0 0 24px;color:#bdd4e8;font-size:16px;line-height:1.65;">${escapeHtml(input.message)}</p>
-        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;"><tr><td style="border-radius:4px;background:#16bfe5;"><a href="${escapeHtml(input.actionUrl)}" style="display:inline-block;padding:13px 22px;color:#001827;font-size:15px;font-weight:800;text-decoration:none;">Open ProjectFlow</a></td></tr></table>
+        <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;"><tr><td style="border-radius:4px;background:#16bfe5;"><a href="${escapeHtml(input.actionUrl)}" style="display:inline-block;padding:13px 22px;color:#001827;font-size:15px;font-weight:800;text-decoration:none;">Open QuestBoard</a></td></tr></table>
         <p style="margin:0;color:#8fb8d8;font-size:12px;line-height:1.55;">Optional notification emails can be changed in Account settings. In-app notifications remain available.</p>
       </td></tr>
     </table>

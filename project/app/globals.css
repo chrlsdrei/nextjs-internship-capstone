@@ -55,7 +55,7 @@
   --text-stroke: rgb(1 7 18 / 72%);
 }
 
-/* React Big Calendar inherits the permanent ProjectFlow ornamental theme. */
+/* React Big Calendar inherits the permanent QuestBoard ornamental theme. */
 .projectflow-calendar .rbc-calendar {
   color: var(--ornament-foreground);
   font-family: var(--font-oxanium), sans-serif;

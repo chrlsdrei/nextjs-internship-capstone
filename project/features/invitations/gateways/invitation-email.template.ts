@@ -76,7 +76,7 @@ export function buildInvitationEmail(input: InvitationEmailTemplateInput) {
     ? `Invitation to ${input.projectTitle} in ${input.workspaceName}`
     : `Invitation to join ${input.workspaceName}`
   const text = [
-    "You're invited to ProjectFlow.",
+    "You're invited to QuestBoard.",
     "",
     `You have been invited to ${destination}.`,
     `Access: ${role}`,
@@ -93,7 +93,7 @@ export function buildInvitationEmail(input: InvitationEmailTemplateInput) {
       <tr><td style="height:5px;background:linear-gradient(90deg,#1268ff,#19d7ff,#1268ff);"></td></tr>
       <tr>
         <td style="padding:34px 36px;">
-          <p style="margin:0 0 10px;color:#19d7ff;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">ProjectFlow invitation</p>
+          <p style="margin:0 0 10px;color:#19d7ff;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;">QuestBoard invitation</p>
           <h1 style="margin:0 0 18px;color:#ffffff;font-size:28px;line-height:1.25;">Join ${escapeHtml(input.workspaceName)}</h1>
           <p style="margin:0 0 20px;color:#bdd4e8;font-size:16px;line-height:1.65;">You have been invited to <strong style="color:#ffffff;">${escapeHtml(destination)}</strong>.</p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 24px;border:1px solid #174d78;background:#041329;">

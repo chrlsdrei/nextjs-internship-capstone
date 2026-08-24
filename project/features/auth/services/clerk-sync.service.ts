@@ -33,7 +33,7 @@ function primaryEmail(data: ClerkUserPayload) {
 
 function displayName(data: ClerkUserPayload, email: string) {
   const fullName = [data.first_name, data.last_name].filter(Boolean).join(" ").trim()
-  return fullName || data.username || email.split("@")[0] || "ProjectFlow user"
+  return fullName || data.username || email.split("@")[0] || "QuestBoard user"
 }
 
 export async function synchronizeClerkUser(data: ClerkUserPayload) {

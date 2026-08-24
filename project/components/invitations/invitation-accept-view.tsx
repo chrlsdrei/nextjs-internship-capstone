@@ -47,7 +47,7 @@ const stateCopy = {
   accepted: {
     icon: CheckCircle2,
     title: "Invitation already accepted",
-    message: "This invitation has already been used. Open ProjectFlow to continue.",
+    message: "This invitation has already been used. Open QuestBoard to continue.",
   },
 } as const
 
@@ -87,7 +87,7 @@ export function InvitationAcceptView({
         <h1 className="mt-4 font-bold text-2xl text-outer-space-500 dark:text-platinum-500">{copy.title}</h1>
         <p className="mt-2 text-paynes-gray-500 dark:text-french-gray-400">{copy.message}</p>
         <Link href="/" className="mt-6 inline-flex rounded-lg bg-blue-munsell-500 px-4 py-2 font-medium text-white">
-          Return to ProjectFlow
+          Return to QuestBoard
         </Link>
       </InvitationCard>
     )
@@ -101,9 +101,7 @@ export function InvitationAcceptView({
   return (
     <InvitationCard>
       <MailWarning className="mx-auto size-10 text-blue-munsell-500" aria-hidden="true" />
-      <p className="mt-4 font-medium text-blue-munsell-700 text-sm dark:text-blue-munsell-300">
-        ProjectFlow invitation
-      </p>
+      <p className="mt-4 font-medium text-blue-munsell-700 text-sm dark:text-blue-munsell-300">QuestBoard invitation</p>
       <h1 className="mt-2 font-bold text-2xl text-outer-space-500 dark:text-platinum-500">Join {destination}</h1>
       <p className="mt-3 text-paynes-gray-500 dark:text-french-gray-400">
         Continue with the verified Clerk account matching <strong>{preview.maskedEmail}</strong>.

@@ -2,6 +2,8 @@ import { Show, UserButton } from "@clerk/nextjs"
 import { ArrowRight, CheckCircle, Kanban, Users } from "lucide-react"
 import Link from "next/link"
 
+import { BrandLogo } from "@/components/global/brand-logo"
+
 export function MarketingPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-platinum-900 to-platinum-800 dark:from-outer-space-500 dark:to-paynes-gray-500">
@@ -9,7 +11,9 @@ export function MarketingPage() {
       <header className="border-b border-french-gray-300 dark:border-paynes-gray-400 bg-white/80 dark:bg-outer-space-500/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="text-2xl font-bold text-blue-munsell-500">ProjectFlow</div>
+            <Link href="/" aria-label="QuestBoard home">
+              <BrandLogo priority />
+            </Link>
             <div className="flex items-center space-x-4">
               <Show when="signed-in">
                 <Link
@@ -108,7 +112,7 @@ export function MarketingPage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-outer-space-400/50">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500 mb-8">
-            Explore the ProjectFlow workspace
+            Explore the QuestBoard workspace
           </h2>
           <p className="text-lg text-paynes-gray-500 dark:text-french-gray-500 mb-8">
             Sign in to access the protected dashboard, project boards, and team workspace.

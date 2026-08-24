@@ -136,7 +136,7 @@ export function SubscriptionPageController({
           className="rounded-xl border border-cyan-300/40 bg-cyan-950/75 px-5 py-4 text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.16)]"
         >
           You returned from PayMongo. Payment is not considered complete until the verified webhook confirms it;
-          ProjectFlow is refreshing your access status now.
+          QuestBoard is refreshing your access status now.
         </div>
       )}
       {checkoutReturn === "success" && returnedPurchase?.status !== "paid" && confirmationTimedOut && (
@@ -204,7 +204,7 @@ export function SubscriptionPageController({
             checkout={
               <CheckoutController
                 plan={userPro}
-                subjectName="Your ProjectFlow account"
+                subjectName="Your QuestBoard account"
                 label={
                   data.user.tier === "pro"
                     ? "Purchase 30 more days"
