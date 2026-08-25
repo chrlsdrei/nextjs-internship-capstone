@@ -1,7 +1,6 @@
 import { BrainCircuit, Clock3, Sparkles, Users } from "lucide-react"
 
 import { OrnamentalFrame } from "@/components/ui/ornamental-frame"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { TaskFrame } from "@/components/ui/task-frame"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
 
@@ -46,7 +45,7 @@ function ExampleTask({
   task: { readonly title: string; readonly label: string; readonly meta: string; readonly owner: string }
 }) {
   return (
-    <TaskFrame className="min-h-32" contentClassName="flex h-full flex-col gap-3 p-4">
+    <TaskFrame className="min-h-32" contentClassName="flex h-full flex-col gap-3 p-3 sm:p-4">
       <span className="w-fit rounded-md border border-cyan-300/20 bg-cyan-400/10 px-2 py-1 font-semibold text-[0.65rem] text-cyan-200 uppercase tracking-wide">
         {task.label}
       </span>
@@ -68,7 +67,7 @@ function ExampleBoard() {
   return (
     <TechFrameCard
       className="min-h-0 w-full"
-      contentClassName="min-h-0 gap-6 px-9 py-11 sm:px-12 sm:py-14 lg:px-14"
+      contentClassName="min-h-0 gap-6 px-5 py-8 sm:px-12 sm:py-14 lg:px-14"
       aria-label="Example QuestBoard Kanban board"
     >
       <div className="flex flex-col gap-5 border-cyan-300/20 border-b pb-5 sm:flex-row sm:items-center sm:justify-between">
@@ -107,37 +106,35 @@ function ExampleBoard() {
         </div>
       </div>
 
-      <ScrollArea orientation="horizontal" className="pb-3">
-        <div className="grid min-w-[56rem] grid-cols-4 gap-4 xl:min-w-0">
-          {columns.map((column) => (
-            <OrnamentalFrame
-              key={column.title}
-              title={column.title}
-              className="min-h-[25rem]"
-              contentClassName="flex flex-col gap-3 px-2 pb-4"
-              titleClassName="overflow-visible text-clip whitespace-normal text-sm leading-tight tracking-[0.035em]"
-            >
-              <div className="mb-1 flex items-center justify-between px-2 text-[0.7rem] text-cyan-100/60">
-                <span className="inline-flex items-center gap-2">
-                  <span className={`size-1.5 rounded-full ${column.accent}`} />
-                  {column.tasks.length} tasks
-                </span>
-                <span aria-hidden="true">•••</span>
-              </div>
-              {column.tasks.map((task) => (
-                <ExampleTask key={task.title} task={task} />
-              ))}
-            </OrnamentalFrame>
-          ))}
-        </div>
-      </ScrollArea>
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {columns.map((column) => (
+          <OrnamentalFrame
+            key={column.title}
+            title={column.title}
+            className="min-h-[25rem] min-w-0"
+            contentClassName="flex min-w-0 flex-col gap-3 px-2 pb-4"
+            titleClassName="overflow-visible text-clip whitespace-normal text-sm leading-tight tracking-[0.035em]"
+          >
+            <div className="mb-1 flex items-center justify-between px-2 text-[0.7rem] text-cyan-100/60">
+              <span className="inline-flex items-center gap-2">
+                <span className={`size-1.5 rounded-full ${column.accent}`} />
+                {column.tasks.length} tasks
+              </span>
+              <span aria-hidden="true">•••</span>
+            </div>
+            {column.tasks.map((task) => (
+              <ExampleTask key={task.title} task={task} />
+            ))}
+          </OrnamentalFrame>
+        ))}
+      </div>
     </TechFrameCard>
   )
 }
 
 export function Features() {
   return (
-    <section id="features" className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+    <section id="features" className="scroll-mt-32 px-4 py-20 sm:scroll-mt-24 sm:px-6 lg:px-8 lg:py-28">
       <div className="mx-auto grid max-w-[94rem] items-center gap-12 xl:grid-cols-[minmax(20rem,0.72fr)_minmax(0,1.45fr)] xl:gap-14">
         <div className="max-w-2xl">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/5 px-4 py-2 font-semibold text-[0.68rem] text-cyan-300 uppercase tracking-[0.18em] shadow-[0_0_18px_rgb(35_216_245/0.08)]">
