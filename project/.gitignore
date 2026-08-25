@@ -16,6 +16,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Playwright
+/playwright/.clerk/
+/playwright-report/
+/test-results/
+/blob-report/
+
 # env files
 .env*
 !.env.example

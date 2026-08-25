@@ -68,4 +68,4 @@ Biome provides linting and formatting. Drizzle migrations are generated under `d
 
 Board events currently use an in-memory, single-process event hub. Reconnects reconcile through an SSE sync event, but a multi-instance production deployment needs shared pub/sub infrastructure.
 
-Vitest unit tests and isolated Neon integration tests are available through `pnpm test` and `pnpm test:db`. Database tests require a disposable `TEST_DATABASE_URL` that differs from `DATABASE_URL`.
+Vitest unit tests and isolated Neon integration tests are available through `pnpm test` and `pnpm test:db`. Database tests require a disposable `TEST_DATABASE_URL` that differs from `DATABASE_URL`. Playwright browser tests are available through `pnpm test:e2e`; authenticated Clerk flows require the synchronized test user described in the [development setup guide](../docs/DEVELOPMENT_SETUP.md#playwright-and-clerk-e2e-setup).
