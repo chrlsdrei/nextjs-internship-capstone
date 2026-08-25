@@ -11,7 +11,13 @@ import type { NotificationCenterDto, NotificationDto } from "@/features/notifica
 
 const POLL_INTERVAL_MS = 30_000
 
-export function NotificationCenterController({ initialData }: { initialData: NotificationCenterDto }) {
+export function NotificationCenterController({
+  collapsed = false,
+  initialData,
+}: {
+  collapsed?: boolean
+  initialData: NotificationCenterDto
+}) {
   const router = useRouter()
   const [data, setData] = useState(initialData)
   const [open, setOpen] = useState(false)
@@ -91,16 +97,22 @@ export function NotificationCenterController({ initialData }: { initialData: Not
         type="button"
         aria-label={data.unreadCount > 0 ? `Notifications, ${data.unreadCount} unread` : "Notifications"}
         aria-haspopup="dialog"
+        title={collapsed ? "Notifications" : undefined}
         onClick={openCenter}
-        className="relative rounded-lg p-2 text-cyan-100/75 transition-colors hover:bg-cyan-300/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+        className={`flex w-full cursor-pointer items-center rounded-lg px-3 py-2 font-medium text-cyan-50/80 text-sm transition-colors hover:bg-cyan-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+          collapsed ? "lg:justify-center lg:px-2" : ""
+        }`}
       >
-        <Bell size={20} />
-        {data.unreadCount > 0 && (
-          <span
-            aria-hidden="true"
-            className="absolute top-1 right-1 size-2.5 rounded-full border border-blue-950 bg-cyan-300 shadow-[0_0_9px_3px_rgba(34,211,238,0.8)]"
-          />
-        )}
+        <span className={`relative shrink-0 ${collapsed ? "mr-3 lg:mr-0" : "mr-3"}`}>
+          <Bell size={20} />
+          {data.unreadCount > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full border border-blue-950 bg-cyan-300 shadow-[0_0_9px_3px_rgba(34,211,238,0.8)]"
+            />
+          )}
+        </span>
+        <span className={collapsed ? "lg:sr-only" : undefined}>Notifications</span>
       </button>
       <NotificationCenter
         open={open}

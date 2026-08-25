@@ -10,6 +10,7 @@ describe("board capabilities", () => {
       canEditTasks: true,
       canAssignTasks: true,
       canDeleteTasks: true,
+      canLeaveBoard: false,
     })
   })
 
@@ -21,6 +22,7 @@ describe("board capabilities", () => {
       canEditTasks: false,
       canAssignTasks: false,
       canDeleteTasks: false,
+      canLeaveBoard: false,
     })
   })
 })

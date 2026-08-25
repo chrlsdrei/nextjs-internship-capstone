@@ -25,7 +25,7 @@ describe("notification emails", () => {
       createdAt: new Date("2026-08-22T00:00:00.000Z"),
     })
 
-    expect(email.subject).toBe("[ProjectFlow] New <comment>")
+    expect(email.subject).toBe("[QuestBoard] New <comment>")
     expect(email.text).toContain("Account settings")
     expect(email.html).toContain("New &lt;comment&gt;")
     expect(email.html).toContain("Review A &amp; B")

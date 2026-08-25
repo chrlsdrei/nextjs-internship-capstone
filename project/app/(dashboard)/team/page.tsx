@@ -1,16 +1,12 @@
-import { TeamDirectory } from "@/components/team/team-directory"
-import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
-import { listWorkspaceTeamDetails } from "@/features/workspaces/queries/list-workspace-team-details"
+import { WorkspaceEmptyState } from "@/components/workspaces/workspace-empty-state"
+import { TeamDirectoryController } from "@/controllers/team/team-directory.controller"
+import { getActiveWorkspaceContext } from "@/features/workspaces/queries/get-active-workspace-context"
+import { getWorkspaceDetails } from "@/features/workspaces/queries/get-workspace-details"
 
 export default async function TeamPage() {
-  const workspaces = await listWorkspaceTeamDetails()
+  const { activeWorkspace } = await getActiveWorkspaceContext()
+  if (!activeWorkspace) return <WorkspaceEmptyState />
+  const workspace = await getWorkspaceDetails(activeWorkspace.id)
 
-  return (
-    <div className="relative isolate -mx-4 -my-8 min-h-[calc(100vh-4rem)] overflow-hidden px-4 py-8 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-      <RealisticFogBackground />
-      <div className="relative z-10">
-        <TeamDirectory workspaces={workspaces} />
-      </div>
-    </div>
-  )
+  return <TeamDirectoryController key={activeWorkspace.id} initialWorkspace={workspace} />
 }

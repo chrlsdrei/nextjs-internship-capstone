@@ -170,11 +170,11 @@ export function CheckoutController({
             </div>
             <p className="text-cyan-100/70 text-sm">
               This purchase does not renew automatically. PayMongo securely collects all payment information on its
-              hosted checkout page. ProjectFlow grants access only after receiving a verified payment webhook.
+              hosted checkout page. QuestBoard grants access only after receiving a verified payment webhook.
             </p>
             {checkoutResult && (
               <p className="rounded-lg border border-cyan-300/30 bg-cyan-950/55 p-3 text-cyan-50 text-sm" role="status">
-                PayMongo opened in another tab so ProjectFlow remains available even if a wallet simulator does not
+                PayMongo opened in another tab so QuestBoard remains available even if a wallet simulator does not
                 redirect back. Complete payment there, then return to this tab; access will refresh automatically after
                 the verified webhook arrives.
               </p>

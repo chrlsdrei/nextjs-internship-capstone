@@ -1,6 +1,6 @@
-# ProjectFlow
+# QuestBoard
 
-ProjectFlow is a collaborative Kanban project-management application built with Next.js 16, React 19, Clerk, Neon Postgres, Drizzle ORM, Tailwind CSS 4, Zod, Zustand, and dnd-kit.
+QuestBoard is a collaborative Kanban project-management application built with Next.js 16, React 19, Clerk, Neon Postgres, Drizzle ORM, Tailwind CSS 4, Zod, Zustand, and dnd-kit.
 
 Implemented capabilities include:
 

@@ -341,4 +341,29 @@ describe("project workspace governance", () => {
     expect(remainingAssignments).toHaveLength(0)
     expect(await findProjectAccess(project.id, assignee.id)).toBeNull()
   })
+
+  it("lets a project member leave their own board", async () => {
+    const owner = await createUser("leave-owner")
+    const member = await createUser("leave-member")
+    const workspace = await createWorkspace(owner.id, "leave")
+    const memberWorkspaceMembership = await addWorkspaceMember(workspace.workspaceId, member.id)
+    const project = await createProjectFor(workspace.workspaceId, workspace.ownerMembershipId, true, "leave")
+    const [projectMembership] = await database
+      .insert(projectMembers)
+      .values({
+        projectId: project.id,
+        workspaceId: workspace.workspaceId,
+        workspaceMemberId: memberWorkspaceMembership.id,
+        role: "viewer",
+      })
+      .returning()
+
+    expect(await softRemoveMemberAndUnassignTasks(project.id, member.id, projectMembership.id)).toMatchObject({
+      userId: member.id,
+    })
+    expect(await findProjectAccess(project.id, member.id)).toBeNull()
+    expect(
+      await database.select().from(workspaceMembers).where(eq(workspaceMembers.id, memberWorkspaceMembership.id)),
+    ).toHaveLength(1)
+  })
 })

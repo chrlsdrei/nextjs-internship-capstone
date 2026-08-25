@@ -141,6 +141,20 @@
       "when": 1787399799317,
       "tag": "0019_equal_kingpin",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787593128842,
+      "tag": "0020_blue_wallow",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787594983272,
+      "tag": "0021_nifty_blockbuster",
+      "breakpoints": true
     }
   ]
 }

@@ -183,7 +183,20 @@ export async function softRemoveMemberAndUnassignTasks(projectId: string, actorU
           AND "member"."project_id" = ${projectId}
           AND "member"."removed_at" IS NULL
           AND "workspace_member"."id" = "member"."workspace_member_id"
-          AND ${canManageProject(projectId, actorUserId)}
+          AND (
+            ${canManageProject(projectId, actorUserId)}
+            OR (
+              "workspace_member"."user_id" = ${actorUserId}
+              AND NOT EXISTS (
+                SELECT 1
+                FROM "projects" AS "leave_project"
+                INNER JOIN "workspaces" AS "leave_workspace"
+                  ON "leave_workspace"."id" = "leave_project"."workspace_id"
+                WHERE "leave_project"."id" = ${projectId}
+                  AND "leave_workspace"."owner_workspace_member_id" = "member"."workspace_member_id"
+              )
+            )
+          )
         RETURNING "workspace_member"."user_id" AS "userId"
       ),
       "removed_assignments" AS (

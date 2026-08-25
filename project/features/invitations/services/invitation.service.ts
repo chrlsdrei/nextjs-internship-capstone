@@ -15,6 +15,7 @@ import type { InvitationDto, InvitationPreviewDto } from "@/features/invitations
 import {
   acceptInvitationRecord,
   createInvitationRecord,
+  declineInvitationRecord,
   findActiveWorkspaceMemberByNormalizedEmail,
   findInvitationById,
   findInvitationByTokenHash,
@@ -64,6 +65,7 @@ function toDto(invitation: InvitationRecord): InvitationDto {
     expiresAt: invitation.expiresAt.toISOString(),
     acceptedAt: invitation.acceptedAt?.toISOString() ?? null,
     revokedAt: invitation.revokedAt?.toISOString() ?? null,
+    declinedAt: invitation.declinedAt?.toISOString() ?? null,
     createdAt: invitation.createdAt.toISOString(),
   }
 }
@@ -279,9 +281,11 @@ export async function getInvitationPreview(token: string): Promise<InvitationPre
     ? "accepted"
     : invitation.revokedAt
       ? "revoked"
-      : invitation.expiresAt <= new Date()
-        ? "expired"
-        : "active"
+      : invitation.declinedAt
+        ? "declined"
+        : invitation.expiresAt <= new Date()
+          ? "expired"
+          : "active"
   return {
     state,
     workspaceName: invitation.workspaceName,
@@ -371,6 +375,7 @@ export async function acceptInvitation(input: unknown) {
   if (invitation.acceptedAt)
     throw new InvitationError("Invitation has already been accepted", "INVITATION_ACCEPTED", 409)
   if (invitation.revokedAt) throw new InvitationError("Invitation has been revoked", "INVITATION_REVOKED", 410)
+  if (invitation.declinedAt) throw new InvitationError("Invitation has been declined", "INVITATION_DECLINED", 410)
   if (invitation.expiresAt <= new Date()) throw new InvitationError("Invitation has expired", "INVITATION_EXPIRED", 410)
   if (invitation.normalizedEmail !== normalizedEmail) {
     throw new InvitationError(
@@ -380,4 +385,48 @@ export async function acceptInvitation(input: unknown) {
     )
   }
   throw new InvitationError("The invitation cannot be accepted", "INVITATION_INVALID", 409)
+}
+
+export async function declineInvitation(input: unknown) {
+  const values = acceptInvitationSchema.parse(input)
+  const user = await getCurrentDatabaseUser()
+  await enforceRateLimit({ action: "invitation.accept", actorUserId: user.id })
+
+  let normalizedEmail: string
+  try {
+    normalizedEmail = await getVerifiedPrimaryEmail()
+  } catch (error) {
+    throw new InvitationError(
+      error instanceof Error ? error.message : "Verify your primary email before declining this invitation",
+      "INVITATION_EMAIL_MISMATCH",
+      403,
+    )
+  }
+
+  const tokenHash = hashInvitationToken(values.token)
+  const declined = await declineInvitationRecord(tokenHash, user.id, normalizedEmail)
+  if (declined) {
+    return {
+      invitationId: declined.id,
+      workspaceId: declined.workspaceId,
+      projectId: declined.projectId,
+    }
+  }
+
+  const invitation = await findInvitationByTokenHash(tokenHash)
+  if (!invitation) throw new InvitationError("Invitation is invalid", "INVITATION_INVALID", 404)
+  if (invitation.acceptedAt)
+    throw new InvitationError("Invitation has already been accepted", "INVITATION_ACCEPTED", 409)
+  if (invitation.revokedAt) throw new InvitationError("Invitation has been revoked", "INVITATION_REVOKED", 410)
+  if (invitation.declinedAt)
+    throw new InvitationError("Invitation has already been declined", "INVITATION_DECLINED", 409)
+  if (invitation.expiresAt <= new Date()) throw new InvitationError("Invitation has expired", "INVITATION_EXPIRED", 410)
+  if (invitation.normalizedEmail !== normalizedEmail) {
+    throw new InvitationError(
+      "Sign in with the email address that received this invitation",
+      "INVITATION_EMAIL_MISMATCH",
+      403,
+    )
+  }
+  throw new InvitationError("The invitation cannot be declined", "INVITATION_INVALID", 409)
 }

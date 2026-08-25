@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { invitationDisplayState } from "../../features/invitations/invitation.presenter"
+import { invitationDisplayState, isPendingInvitation } from "../../features/invitations/invitation.presenter"
 import type { InvitationDto } from "../../features/invitations/invitation.types"
 import {
   authenticationHref,
@@ -12,7 +12,7 @@ const activeInvitation: InvitationDto = {
   id: "invitation-id",
   kind: "workspace",
   workspaceId: "workspace-id",
-  workspaceName: "ProjectFlow",
+  workspaceName: "QuestBoard",
   projectId: null,
   projectTitle: null,
   email: "member@example.com",
@@ -22,19 +22,30 @@ const activeInvitation: InvitationDto = {
   expiresAt: "2030-01-08T00:00:00.000Z",
   acceptedAt: null,
   revokedAt: null,
+  declinedAt: null,
   createdAt: "2030-01-01T00:00:00.000Z",
 }
 
 describe("invitation UI state", () => {
-  it("distinguishes active, expired, revoked, accepted, and failed delivery states", () => {
+  it("distinguishes active, expired, revoked, declined, accepted, and failed delivery states", () => {
     const now = new Date("2030-01-02T00:00:00.000Z")
     expect(invitationDisplayState(activeInvitation, now).key).toBe("active")
     expect(invitationDisplayState({ ...activeInvitation, expiresAt: "2030-01-01T00:00:00.000Z" }, now).key).toBe(
       "expired",
     )
     expect(invitationDisplayState({ ...activeInvitation, revokedAt: now.toISOString() }, now).key).toBe("revoked")
+    expect(invitationDisplayState({ ...activeInvitation, declinedAt: now.toISOString() }, now).key).toBe("declined")
     expect(invitationDisplayState({ ...activeInvitation, acceptedAt: now.toISOString() }, now).key).toBe("accepted")
     expect(invitationDisplayState({ ...activeInvitation, deliveryStatus: "failed" }, now).key).toBe("failed")
+  })
+
+  it("shows only active, unexpired invitations as pending", () => {
+    const now = new Date("2030-01-02T00:00:00.000Z")
+    expect(isPendingInvitation(activeInvitation, now)).toBe(true)
+    expect(isPendingInvitation({ ...activeInvitation, acceptedAt: now.toISOString() }, now)).toBe(false)
+    expect(isPendingInvitation({ ...activeInvitation, declinedAt: now.toISOString() }, now)).toBe(false)
+    expect(isPendingInvitation({ ...activeInvitation, revokedAt: now.toISOString() }, now)).toBe(false)
+    expect(isPendingInvitation({ ...activeInvitation, expiresAt: now.toISOString() }, now)).toBe(false)
   })
 })
 

@@ -58,7 +58,7 @@ export async function getProjectManagementData(projectId: string): Promise<Proje
   const projectWorkspaceMemberIds = new Set(members.map((member) => member.workspaceMemberId))
   const activelyInvitedEmails = new Set(
     invitations
-      .filter((invitation) => !invitation.acceptedAt && !invitation.revokedAt)
+      .filter((invitation) => !invitation.acceptedAt && !invitation.revokedAt && !invitation.declinedAt)
       .map((invitation) => invitation.email.trim().toLowerCase()),
   )
   return {
@@ -179,6 +179,42 @@ export async function removeProjectMember(projectId: string, memberId: string) {
     actorWorkspaceMemberId: access.workspaceMemberId,
     event: {
       action: "project.member_removed",
+      metadata: {
+        actorName: access.user.name,
+        workspaceName: workspaceOwner.workspaceName,
+        projectTitle: project.title,
+        memberName: currentMember.name,
+        memberEmail: currentMember.email,
+        role: currentMember.role,
+      },
+    },
+  })
+}
+
+export async function leaveProject(projectId: string) {
+  const id = projectIdSchema.parse(projectId)
+  const access = await requireProjectPermission(id, "view")
+  if (access.isWorkspaceOwner) {
+    throw new ProjectAccessError("Workspace owners have implicit board access and cannot leave the board", 409)
+  }
+  if (!access.projectMemberId) throw new ProjectAccessError("You are not an explicit member of this board", 409)
+
+  const currentMember = (await listProjectMembers(id)).find((member) => member.id === access.projectMemberId)
+  if (!currentMember) throw new ProjectAccessError("Your board membership could not be found", 404)
+
+  const [project, workspaceOwner] = await Promise.all([getProjectById(id), findWorkspaceOwnerForProject(id)])
+  if (!workspaceOwner) throw new ProjectAccessError("Workspace information is unavailable", 409)
+
+  await enforceRateLimit({ action: "member.admin", actorUserId: access.user.id, workspaceId: access.workspaceId })
+  const removed = await softRemoveMemberAndUnassignTasks(id, access.user.id, access.projectMemberId)
+  if (!removed) throw new ProjectAccessError("Your board membership could not be removed", 409)
+
+  await recordActivity({
+    workspaceId: access.workspaceId,
+    projectId: id,
+    actorWorkspaceMemberId: access.workspaceMemberId,
+    event: {
+      action: "project.member_left",
       metadata: {
         actorName: access.user.name,
         workspaceName: workspaceOwner.workspaceName,

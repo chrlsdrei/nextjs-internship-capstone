@@ -14,6 +14,7 @@ type BoardToolbarProps = {
   onSearchChange: (value: string) => void
   onOpenFilters: () => void
   aiControls?: ReactNode
+  membershipControls?: ReactNode
 }
 
 export function BoardToolbar({
@@ -26,6 +27,7 @@ export function BoardToolbar({
   onSearchChange,
   onOpenFilters,
   aiControls,
+  membershipControls,
 }: BoardToolbarProps) {
   return (
     <TechFrameCard className="min-h-0 w-full" contentClassName="min-h-0 gap-0 px-5 py-4 sm:min-h-0 sm:px-7 sm:py-5">
@@ -73,6 +75,7 @@ export function BoardToolbar({
             )}
           </button>
           {aiControls}
+          {membershipControls}
           {canManage && (
             <Link
               href={`/projects/${projectId}/members`}

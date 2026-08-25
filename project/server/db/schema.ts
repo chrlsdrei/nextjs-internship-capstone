@@ -86,6 +86,17 @@ export const users = pgTable(
   ],
 )
 
+export const userPresence = pgTable(
+  "user_presence",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("user_presence_last_seen_at_idx").on(table.lastSeenAt)],
+)
+
 export const workspaces = pgTable(
   "workspaces",
   {
@@ -697,6 +708,8 @@ export const workspaceInvitations = pgTable(
     acceptedByUserId: uuid("accepted_by_user_id").references(() => users.id, { onDelete: "set null" }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     revokedByUserId: uuid("revoked_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    declinedAt: timestamp("declined_at", { withTimezone: true }),
+    declinedByUserId: uuid("declined_by_user_id").references(() => users.id, { onDelete: "set null" }),
     deliveryStatus: invitationDeliveryStatus("delivery_status").default("pending").notNull(),
     deliveryAttempt: integer("delivery_attempt").default(1).notNull(),
     resendMessageId: text("resend_message_id"),
@@ -718,10 +731,14 @@ export const workspaceInvitations = pgTable(
     uniqueIndex("workspace_invitations_token_hash_unique").on(table.tokenHash),
     uniqueIndex("workspace_invitations_active_workspace_email_unique")
       .on(table.workspaceId, table.normalizedEmail)
-      .where(sql`${table.kind} = 'workspace' AND ${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
+      .where(
+        sql`${table.kind} = 'workspace' AND ${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL AND ${table.declinedAt} IS NULL`,
+      ),
     uniqueIndex("workspace_invitations_active_project_email_unique")
       .on(table.projectId, table.normalizedEmail)
-      .where(sql`${table.kind} = 'project' AND ${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL`),
+      .where(
+        sql`${table.kind} = 'project' AND ${table.acceptedAt} IS NULL AND ${table.revokedAt} IS NULL AND ${table.declinedAt} IS NULL`,
+      ),
     index("workspace_invitations_workspace_created_idx").on(table.workspaceId, table.createdAt),
     index("workspace_invitations_project_created_idx").on(table.projectId, table.createdAt),
     index("workspace_invitations_normalized_email_idx").on(table.normalizedEmail),
@@ -750,7 +767,11 @@ export const workspaceInvitations = pgTable(
     ),
     check(
       "workspace_invitations_lifecycle_valid",
-      sql`NOT (${table.acceptedAt} IS NOT NULL AND ${table.revokedAt} IS NOT NULL)`,
+      sql`NOT (
+        (${table.acceptedAt} IS NOT NULL AND ${table.revokedAt} IS NOT NULL)
+        OR (${table.acceptedAt} IS NOT NULL AND ${table.declinedAt} IS NOT NULL)
+        OR (${table.revokedAt} IS NOT NULL AND ${table.declinedAt} IS NOT NULL)
+      )`,
     ),
   ],
 )
@@ -822,7 +843,8 @@ export const notifications = pgTable(
   ],
 )
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
+  presence: one(userPresence),
   workspaceMemberships: many(workspaceMembers),
   rateLimitBuckets: many(rateLimitBuckets),
   aiUsageLogs: many(aiUsageLogs),
@@ -830,8 +852,16 @@ export const usersRelations = relations(users, ({ many }) => ({
   paidCheckoutPurchases: many(billingCheckoutPurchases, { relationName: "checkoutPurchasePayer" }),
   acceptedInvitations: many(workspaceInvitations, { relationName: "acceptedInvitationUser" }),
   revokedInvitations: many(workspaceInvitations, { relationName: "revokedInvitationUser" }),
+  declinedInvitations: many(workspaceInvitations, { relationName: "declinedInvitationUser" }),
   receivedNotifications: many(notifications, { relationName: "notificationRecipient" }),
   sentNotifications: many(notifications, { relationName: "notificationActor" }),
+}))
+
+export const userPresenceRelations = relations(userPresence, ({ one }) => ({
+  user: one(users, {
+    fields: [userPresence.userId],
+    references: [users.id],
+  }),
 }))
 
 export const workspacesRelations = relations(workspaces, ({ many, one }) => ({
@@ -967,6 +997,11 @@ export const workspaceInvitationsRelations = relations(workspaceInvitations, ({ 
     fields: [workspaceInvitations.revokedByUserId],
     references: [users.id],
     relationName: "revokedInvitationUser",
+  }),
+  declinedByUser: one(users, {
+    fields: [workspaceInvitations.declinedByUserId],
+    references: [users.id],
+    relationName: "declinedInvitationUser",
   }),
 }))
 

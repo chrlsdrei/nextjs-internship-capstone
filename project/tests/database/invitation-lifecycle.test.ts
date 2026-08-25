@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
   acceptInvitationRecord,
   createInvitationRecord,
+  declineInvitationRecord,
   findInvitationByTokenHash,
   revokeInvitationRecord,
   rotateInvitationToken,
@@ -237,5 +238,33 @@ describe("invitation persistence", () => {
     expect(rotated?.deliveryAttempt).toBe(2)
     expect(await findInvitationByTokenHash(hashInvitationToken(token))).toBeNull()
     expect((await findInvitationByTokenHash(hashInvitationToken(replacement)))?.id).toBe(invitation?.id)
+  })
+
+  it("lets the matching recipient decline once and permits a fresh invitation", async () => {
+    const workspace = await createWorkspaceFixture("decline")
+    const recipient = await createUser("decline-recipient")
+    const token = `decline-${randomUUID()}`
+    const invitation = await createInvitationFixture({
+      workspaceId: workspace.workspaceId,
+      ownerMemberId: workspace.ownerMemberId,
+      email: recipient.normalizedEmail,
+      token,
+    })
+
+    expect(
+      await declineInvitationRecord(hashInvitationToken(token), recipient.id, recipient.normalizedEmail),
+    ).toMatchObject({ id: invitation?.id, declinedByUserId: recipient.id })
+    expect(
+      await declineInvitationRecord(hashInvitationToken(token), recipient.id, recipient.normalizedEmail),
+    ).toBeNull()
+    expect(await acceptInvitationRecord(hashInvitationToken(token), recipient.id, recipient.normalizedEmail)).toBeNull()
+
+    const replacement = await createInvitationFixture({
+      workspaceId: workspace.workspaceId,
+      ownerMemberId: workspace.ownerMemberId,
+      email: recipient.normalizedEmail,
+      token: `replacement-${randomUUID()}`,
+    })
+    expect(replacement).not.toBeNull()
   })
 })

@@ -45,6 +45,7 @@ describe("workspace role resolution", () => {
       canRemoveMembers: true,
       canTransferOwnership: true,
       canInviteWorkspaceMembers: true,
+      canLeaveWorkspace: false,
     })
     expect(workspaceCapabilities("admin")).toEqual({
       canManageDetails: false,
@@ -53,8 +54,10 @@ describe("workspace role resolution", () => {
       canRemoveMembers: true,
       canTransferOwnership: false,
       canInviteWorkspaceMembers: true,
+      canLeaveWorkspace: true,
     })
     expect(workspaceCapabilities("member").canInviteWorkspaceMembers).toBe(false)
+    expect(workspaceCapabilities("member").canLeaveWorkspace).toBe(true)
   })
 })
 

@@ -5,35 +5,25 @@ import { useMemo, useState } from "react"
 
 import type { ProjectSummaryDto } from "@/features/projects/project.types"
 import type { WorkspaceSummaryDto } from "@/features/workspaces/workspace.types"
-import { groupProjectsByWorkspace } from "@/features/workspaces/workspace-projects"
 
 import { ProjectCard } from "./project-card"
 
 type ProjectDirectoryProps = {
-  initialWorkspaceId?: string
   projects: ProjectSummaryDto[]
-  workspaces: WorkspaceSummaryDto[]
+  workspace: WorkspaceSummaryDto
 }
 
-export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: ProjectDirectoryProps) {
+export function ProjectDirectory({ projects, workspace }: ProjectDirectoryProps) {
   const [search, setSearch] = useState("")
   const [role, setRole] = useState<"all" | ProjectSummaryDto["role"]>("all")
-  const validInitialWorkspace = workspaces.some((workspace) => workspace.id === initialWorkspaceId)
-    ? initialWorkspaceId
-    : "all"
-  const [workspaceId, setWorkspaceId] = useState(validInitialWorkspace)
   const visibleProjects = useMemo(() => {
     const term = search.trim().toLowerCase()
     return projects.filter(
       (project) =>
-        (workspaceId === "all" || project.workspaceId === workspaceId) &&
         (role === "all" || project.role === role) &&
         (!term || project.title.toLowerCase().includes(term) || project.description?.toLowerCase().includes(term)),
     )
-  }, [projects, role, search, workspaceId])
-  const groups = groupProjectsByWorkspace(workspaces, visibleProjects, workspaceId !== "all").filter(
-    (group) => workspaceId === "all" || group.key === workspaceId,
-  )
+  }, [projects, role, search])
 
   return (
     <>
@@ -66,21 +56,6 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
             <option value="viewer">Viewer</option>
           </select>
         </label>
-        <label className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-cyan-300/25 bg-blue-950/55 px-3 py-2 text-white focus-within:border-cyan-300/60 focus-within:ring-2 focus-within:ring-cyan-300/30">
-          <span className="sr-only">Filter by workspace</span>
-          <select
-            value={workspaceId}
-            onChange={(event) => setWorkspaceId(event.target.value)}
-            className="w-full min-w-52 max-w-60 bg-transparent text-white [color-scheme:dark] focus:outline-none [&>option]:bg-[#081b31] [&>option]:text-white"
-          >
-            <option value="all">All workspaces</option>
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       {visibleProjects.length === 0 ? (
@@ -88,41 +63,14 @@ export function ProjectDirectory({ initialWorkspaceId, projects, workspaces }: P
           <h2 className="font-semibold text-outer-space-500 dark:text-platinum-500">No projects found</h2>
           <p className="mt-2 text-sm text-paynes-gray-500 dark:text-french-gray-400">
             {projects.length === 0
-              ? "Create a project to get started."
-              : "Try a different search, role, or workspace filter."}
+              ? `Create a project in ${workspace.name} to get started.`
+              : "Try a different search or role filter."}
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
-          {groups.map((group) => (
-            <section key={group.key} aria-labelledby={`project-group-${group.key}`}>
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <div>
-                  <h2
-                    id={`project-group-${group.key}`}
-                    className="font-semibold text-lg text-outer-space-500 dark:text-platinum-500"
-                  >
-                    {group.name}
-                  </h2>
-                  <p className="mt-1 text-paynes-gray-500 text-sm dark:text-french-gray-400">
-                    {group.workspace
-                      ? `${group.workspace.role.replace("_", " ")} access · ${group.projects.length} projects`
-                      : "Projects created before workspace assignment"}
-                  </p>
-                </div>
-              </div>
-              {group.projects.length === 0 ? (
-                <div className="rounded-lg border border-french-gray-300 border-dashed p-6 text-paynes-gray-500 text-sm dark:border-paynes-gray-400 dark:text-french-gray-400">
-                  No projects are assigned to this workspace yet.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {group.projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
-                  ))}
-                </div>
-              )}
-            </section>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {visibleProjects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
           ))}
         </div>
       )}

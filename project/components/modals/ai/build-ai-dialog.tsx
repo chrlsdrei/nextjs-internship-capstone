@@ -19,6 +19,7 @@ export function BuildAiDialog({
   state: ActionState<unknown>
   workspaces: Array<{ id: string; name: string }>
 }) {
+  const workspace = workspaces[0]
   const input =
     "mt-2 w-full rounded-lg border border-cyan-300/35 bg-blue-950/75 px-3 py-2.5 text-white [color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
   return (
@@ -30,19 +31,11 @@ export function BuildAiDialog({
       className="max-w-2xl"
     >
       <form action={onSubmit} className="space-y-4">
-        <label className="block font-medium text-sm">
-          Workspace
-          <select name="workspaceId" required defaultValue="" className={input}>
-            <option value="" disabled>
-              Select a workspace
-            </option>
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <input type="hidden" name="workspaceId" value={workspace?.id ?? ""} />
+        <div className="rounded-lg border border-cyan-300/25 bg-cyan-400/10 px-4 py-3">
+          <p className="text-cyan-100/55 text-xs uppercase tracking-wider">Active workspace</p>
+          <p className="mt-1 font-semibold text-white">{workspace?.name ?? "No workspace available"}</p>
+        </div>
         <label className="block font-medium text-sm">
           Project title
           <input name="title" required maxLength={200} className={input} />
@@ -83,7 +76,7 @@ export function BuildAiDialog({
           </button>
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || !workspace}
             className="rounded-lg bg-cyan-400 px-4 py-2 font-semibold text-blue-950 disabled:opacity-50"
           >
             {pending ? "Building…" : "Build project"}

@@ -55,7 +55,7 @@
   --text-stroke: rgb(1 7 18 / 72%);
 }
 
-/* React Big Calendar inherits the permanent ProjectFlow ornamental theme. */
+/* React Big Calendar inherits the permanent QuestBoard ornamental theme. */
 .projectflow-calendar .rbc-calendar {
   color: var(--ornament-foreground);
   font-family: var(--font-oxanium), sans-serif;
@@ -132,10 +132,44 @@
 
 .projectflow-calendar .rbc-event {
   min-height: 1.45rem;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0;
   border: 1px solid rgb(108 232 255 / 58%);
   background: #07508a;
   color: #f1fbff;
   box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+  cursor: pointer;
+}
+
+.projectflow-calendar .calendar-event-content {
+  padding: 0.2rem 0.38rem;
+  line-height: 1.15;
+}
+
+.projectflow-calendar .rbc-month-view .rbc-event {
+  box-sizing: border-box;
+  height: 1.55rem;
+  min-height: 1.55rem;
+}
+
+.projectflow-calendar .rbc-month-view .calendar-event-content {
+  padding: 0.25rem 0.38rem;
+  line-height: 1rem;
+}
+
+.projectflow-calendar .rbc-month-view .calendar-event-source {
+  display: none;
+}
+
+.projectflow-calendar .rbc-month-view .rbc-row-content {
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.projectflow-calendar .rbc-row-segment {
+  min-width: 0;
+  padding: 0 2px 2px;
 }
 
 .projectflow-calendar .rbc-event--project {
@@ -155,8 +189,11 @@
 }
 
 .projectflow-calendar .rbc-show-more {
+  min-height: 1.3rem;
+  padding: 0.15rem 0.3rem;
   color: #67e8f9;
   background: transparent;
+  line-height: 1rem;
 }
 
 .projectflow-calendar .rbc-overlay {
@@ -176,6 +213,15 @@
     order: -1;
     padding: 0.25rem;
     text-align: left;
+  }
+
+  .projectflow-calendar .rbc-month-view .rbc-event {
+    min-height: 1.25rem;
+    font-size: 0.7rem;
+  }
+
+  .projectflow-calendar .rbc-month-view .calendar-event-content {
+    padding: 0.2rem 0.25rem;
   }
 }
 
@@ -342,4 +388,32 @@ html::-webkit-scrollbar-thumb:hover {
 .themed-scrollbar::-webkit-scrollbar-corner,
 html::-webkit-scrollbar-corner {
   background: var(--scroll-track);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    animation-delay: 0ms;
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+    transition-delay: 0ms;
+    transition-duration: 1ms;
+  }
+}
+
+html[data-reduce-motion="true"] {
+  scroll-behavior: auto;
+}
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  scroll-behavior: auto;
+  animation-delay: 0ms;
+  animation-duration: 1ms;
+  animation-iteration-count: 1;
+  transition-delay: 0ms;
+  transition-duration: 1ms;
 }

@@ -1,15 +1,17 @@
 "use client"
 
 import { CalendarPlus } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import type { SlotInfo } from "react-big-calendar"
 import { CalendarView } from "@/components/calendar/calendar-view"
 import { UpcomingDeadlines } from "@/components/calendar/upcoming-deadlines"
 import { type CalendarEventForm, CreateEventDialog } from "@/components/modals/calendar/create-event-dialog"
+import { EventDetailsDialog } from "@/components/modals/calendar/event-details-dialog"
 import { Button } from "@/components/ui/button"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
 import { createCalendarEventAction } from "@/features/calendar/actions/create-calendar-event"
-import type { CalendarPageDto } from "@/features/calendar/calendar.types"
+import type { CalendarItemDto, CalendarPageDto } from "@/features/calendar/calendar.types"
 
 function toLocalInput(date: Date, allDay: boolean) {
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
@@ -32,11 +34,14 @@ function initialForm(
 }
 
 export function CalendarController({ initialData }: { initialData: CalendarPageDto }) {
+  const router = useRouter()
   const [items, setItems] = useState(initialData.items)
   const [open, setOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<CalendarItemDto | null>(null)
   const [values, setValues] = useState<CalendarEventForm>(() => initialForm(initialData.workspaces[0]?.id ?? ""))
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const workspace = initialData.workspaces[0]
 
   const openDefault = () => {
     setValues(initialForm(initialData.workspaces[0]?.id ?? ""))
@@ -55,6 +60,13 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
     })
     setError(null)
     setOpen(true)
+  }
+  const openCalendarItem = (item: CalendarItemDto) => {
+    if (item.projectId) {
+      router.push(`/projects/${item.projectId}`)
+      return
+    }
+    setSelectedEvent(item)
   }
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -87,7 +99,9 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
               <h1 className="font-heading font-bold text-3xl text-white">Calendar</h1>
-              <p className="mt-2 text-cyan-100/70">Plan workspace events and track every accessible deadline.</p>
+              <p className="mt-2 text-cyan-100/70">
+                Plan events and track deadlines in {workspace?.name ?? "this workspace"}.
+              </p>
             </div>
             <Button type="button" onClick={openDefault} disabled={initialData.workspaces.length === 0}>
               <CalendarPlus className="size-5" />
@@ -96,13 +110,13 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
           </div>
         </TechFrameCard>
         <div className="rounded-lg border border-cyan-400/30 bg-[#031326]/90 p-3 shadow-[0_0_24px_rgb(0_190_232/0.12)] sm:p-5">
-          <CalendarView items={items} onSelectSlot={openForSlot} />
+          <CalendarView items={items} onSelectSlot={openForSlot} onSelectEvent={openCalendarItem} />
         </div>
         <UpcomingDeadlines items={items} />
       </div>
       <CreateEventDialog
         open={open}
-        workspaces={initialData.workspaces}
+        workspace={workspace}
         values={values}
         pending={pending}
         error={error}
@@ -110,6 +124,7 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
         onChange={setValues}
         onSubmit={submit}
       />
+      <EventDetailsDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} />
     </>
   )
 }

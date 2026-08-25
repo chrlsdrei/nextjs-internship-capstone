@@ -22,13 +22,15 @@ function nextDay(value: Date) {
   return result
 }
 
-export async function getCalendarPageData(): Promise<CalendarPageDto> {
+export async function getCalendarPageData(workspaceId?: string): Promise<CalendarPageDto> {
   const user = await getCurrentDatabaseUser()
   const [memberships, accessibleProjects] = await Promise.all([
     listActiveWorkspaceMemberships(user.id),
-    listAccessibleProjects(user.id),
+    listAccessibleProjects(user.id, undefined, workspaceId),
   ])
-  const activeMemberships = memberships.filter((workspace) => workspace.status === "active")
+  const activeMemberships = memberships.filter(
+    (workspace) => workspace.status === "active" && (!workspaceId || workspace.id === workspaceId),
+  )
   const [events, taskDeadlines] = await Promise.all([
     listWorkspaceCalendarEvents(activeMemberships.map((workspace) => workspace.id)),
     listAccessibleTaskDeadlines(accessibleProjects.map((project) => project.id)),

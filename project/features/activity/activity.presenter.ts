@@ -66,6 +66,8 @@ function knownActivityDescription(activity: Extract<ActivityDto, { kind: "known"
       }
     case "project.member_removed":
       return { title: `${actor} removed ${event.metadata.memberName} from the project` }
+    case "project.member_left":
+      return { title: `${actor} left the project` }
     case "list.created":
       return { title: `${actor} created a list`, detail: event.metadata.listName }
     case "list.renamed":

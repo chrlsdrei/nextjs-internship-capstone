@@ -1,4 +1,6 @@
 import { SignUp } from "@clerk/nextjs"
+import { BrandLogo } from "@/components/global/brand-logo"
+import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 import { authenticationHref, safeInvitationRedirect } from "@/features/invitations/invitation-redirect"
 
 export default async function SignUpPage({
@@ -8,13 +10,13 @@ export default async function SignUpPage({
 }) {
   const redirectUrl = safeInvitationRedirect((await searchParams).redirect_url)
   return (
-    <main className="flex min-h-screen items-center justify-center bg-platinum-900 px-4 dark:bg-outer-space-600">
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#020617] px-4 py-10">
+      <RealisticFogBackground className="absolute inset-0 -z-10" />
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 font-bold text-3xl text-outer-space-500 dark:text-platinum-500">Create your account</h1>
-          <p className="text-paynes-gray-500 dark:text-french-gray-400">
-            Join ProjectFlow and start organizing your work
-          </p>
+          <BrandLogo className="mx-auto mb-4" priority />
+          <h1 className="mb-2 font-bold text-3xl text-white">Create your account</h1>
+          <p className="text-cyan-100/65">Join QuestBoard and start organizing your work</p>
         </div>
         <SignUp
           path="/sign-up"
@@ -25,7 +27,6 @@ export default async function SignUpPage({
             elements: {
               rootBox: "mx-auto w-full",
               cardBox: "w-full",
-              card: "border border-french-gray-300 shadow-lg dark:border-paynes-gray-400",
               formFieldRow__phoneNumber: "hidden",
             },
           }}

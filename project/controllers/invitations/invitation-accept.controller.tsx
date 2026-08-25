@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useActionState, useEffect } from "react"
 import { InvitationAcceptView } from "@/components/invitations/invitation-accept-view"
 import { acceptInvitationAction } from "@/features/invitations/actions/accept-invitation"
+import { declineInvitationAction } from "@/features/invitations/actions/decline-invitation"
 import type { InvitationAcceptanceDto, InvitationPreviewDto } from "@/features/invitations/invitation.types"
 import type { ActionState } from "@/lib/action-state"
 
@@ -24,6 +25,7 @@ export function InvitationAcceptController({
 }) {
   const router = useRouter()
   const [state, action, pending] = useActionState(acceptInvitationAction, initialState)
+  const [declineState, declineAction, declining] = useActionState(declineInvitationAction, initialState)
 
   useEffect(() => {
     if (state.status !== "success" || !state.data) return
@@ -38,6 +40,7 @@ export function InvitationAcceptController({
       signInHref={signInHref}
       signUpHref={signUpHref}
       accept={{ action, pending, state }}
+      decline={{ action: declineAction, pending: declining, state: declineState }}
     />
   )
 }

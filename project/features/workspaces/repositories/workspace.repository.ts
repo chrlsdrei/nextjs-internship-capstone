@@ -9,7 +9,7 @@ import type {
   UpdateWorkspaceSettingsInput,
 } from "@/features/workspaces/workspace.schema"
 import { db } from "@/server/db/client"
-import { users, workspaceMembers, workspaceSettings, workspaces } from "@/server/db/schema"
+import { userPresence, users, workspaceMembers, workspaceSettings, workspaces } from "@/server/db/schema"
 
 export async function createWorkspaceWithOwner(userId: string, input: CreateWorkspaceInput) {
   const workspaceId = randomUUID()
@@ -98,9 +98,11 @@ export async function listActiveWorkspaceMembers(workspaceId: string) {
       role: workspaceMembers.role,
       removedAt: workspaceMembers.removedAt,
       joinedAt: workspaceMembers.joinedAt,
+      lastSeenAt: userPresence.lastSeenAt,
     })
     .from(workspaceMembers)
     .innerJoin(users, eq(users.id, workspaceMembers.userId))
+    .leftJoin(userPresence, eq(userPresence.userId, users.id))
     .where(and(eq(workspaceMembers.workspaceId, workspaceId), isNull(workspaceMembers.removedAt)))
     .orderBy(workspaceMembers.joinedAt)
 }
