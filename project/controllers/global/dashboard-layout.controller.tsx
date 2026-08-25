@@ -39,9 +39,10 @@ const workspaceNavigation = [
 ]
 
 const accountNavigation = [
-  { name: "Subscription", href: "/subscription", icon: CreditCard },
-  { name: "Settings", href: "/settings", icon: Settings },
-]
+  { kind: "link", name: "Subscription", href: "/subscription", icon: CreditCard },
+  { kind: "notifications", name: "Notifications" },
+  { kind: "link", name: "Settings", href: "/settings", icon: Settings },
+] as const
 
 export function DashboardLayout({
   children,
@@ -160,6 +161,13 @@ export function DashboardLayout({
             </p>
             <ul className="space-y-1">
               {accountNavigation.map((item) => {
+                if (item.kind === "notifications") {
+                  return (
+                    <li key={item.name}>
+                      <NotificationCenterController collapsed={sidebarCollapsed} initialData={notifications} />
+                    </li>
+                  )
+                }
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                 return (
                   <li key={item.name}>
@@ -205,8 +213,7 @@ export function DashboardLayout({
             >
               <Menu size={20} />
             </button>
-            <div className="ml-auto flex items-center gap-x-4">
-              <NotificationCenterController initialData={notifications} />
+            <div className="ml-auto flex items-center">
               <UserButton />
             </div>
           </TaskFrame>
