@@ -7,7 +7,7 @@ import { createProjectAction } from "@/features/projects/actions/create-project"
 import type { WorkspaceSummaryDto } from "@/features/workspaces/workspace.types"
 import { initialActionState } from "@/lib/action-state"
 
-export function CreateProjectController({ workspaces }: { workspaces: WorkspaceSummaryDto[] }) {
+export function CreateProjectController({ workspace }: { workspace: WorkspaceSummaryDto | null }) {
   const [isOpen, setIsOpen] = useState(false)
   const [state, formAction, isPending] = useActionState(createProjectAction, initialActionState)
 
@@ -20,20 +20,20 @@ export function CreateProjectController({ workspaces }: { workspaces: WorkspaceS
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        disabled={workspaces.length === 0}
-        title={workspaces.length === 0 ? "You need permission to create projects in an active workspace" : undefined}
+        disabled={!workspace}
+        title={!workspace ? "You need permission to create projects in the active workspace" : undefined}
         className="inline-flex items-center rounded-lg bg-blue-munsell-500 px-4 py-2 text-white transition-colors hover:bg-blue-munsell-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Plus size={20} className="mr-2" />
         New Project
       </button>
-      {isOpen && (
+      {isOpen && workspace && (
         <CreateProjectDialog
           action={formAction}
           isPending={isPending}
           onClose={() => setIsOpen(false)}
           state={state}
-          workspaces={workspaces}
+          workspace={workspace}
         />
       )}
     </>

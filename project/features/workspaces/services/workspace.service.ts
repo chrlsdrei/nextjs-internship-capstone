@@ -129,17 +129,6 @@ export async function getWorkspaceDetails(workspaceId: string): Promise<Workspac
   return detailDto(access, role, user.id)
 }
 
-export async function listWorkspaceTeamDetails(): Promise<WorkspaceDetailDto[]> {
-  const user = await getCurrentDatabaseUser()
-  const memberships = await listActiveWorkspaceMemberships(user.id)
-  return Promise.all(
-    memberships.map((access) => {
-      const role = effectiveRole(access)
-      return detailDto(access, role, user.id)
-    }),
-  )
-}
-
 export async function createWorkspace(input: unknown): Promise<WorkspaceSummaryDto> {
   const values = createWorkspaceSchema.parse(input)
   const user = await getCurrentDatabaseUser()

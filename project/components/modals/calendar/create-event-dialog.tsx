@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarPlus, LoaderCircle } from "lucide-react"
+import { Building2, CalendarPlus, LoaderCircle } from "lucide-react"
 import type { FormEvent } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ export type CalendarEventForm = {
 
 type CreateEventDialogProps = {
   open: boolean
-  workspaces: CalendarWorkspaceDto[]
+  workspace: CalendarWorkspaceDto | undefined
   values: CalendarEventForm
   pending: boolean
   error: string | null
@@ -30,7 +30,7 @@ type CreateEventDialogProps = {
 
 export function CreateEventDialog({
   open,
-  workspaces,
+  workspace,
   values,
   pending,
   error,
@@ -62,7 +62,7 @@ export function CreateEventDialog({
           <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
             Cancel
           </Button>
-          <Button type="submit" form="create-calendar-event" disabled={pending || workspaces.length === 0}>
+          <Button type="submit" form="create-calendar-event" disabled={pending || !workspace}>
             {pending ? <LoaderCircle className="size-4 animate-spin" /> : <CalendarPlus className="size-4" />}
             Add event
           </Button>
@@ -70,23 +70,14 @@ export function CreateEventDialog({
       }
     >
       <form id="create-calendar-event" className="space-y-4 px-1" onSubmit={onSubmit}>
-        <label htmlFor="calendar-workspace" className="grid gap-2 font-medium text-sm">
-          Workspace
-          <select
-            id="calendar-workspace"
-            required
-            value={values.workspaceId}
-            onChange={(event) => onChange({ ...values, workspaceId: event.target.value })}
-            className="h-10 rounded-md border border-cyan-400/45 bg-[#041426] px-3 text-cyan-50 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/25"
-          >
-            <option value="">Select a workspace</option>
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <input type="hidden" name="workspaceId" value={workspace?.id ?? ""} />
+        <div className="flex items-center gap-3 rounded-md border border-cyan-400/20 bg-cyan-950/25 p-3">
+          <Building2 className="shrink-0 text-cyan-300" size={18} />
+          <div className="min-w-0">
+            <p className="text-cyan-100/55 text-xs uppercase tracking-wider">Active workspace</p>
+            <p className="truncate font-semibold text-cyan-50">{workspace?.name ?? "No workspace selected"}</p>
+          </div>
+        </div>
         <label htmlFor="calendar-event-title" className="grid gap-2 font-medium text-sm">
           Event title
           <Input

@@ -54,9 +54,12 @@ function normalizeProjectInput(input: UpdateProjectInput) {
   return { ...input, ...(input.description === "" ? { description: null } : {}) }
 }
 
-export async function getAccessibleProjectSummaries(limit?: number): Promise<ProjectSummaryDto[]> {
+export async function getAccessibleProjectSummaries(
+  limit?: number,
+  workspaceId?: string,
+): Promise<ProjectSummaryDto[]> {
   const user = await getCurrentDatabaseUser()
-  const memberships = await listAccessibleProjects(user.id, limit)
+  const memberships = await listAccessibleProjects(user.id, limit, workspaceId)
   return Promise.all(
     memberships.map(async (project) => ({
       ...project,
@@ -67,8 +70,8 @@ export async function getAccessibleProjectSummaries(limit?: number): Promise<Pro
   )
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummaryDto> {
-  const accessibleProjects = await getAccessibleProjectSummaries()
+export async function getDashboardSummary(workspaceId?: string): Promise<DashboardSummaryDto> {
+  const accessibleProjects = await getAccessibleProjectSummaries(undefined, workspaceId)
   const memberRows = await listProjectMemberUserIds(accessibleProjects.map((project) => project.id))
 
   return {

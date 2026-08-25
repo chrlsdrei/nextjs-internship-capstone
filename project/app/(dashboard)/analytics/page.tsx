@@ -1,11 +1,15 @@
 import { BarChart3 } from "lucide-react"
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
+import { WorkspaceEmptyState } from "@/components/workspaces/workspace-empty-state"
 import { getAnalyticsDashboard } from "@/features/analytics/queries/get-analytics-dashboard"
+import { getActiveWorkspaceContext } from "@/features/workspaces/queries/get-active-workspace-context"
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
   const requestedYear = Number.parseInt((await searchParams).year ?? "", 10)
-  const data = await getAnalyticsDashboard(Number.isNaN(requestedYear) ? undefined : requestedYear)
+  const { activeWorkspace } = await getActiveWorkspaceContext()
+  if (!activeWorkspace) return <WorkspaceEmptyState />
+  const data = await getAnalyticsDashboard(Number.isNaN(requestedYear) ? undefined : requestedYear, activeWorkspace.id)
 
   return (
     <div className="mx-auto max-w-[112rem] space-y-6">
@@ -19,7 +23,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           </div>
           <div>
             <h1 className="font-bold text-3xl text-white">Analytics</h1>
-            <p className="mt-1 text-cyan-100/70">Track real project progress, completions, and team activity.</p>
+            <p className="mt-1 text-cyan-100/70">
+              Track progress, completions, and team activity in {activeWorkspace.name}.
+            </p>
           </div>
         </header>
       </TechFrameCard>

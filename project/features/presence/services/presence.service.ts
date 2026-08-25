@@ -13,11 +13,13 @@ export async function recordCurrentUserPresence() {
   await touchUserPresence(user.id)
 }
 
-export async function refreshAccessibleTeamPresence(): Promise<TeamPresenceDto[]> {
+export async function refreshAccessibleTeamPresence(workspaceId?: string): Promise<TeamPresenceDto[]> {
   const user = await getCurrentDatabaseUser()
   await touchUserPresence(user.id)
 
-  const memberships = await listActiveWorkspaceMemberships(user.id)
+  const memberships = (await listActiveWorkspaceMemberships(user.id)).filter(
+    (workspace) => !workspaceId || workspace.id === workspaceId,
+  )
   const workspaceMembers = await Promise.all(memberships.map((workspace) => listActiveWorkspaceMembers(workspace.id)))
   const userIds = [...new Set(workspaceMembers.flat().map((member) => member.userId))]
   const presence = await listPresenceByUserIds(userIds)

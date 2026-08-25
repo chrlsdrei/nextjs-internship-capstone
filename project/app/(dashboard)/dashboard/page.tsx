@@ -1,14 +1,17 @@
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
 import { RecentProjects } from "@/components/dashboard/recent-projects"
-import { WorkspaceDashboardPanel } from "@/components/dashboard/workspace-dashboard-panel"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
+import { WorkspaceEmptyState } from "@/components/workspaces/workspace-empty-state"
 import { CreateProjectController } from "@/controllers/projects/create-project.controller"
 import { getDashboardSummary } from "@/features/projects/queries/get-dashboard-summary"
-import { listWorkspaces } from "@/features/workspaces/queries/list-workspaces"
+import { getActiveWorkspaceContext } from "@/features/workspaces/queries/get-active-workspace-context"
 import { canCreateProjectInWorkspace } from "@/features/workspaces/workspace.policy"
 
 export default async function DashboardPage() {
-  const [summary, workspaces] = await Promise.all([getDashboardSummary(), listWorkspaces()])
+  const { activeWorkspace } = await getActiveWorkspaceContext()
+  if (!activeWorkspace) return <WorkspaceEmptyState />
+  const summary = await getDashboardSummary(activeWorkspace.id)
+  const creationWorkspace = canCreateProjectInWorkspace(activeWorkspace) ? activeWorkspace : null
 
   return (
     <div className="space-y-6">
@@ -18,20 +21,19 @@ export default async function DashboardPage() {
       >
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-bold text-3xl text-white">Dashboard</h1>
-            <p className="mt-2 text-cyan-100/70">An overview of the projects you can access.</p>
+            <h1 className="font-bold text-3xl text-white">{activeWorkspace.name}</h1>
+            <p className="mt-2 text-cyan-100/70">Workspace dashboard and accessible project overview.</p>
           </div>
-          <CreateProjectController workspaces={workspaces.filter(canCreateProjectInWorkspace)} />
+          <CreateProjectController workspace={creationWorkspace} />
         </header>
       </TechFrameCard>
       <DashboardStats
         projectCount={summary.projectCount}
         memberCount={summary.memberCount}
         taskCount={summary.taskCount}
-        workspaceCount={workspaces.length}
+        workspaceMemberCount={activeWorkspace.memberCount}
       />
-      <WorkspaceDashboardPanel workspaces={workspaces} />
-      <RecentProjects projects={summary.recentProjects} workspaces={workspaces} />
+      <RecentProjects projects={summary.recentProjects} workspaces={[activeWorkspace]} />
     </div>
   )
 }

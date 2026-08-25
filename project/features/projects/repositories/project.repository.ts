@@ -36,7 +36,7 @@ function canManageProject(projectId: string, userId: string) {
   )`
 }
 
-export async function listAccessibleProjects(userId: string, limit?: number) {
+export async function listAccessibleProjects(userId: string, limit?: number, workspaceId?: string) {
   const effectiveRole = sql<BoardRole>`CASE
     WHEN ${workspaces.ownerWorkspaceMemberId} = ${workspaceMembers.id} THEN 'board_admin'::board_role
     ELSE ${projectMembers.role}
@@ -69,7 +69,12 @@ export async function listAccessibleProjects(userId: string, limit?: number) {
         isNull(projectMembers.removedAt),
       ),
     )
-    .where(or(eq(workspaces.ownerWorkspaceMemberId, workspaceMembers.id), isNotNull(projectMembers.id)))
+    .where(
+      and(
+        or(eq(workspaces.ownerWorkspaceMemberId, workspaceMembers.id), isNotNull(projectMembers.id)),
+        workspaceId ? eq(projects.workspaceId, workspaceId) : undefined,
+      ),
+    )
     .orderBy(desc(projects.updatedAt))
 
   const rows = limit === undefined ? await query : await query.limit(limit)

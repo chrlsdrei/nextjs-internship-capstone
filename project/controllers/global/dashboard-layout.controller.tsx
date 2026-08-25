@@ -3,7 +3,6 @@
 import { UserButton } from "@clerk/nextjs"
 import {
   BarChart3,
-  Building2,
   Calendar,
   CreditCard,
   FolderOpen,
@@ -26,16 +25,20 @@ import { TaskFrame } from "@/components/ui/task-frame"
 import { BuildAiController } from "@/controllers/global/build-ai.controller"
 import { NotificationCenterController } from "@/controllers/global/notification-center.controller"
 import { PresenceHeartbeatController } from "@/controllers/global/presence-heartbeat.controller"
+import { WorkspaceSwitcherController } from "@/controllers/global/workspace-switcher.controller"
 import type { UserAiEntitlementDto } from "@/features/billing/billing.types"
 import type { NotificationCenterDto } from "@/features/notifications/notification.types"
+import type { WorkspaceSummaryDto } from "@/features/workspaces/workspace.types"
 
-const navigation = [
+const workspaceNavigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Workspaces", href: "/workspaces", icon: Building2 },
   { name: "Projects", href: "/projects", icon: FolderOpen },
   { name: "Team", href: "/team", icon: Users },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+]
+
+const accountNavigation = [
   { name: "Subscription", href: "/subscription", icon: CreditCard },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
@@ -44,10 +47,12 @@ export function DashboardLayout({
   children,
   ai,
   notifications,
+  workspaceContext,
 }: Readonly<{
   children: React.ReactNode
   ai: { entitlement: UserAiEntitlementDto; workspaces: Array<{ id: string; name: string }> }
   notifications: NotificationCenterDto
+  workspaceContext: { activeWorkspace: WorkspaceSummaryDto | null; workspaces: WorkspaceSummaryDto[] }
 }>) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -102,11 +107,60 @@ export function DashboardLayout({
             </button>
           </div>
 
-          <nav aria-label="Dashboard navigation" className={`mt-6 px-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+          <WorkspaceSwitcherController
+            activeWorkspace={workspaceContext.activeWorkspace}
+            collapsed={sidebarCollapsed}
+            onNavigate={() => setSidebarOpen(false)}
+            workspaces={workspaceContext.workspaces}
+          />
+
+          <nav aria-label="Workspace navigation" className={`mt-5 px-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+            <p
+              className={`mb-2 px-3 font-medium text-cyan-100/45 text-[0.65rem] uppercase tracking-[0.16em] ${
+                sidebarCollapsed ? "lg:sr-only" : ""
+              }`}
+            >
+              Workspace
+            </p>
             <ul className="space-y-1">
-              {navigation.map((item) => {
+              {workspaceNavigation.map((item) => {
                 const isActive =
                   pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`))
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      aria-current={isActive ? "page" : undefined}
+                      aria-label={sidebarCollapsed ? item.name : undefined}
+                      title={sidebarCollapsed ? item.name : undefined}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center rounded-lg px-3 py-2 font-medium text-sm transition-colors ${
+                        sidebarCollapsed ? "lg:justify-center lg:px-2" : ""
+                      } ${
+                        isActive
+                          ? "bg-cyan-400/20 text-cyan-100 ring-1 ring-cyan-300/35"
+                          : "text-cyan-50/80 hover:bg-cyan-300/10 hover:text-white"
+                      }`}
+                    >
+                      <item.icon className={sidebarCollapsed ? "mr-3 lg:mr-0" : "mr-3"} size={20} />
+                      <span className={sidebarCollapsed ? "lg:sr-only" : undefined}>{item.name}</span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+          <nav aria-label="Account navigation" className={`mt-5 px-3 ${sidebarCollapsed ? "lg:px-2" : ""}`}>
+            <p
+              className={`mb-2 px-3 font-medium text-cyan-100/45 text-[0.65rem] uppercase tracking-[0.16em] ${
+                sidebarCollapsed ? "lg:sr-only" : ""
+              }`}
+            >
+              Account
+            </p>
+            <ul className="space-y-1">
+              {accountNavigation.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
                 return (
                   <li key={item.name}>
                     <Link

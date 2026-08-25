@@ -1,8 +1,12 @@
+import { WorkspaceEmptyState } from "@/components/workspaces/workspace-empty-state"
 import { TeamDirectoryController } from "@/controllers/team/team-directory.controller"
-import { listWorkspaceTeamDetails } from "@/features/workspaces/queries/list-workspace-team-details"
+import { getActiveWorkspaceContext } from "@/features/workspaces/queries/get-active-workspace-context"
+import { getWorkspaceDetails } from "@/features/workspaces/queries/get-workspace-details"
 
 export default async function TeamPage() {
-  const workspaces = await listWorkspaceTeamDetails()
+  const { activeWorkspace } = await getActiveWorkspaceContext()
+  if (!activeWorkspace) return <WorkspaceEmptyState />
+  const workspace = await getWorkspaceDetails(activeWorkspace.id)
 
-  return <TeamDirectoryController initialWorkspaces={workspaces} />
+  return <TeamDirectoryController key={activeWorkspace.id} initialWorkspace={workspace} />
 }

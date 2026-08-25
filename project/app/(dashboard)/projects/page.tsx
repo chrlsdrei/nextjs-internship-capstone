@@ -1,16 +1,16 @@
 import { ProjectDirectory } from "@/components/projects/project-directory"
 import { TechFrameCard } from "@/components/ui/tech-frame-card"
+import { WorkspaceEmptyState } from "@/components/workspaces/workspace-empty-state"
 import { CreateProjectController } from "@/controllers/projects/create-project.controller"
 import { getAccessibleProjectSummaries } from "@/features/projects/queries/get-accessible-project-summaries"
-import { listWorkspaces } from "@/features/workspaces/queries/list-workspaces"
+import { getActiveWorkspaceContext } from "@/features/workspaces/queries/get-active-workspace-context"
 import { canCreateProjectInWorkspace } from "@/features/workspaces/workspace.policy"
 
-export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ workspace?: string }> }) {
-  const [{ workspace }, projects, workspaces] = await Promise.all([
-    searchParams,
-    getAccessibleProjectSummaries(),
-    listWorkspaces(),
-  ])
+export default async function ProjectsPage() {
+  const { activeWorkspace } = await getActiveWorkspaceContext()
+  if (!activeWorkspace) return <WorkspaceEmptyState />
+  const projects = await getAccessibleProjectSummaries(undefined, activeWorkspace.id)
+  const creationWorkspace = canCreateProjectInWorkspace(activeWorkspace) ? activeWorkspace : null
 
   return (
     <div className="space-y-6">
@@ -21,12 +21,12 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="font-bold text-3xl text-white">Projects</h1>
-            <p className="mt-2 text-cyan-100/70">Projects you own or collaborate on.</p>
+            <p className="mt-2 text-cyan-100/70">Projects in {activeWorkspace.name} that you can access.</p>
           </div>
-          <CreateProjectController workspaces={workspaces.filter(canCreateProjectInWorkspace)} />
+          <CreateProjectController workspace={creationWorkspace} />
         </header>
       </TechFrameCard>
-      <ProjectDirectory initialWorkspaceId={workspace} projects={projects} workspaces={workspaces} />
+      <ProjectDirectory projects={projects} workspace={activeWorkspace} />
     </div>
   )
 }

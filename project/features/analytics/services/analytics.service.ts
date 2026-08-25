@@ -34,9 +34,12 @@ function validAnalyticsYear(value: number | undefined, currentYear: number) {
   return value && Number.isInteger(value) && value >= 2020 && value <= currentYear ? value : currentYear
 }
 
-export async function getAnalyticsDashboard(requestedYear?: number): Promise<AnalyticsDashboardDto> {
+export async function getAnalyticsDashboard(
+  requestedYear?: number,
+  workspaceId?: string,
+): Promise<AnalyticsDashboardDto> {
   const user = await getCurrentDatabaseUser()
-  const accessibleProjects = await listAccessibleProjects(user.id)
+  const accessibleProjects = await listAccessibleProjects(user.id, undefined, workspaceId)
   const projectIds = accessibleProjects.map((project) => project.id)
   const now = new Date()
   const currentYear = Number(new Intl.DateTimeFormat("en", { year: "numeric", timeZone: MANILA_TIME_ZONE }).format(now))

@@ -41,6 +41,7 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
   const [values, setValues] = useState<CalendarEventForm>(() => initialForm(initialData.workspaces[0]?.id ?? ""))
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const workspace = initialData.workspaces[0]
 
   const openDefault = () => {
     setValues(initialForm(initialData.workspaces[0]?.id ?? ""))
@@ -98,7 +99,9 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
             <div>
               <h1 className="font-heading font-bold text-3xl text-white">Calendar</h1>
-              <p className="mt-2 text-cyan-100/70">Plan workspace events and track every accessible deadline.</p>
+              <p className="mt-2 text-cyan-100/70">
+                Plan events and track deadlines in {workspace?.name ?? "this workspace"}.
+              </p>
             </div>
             <Button type="button" onClick={openDefault} disabled={initialData.workspaces.length === 0}>
               <CalendarPlus className="size-5" />
@@ -113,7 +116,7 @@ export function CalendarController({ initialData }: { initialData: CalendarPageD
       </div>
       <CreateEventDialog
         open={open}
-        workspaces={initialData.workspaces}
+        workspace={workspace}
         values={values}
         pending={pending}
         error={error}

@@ -6,15 +6,15 @@ export function DashboardStats({
   projectCount,
   memberCount,
   taskCount,
-  workspaceCount,
+  workspaceMemberCount,
 }: {
   projectCount: number
   memberCount: number
   taskCount: number
-  workspaceCount: number
+  workspaceMemberCount: number
 }) {
   const stats = [
-    { name: "Workspaces", value: workspaceCount, icon: Building2 },
+    { name: "Workspace members", value: workspaceMemberCount, icon: Building2 },
     { name: "Projects", value: projectCount, icon: FolderKanban },
     { name: "Collaborators", value: memberCount, icon: Users },
     { name: "Tasks", value: taskCount, icon: CheckCircle },

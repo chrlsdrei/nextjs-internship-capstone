@@ -8,8 +8,8 @@ import type { WorkspaceDetailDto } from "@/features/workspaces/workspace.types"
 
 const PRESENCE_REFRESH_INTERVAL_MS = 30_000
 
-export function TeamDirectoryController({ initialWorkspaces }: { initialWorkspaces: WorkspaceDetailDto[] }) {
-  const [workspaces, setWorkspaces] = useState(initialWorkspaces)
+export function TeamDirectoryController({ initialWorkspace }: { initialWorkspace: WorkspaceDetailDto }) {
+  const [workspace, setWorkspace] = useState(initialWorkspace)
   const pending = useRef(false)
 
   useEffect(() => {
@@ -17,17 +17,15 @@ export function TeamDirectoryController({ initialWorkspaces }: { initialWorkspac
       if (document.visibilityState !== "visible" || pending.current) return
       pending.current = true
       try {
-        const presence = await refreshTeamPresenceAction()
+        const presence = await refreshTeamPresenceAction(initialWorkspace.id)
         const lastSeenByUserId = new Map(presence.map((record) => [record.userId, record.lastSeenAt]))
-        setWorkspaces((current) =>
-          current.map((workspace) => ({
-            ...workspace,
-            members: workspace.members.map((member) => ({
-              ...member,
-              lastSeenAt: lastSeenByUserId.get(member.userId) ?? null,
-            })),
+        setWorkspace((current) => ({
+          ...current,
+          members: current.members.map((member) => ({
+            ...member,
+            lastSeenAt: lastSeenByUserId.get(member.userId) ?? null,
           })),
-        )
+        }))
       } catch {
         // Retain the most recent presence snapshot if a refresh fails.
       } finally {
@@ -47,7 +45,7 @@ export function TeamDirectoryController({ initialWorkspaces }: { initialWorkspac
       window.clearInterval(intervalId)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
-  }, [])
+  }, [initialWorkspace.id])
 
-  return <TeamDirectory workspaces={workspaces} />
+  return <TeamDirectory workspace={workspace} />
 }
