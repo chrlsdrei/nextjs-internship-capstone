@@ -58,7 +58,7 @@ export function WhyQuestBoard() {
     <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28" aria-labelledby="why-questboard-heading">
       <div className="mx-auto max-w-[94rem]">
         <p className="text-center font-semibold text-[0.68rem] text-cyan-300 uppercase tracking-[0.24em]">
-          08 / Why QuestBoard
+          05 / Why QuestBoard
         </p>
 
         <h2

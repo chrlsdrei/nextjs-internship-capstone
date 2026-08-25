@@ -147,7 +147,7 @@ export function Deadlines() {
     <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28" aria-labelledby="deadlines-heading">
       <div className="mx-auto grid max-w-[94rem] items-center gap-12 xl:grid-cols-[minmax(20rem,0.62fr)_minmax(0,1.38fr)] xl:gap-14">
         <div className="max-w-2xl">
-          <p className="font-semibold text-[0.68rem] text-cyan-300 uppercase tracking-[0.24em]">06 / Deadlines</p>
+          <p className="font-semibold text-[0.68rem] text-cyan-300 uppercase tracking-[0.24em]">04 / Deadlines</p>
 
           <h2
             id="deadlines-heading"

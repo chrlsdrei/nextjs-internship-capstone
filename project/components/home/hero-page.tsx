@@ -5,6 +5,7 @@ import Link from "next/link"
 import { BrandLogo } from "@/components/global/brand-logo"
 import { Analytics } from "@/components/home/analytics"
 import { Collaboration } from "@/components/home/collaboration"
+import { Conclusion } from "@/components/home/conclusion"
 import { Deadlines } from "@/components/home/deadlines"
 import { Features } from "@/components/home/features"
 import { WhyQuestBoard } from "@/components/home/why-questboard"
@@ -96,89 +97,7 @@ export function HeroPage() {
         <Analytics />
         <Deadlines />
         <WhyQuestBoard />
-
-        {/* Navigation Demo Section */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-outer-space-400/50">
-          <div className="container mx-auto text-center">
-            <h2 className="text-3xl font-bold text-outer-space-500 dark:text-platinum-500 mb-8">
-              Explore the QuestBoard workspace
-            </h2>
-            <p className="text-lg text-paynes-gray-500 dark:text-french-gray-500 mb-8">
-              Sign in to access the protected dashboard, project boards, and team workspace.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
-              <Link
-                href="/dashboard"
-                className="p-4 bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 hover:shadow-lg transition-shadow"
-              >
-                <h3 className="font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">Dashboard</h3>
-                <p className="text-sm text-paynes-gray-500 dark:text-french-gray-400">Main dashboard view</p>
-              </Link>
-
-              <Link
-                href="/projects"
-                className="p-4 bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 hover:shadow-lg transition-shadow"
-              >
-                <h3 className="font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">Projects</h3>
-                <p className="text-sm text-paynes-gray-500 dark:text-french-gray-400">Projects listing page</p>
-              </Link>
-
-              <Link
-                href="/projects/1"
-                className="p-4 bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 hover:shadow-lg transition-shadow"
-              >
-                <h3 className="font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">Kanban Board</h3>
-                <p className="text-sm text-paynes-gray-500 dark:text-french-gray-400">Project board view</p>
-              </Link>
-
-              <Link
-                href="/sign-in"
-                className="p-4 bg-white dark:bg-outer-space-500 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400 hover:shadow-lg transition-shadow"
-              >
-                <h3 className="font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">Auth Pages</h3>
-                <p className="text-sm text-paynes-gray-500 dark:text-french-gray-400">Secure Clerk authentication</p>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Task Implementation Status */}
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
-          <div className="container mx-auto">
-            <h2 className="text-3xl font-bold text-center text-outer-space-500 dark:text-platinum-500 mb-12">
-              Implementation Roadmap
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { phase: "1.0", title: "Project Setup", status: "pending", tasks: 6 },
-                { phase: "2.0", title: "Authentication", status: "pending", tasks: 6 },
-                { phase: "3.0", title: "Database Setup", status: "pending", tasks: 6 },
-                { phase: "4.0", title: "Core Features", status: "pending", tasks: 6 },
-                { phase: "5.0", title: "Kanban Board", status: "pending", tasks: 6 },
-                { phase: "6.0", title: "Advanced Features", status: "pending", tasks: 6 },
-                { phase: "7.0", title: "Testing", status: "pending", tasks: 6 },
-                { phase: "8.0", title: "Deployment", status: "pending", tasks: 6 },
-              ].map((item) => (
-                <div
-                  key={item.phase}
-                  className="bg-white dark:bg-outer-space-500 p-6 rounded-lg border border-french-gray-300 dark:border-paynes-gray-400"
-                >
-                  <div className="text-sm text-blue-munsell-500 font-semibold mb-2">Phase {item.phase}</div>
-                  <h3 className="font-semibold text-outer-space-500 dark:text-platinum-500 mb-2">{item.title}</h3>
-                  <div className="text-sm text-paynes-gray-500 dark:text-french-gray-400 mb-3">{item.tasks} tasks</div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-paynes-gray-500 dark:text-french-gray-400 capitalize">
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        <Conclusion />
       </div>
     </div>
   )
