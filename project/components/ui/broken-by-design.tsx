@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useRef } from "react"
+import { type ReactNode, useEffect, useMemo, useRef } from "react"
 
 type BrokenByDesignProps = {
   title?: string
   height?: string
   interactive?: boolean
   className?: string
+  children?: ReactNode
 }
 
 const SHARDS = [
@@ -30,9 +31,10 @@ const CRACKS = [
 
 export function BrokenByDesign({
   title = "QuestBoard",
-  height = "clamp(32rem, 72vh, 48rem)",
+  height = "calc(100svh - 4rem)",
   interactive = true,
   className = "",
+  children,
 }: BrokenByDesignProps) {
   const rootRef = useRef<HTMLElement>(null)
   const poses = useMemo(
@@ -93,20 +95,20 @@ export function BrokenByDesign({
         .quest-shatter {
           position: relative;
           width: 100%;
-          min-height: 30rem;
+          min-height: 38rem;
           overflow: hidden;
           isolation: isolate;
           perspective: 1200px;
           background:
             radial-gradient(circle at 50% 46%, rgb(22 191 232 / 18%), transparent 30%),
-            radial-gradient(ellipse at 50% 110%, rgb(7 93 240 / 30%), transparent 54%),
-            linear-gradient(145deg, #010711 0%, #020b16 48%, #061a35 100%);
+            radial-gradient(ellipse at 50% 110%, rgb(7 93 240 / 26%), transparent 54%),
+            linear-gradient(145deg, rgb(1 7 17 / 35%) 0%, rgb(2 11 22 / 18%) 48%, rgb(6 26 53 / 32%) 100%);
           user-select: none;
         }
 
         .quest-shatter::before {
           position: absolute;
-          inset: 1.25rem;
+          inset: .5rem;
           border: 1px solid rgb(35 216 245 / 30%);
           box-shadow: inset 0 0 34px rgb(22 191 232 / 9%), 0 0 30px rgb(8 124 255 / 12%);
           content: "";
@@ -126,7 +128,7 @@ export function BrokenByDesign({
 
         .quest-shatter__stage {
           position: absolute;
-          inset: 7% 4%;
+          inset: 1.5% 0;
           transform-style: preserve-3d;
         }
 
@@ -138,7 +140,7 @@ export function BrokenByDesign({
           place-items: center;
           white-space: nowrap;
           font-family: var(--font-inter), sans-serif;
-          font-size: clamp(3.25rem, 13vw, 12rem);
+          font-size: clamp(3.75rem, 15vw, 15rem);
           font-weight: 850;
           letter-spacing: -0.075em;
           line-height: 0.9;
@@ -216,7 +218,7 @@ export function BrokenByDesign({
 
         .quest-shatter__caption {
           position: absolute;
-          bottom: clamp(2.4rem, 7vh, 4.5rem);
+          bottom: clamp(8.5rem, 17vh, 10rem);
           left: 50%;
           z-index: 30;
           width: min(90%, 46rem);
@@ -230,19 +232,41 @@ export function BrokenByDesign({
           text-shadow: 0 2px 12px #020b16;
         }
 
+        .quest-shatter__supporting-copy {
+          display: block;
+          margin-top: .65rem;
+          color: #a9bfd4;
+          font-family: var(--font-sora), sans-serif;
+          font-size: clamp(.76rem, 1.35vw, .95rem);
+          font-weight: 550;
+          letter-spacing: .015em;
+        }
+
+        .quest-shatter__actions {
+          position: absolute;
+          right: 1rem;
+          bottom: 2rem;
+          left: 1rem;
+          z-index: 40;
+          display: flex;
+          justify-content: center;
+        }
+
         @keyframes quest-shatter-enter {
           from { opacity: 0; transform: translate3d(0, 0, 160px) scale(.88); filter: brightness(1.7) blur(2px); }
           to { opacity: 1; }
         }
 
         @media (max-width: 640px) {
-          .quest-shatter__stage { inset: 8% 2%; }
+          .quest-shatter { min-height: 42rem; }
+          .quest-shatter__stage { inset: 2% 0; }
           .quest-shatter__under,
           .quest-shatter__word {
-            font-size: clamp(2.8rem, 17vw, 5rem);
+            font-size: clamp(3rem, 19vw, 5.75rem);
             letter-spacing: -.07em;
           }
-          .quest-shatter__caption { bottom: 3rem; }
+          .quest-shatter__caption { bottom: 10.5rem; }
+          .quest-shatter__actions { bottom: 2.25rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -256,7 +280,7 @@ export function BrokenByDesign({
       `}</style>
 
       <div className="quest-shatter__grid" aria-hidden="true" />
-      <p className="quest-shatter__eyebrow">Turn broken management into a clear campaign</p>
+      <p className="quest-shatter__eyebrow">Turn broken management into a clear structure</p>
       <div className="quest-shatter__stage" aria-hidden="true">
         <div className="quest-shatter__under">{title}</div>
         {SHARDS.map((shape, index) => (
@@ -282,7 +306,13 @@ export function BrokenByDesign({
           ))}
         </svg>
       </div>
-      <p className="quest-shatter__caption">Plan together. Move work forward. Finish the quest.</p>
+      <p className="quest-shatter__caption">
+        Plan with your team. Let AI break down the work. Finish the quest.
+        <span className="quest-shatter__supporting-copy">
+          AI-powered Kanban for teams that want less planning and more progress.
+        </span>
+      </p>
+      {children ? <div className="quest-shatter__actions">{children}</div> : null}
     </section>
   )
 }
