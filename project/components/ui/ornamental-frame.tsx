@@ -6,6 +6,7 @@ export type OrnamentalFrameProps = React.ComponentProps<"div"> & {
   title?: string
   actions?: React.ReactNode
   contentClassName?: string
+  titleClassName?: string
   isHighlighted?: boolean
 }
 
@@ -68,6 +69,7 @@ export function OrnamentalFrame({
   children,
   className,
   contentClassName,
+  titleClassName,
   isHighlighted = false,
   ...props
 }: OrnamentalFrameProps) {
@@ -104,7 +106,10 @@ export function OrnamentalFrame({
         <header className="relative z-30 mx-5 mb-3 flex min-h-16 items-center justify-center border-[var(--ornament-edge-bright)] border-b px-7 text-center shadow-[0_8px_14px_-12px_var(--ornament-glow)]">
           <h2
             title={title}
-            className="max-w-full truncate font-semibold text-base text-[var(--ornament-foreground)] tracking-[0.08em] drop-shadow-[0_0_5px_rgb(255_255_255/0.28)]"
+            className={cn(
+              "max-w-full truncate font-semibold text-base text-[var(--ornament-foreground)] tracking-[0.08em] drop-shadow-[0_0_5px_rgb(255_255_255/0.28)]",
+              titleClassName,
+            )}
           >
             {title}
           </h2>

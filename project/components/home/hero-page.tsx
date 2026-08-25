@@ -1,8 +1,9 @@
 import { Show, UserButton } from "@clerk/nextjs"
-import { ArrowRight, CheckCircle, Kanban, Sparkles, Users } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 import { BrandLogo } from "@/components/global/brand-logo"
+import { Features } from "@/components/home/features"
 import { BrokenByDesign } from "@/components/ui/broken-by-design"
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
 
@@ -84,27 +85,7 @@ export function HeroPage() {
           </div>
         </BrokenByDesign>
 
-        {/* Feature highlights */}
-        <section id="features" className="border-blue-munsell-500/15 border-b bg-outer-space-600/90 px-4 py-10">
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="flex items-center justify-center space-x-2 text-outer-space-500 dark:text-platinum-500">
-              <Kanban className="text-blue-munsell-500" size={20} />
-              <span>Drag & Drop Boards</span>
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-outer-space-500 dark:text-platinum-500">
-              <Users className="text-blue-munsell-500" size={20} />
-              <span>Team Collaboration</span>
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-outer-space-500 dark:text-platinum-500">
-              <CheckCircle className="text-blue-munsell-500" size={20} />
-              <span>Task Management</span>
-            </div>
-            <div className="flex items-center justify-center space-x-2 text-outer-space-500 dark:text-platinum-500">
-              <Sparkles className="text-blue-munsell-500" size={20} />
-              <span>AI Board Generation</span>
-            </div>
-          </div>
-        </section>
+        <Features />
 
         {/* Navigation Demo Section */}
         <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-outer-space-400/50">
