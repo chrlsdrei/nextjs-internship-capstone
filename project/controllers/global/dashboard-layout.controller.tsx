@@ -5,7 +5,6 @@ import type React from "react"
 import { useState } from "react"
 
 import { RealisticFogBackground } from "@/components/ui/realistic-fog-background"
-import { TaskFrame } from "@/components/ui/task-frame"
 import { PresenceHeartbeatController } from "@/controllers/global/presence-heartbeat.controller"
 import { SidebarController } from "@/controllers/sidebar/sidebar.controller"
 import type { UserAiEntitlementDto } from "@/features/billing/billing.types"
@@ -41,23 +40,16 @@ export function DashboardLayout({
       />
 
       <div className={`relative z-10 transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
-        <header className="sticky top-0 z-30 h-20 p-1.5">
-          <TaskFrame
-            className="h-full w-full rounded-xl"
-            contentClassName="flex h-full items-center gap-x-4 px-4 py-0 sm:px-6 lg:px-8"
-          >
-            <button
-              type="button"
-              aria-label="Open navigation"
-              onClick={() => setSidebarOpen(true)}
-              className="rounded-lg p-2 text-cyan-100/75 hover:bg-cyan-300/15 hover:text-white lg:hidden"
-            >
-              <Menu size={20} />
-            </button>
-          </TaskFrame>
-        </header>
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-30 cursor-pointer rounded-lg border border-cyan-300/35 bg-[#061326]/95 p-2.5 text-cyan-100 shadow-[0_0_14px_rgb(34_211_238/0.2)] backdrop-blur hover:bg-cyan-300/15 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 lg:hidden"
+        >
+          <Menu size={20} />
+        </button>
 
-        <main className="px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        <main className="px-4 pt-20 pb-8 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>
   )
