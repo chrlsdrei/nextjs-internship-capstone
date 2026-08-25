@@ -22,7 +22,7 @@ export function BuildAiController({
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
   const [state, setState] = useState<ActionState<{ projectId: string }>>(initialActionState)
-  const buttonClass = `flex w-full items-center rounded-lg border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 font-semibold text-cyan-100 hover:bg-cyan-300/20 ${collapsed ? "lg:justify-center lg:px-2" : ""}`
+  const buttonClass = `flex w-full cursor-pointer items-center rounded-lg border border-cyan-300/35 bg-cyan-400/10 px-3 py-2 font-semibold text-cyan-100 hover:bg-cyan-300/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-cyan-400/10 ${collapsed ? "lg:justify-center lg:px-2" : ""}`
 
   if (!entitlement.subscribed) {
     return (

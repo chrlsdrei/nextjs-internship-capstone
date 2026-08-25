@@ -99,7 +99,7 @@ export function NotificationCenterController({
         aria-haspopup="dialog"
         title={collapsed ? "Notifications" : undefined}
         onClick={openCenter}
-        className={`flex w-full items-center rounded-lg px-3 py-2 font-medium text-cyan-50/80 text-sm transition-colors hover:bg-cyan-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+        className={`flex w-full cursor-pointer items-center rounded-lg px-3 py-2 font-medium text-cyan-50/80 text-sm transition-colors hover:bg-cyan-300/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
           collapsed ? "lg:justify-center lg:px-2" : ""
         }`}
       >

@@ -34,7 +34,7 @@ export function WorkspaceSwitcher({
         aria-expanded={open}
         aria-haspopup="menu"
         title={collapsed ? (activeWorkspace?.name ?? "Choose workspace") : undefined}
-        className={`flex w-full items-center rounded-xl border border-cyan-300/25 bg-blue-950/65 text-left text-white transition-colors hover:border-cyan-300/50 hover:bg-blue-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
+        className={`flex w-full cursor-pointer items-center rounded-xl border border-cyan-300/25 bg-blue-950/65 text-left text-white transition-colors hover:border-cyan-300/50 hover:bg-blue-900/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 ${
           collapsed ? "justify-center p-2 lg:px-2" : "gap-3 px-3 py-3"
         }`}
       >
@@ -65,7 +65,7 @@ export function WorkspaceSwitcher({
                 aria-checked={workspace.id === activeWorkspace?.id}
                 disabled={pending}
                 onClick={() => onSelect(workspace.id)}
-                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-cyan-50 text-sm hover:bg-cyan-300/10 disabled:opacity-60"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left text-cyan-50 text-sm hover:bg-cyan-300/10 disabled:cursor-wait disabled:opacity-60"
               >
                 <span className="min-w-0 flex-1 truncate">{workspace.name}</span>
                 {workspace.id === activeWorkspace?.id && <Check className="shrink-0 text-cyan-300" size={16} />}
