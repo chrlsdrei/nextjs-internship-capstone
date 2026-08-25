@@ -1,5 +1,5 @@
-import { MarketingPage } from "@/components/home/marketing-page"
+import { HeroPage } from "@/components/home/hero-page"
 
 export default function HomePage() {
-  return <MarketingPage />
+  return <HeroPage />
 }
