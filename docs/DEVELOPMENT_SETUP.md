@@ -48,6 +48,8 @@ cp .env.example .env.local
 
 Fill in the required environment variables (will be provided during onboarding).
 
+Workspace and board invitation emails require a Resend API key and a verified sending domain. Configure `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, optional `RESEND_REPLY_TO_EMAIL`, and `NEXT_PUBLIC_APP_URL` using [the Resend invitation setup guide](RESEND_INVITATION_EMAIL_SETUP.md).
+
 ### 4. Database Setup
 
 Run database migrations:
@@ -147,7 +149,11 @@ Use conventional commits:
 - `pnpm type-check` - Run TypeScript type checking
 - `pnpm test` - Run unit tests
 - `pnpm test:watch` - Run tests in watch mode
+- `pnpm test:db` - Run isolated Neon database integration tests
 - `pnpm test:e2e` - Run end-to-end tests
+- `pnpm test:e2e:public` - Run signed-out Chromium flows
+- `pnpm test:e2e:auth` - Run authenticated Chromium flows
+- `pnpm test:e2e:ui` - Open Playwright's interactive test runner
 - `pnpm db:generate` - Generate database migrations
 - `pnpm db:migrate` - Run database migrations
 - `pnpm db:studio` - Open database studio (if using Drizzle Studio)
@@ -195,6 +201,10 @@ project/                   # Your project directory
 └── styles/               # Additional styles
 ```
 
+## AI and subscription development
+
+AI and one-time billing require `GEMINI_API_KEY`, `GEMINI_MODEL`, `PAYMONGO_SECRET_KEY`, `PAYMONGO_WEBHOOK_SECRET`, and `NEXT_PUBLIC_APP_URL`. Keep Gemini and both PayMongo values server-only. The hosted Checkout Session flow does not require a browser PayMongo public key. Apply migrations before loading authenticated pages, then configure the database product catalog with the guarded `billing:plan:upsert` script. Configure `/api/webhooks/paymongo` for only `checkout_session.payment.paid`; a browser return never grants access. See [AI_BILLING_SETUP.md](AI_BILLING_SETUP.md) for test/live key separation, non-renewing 30-day access, unlimited showcase AI behavior, and rollout steps.
+
 ## Testing Guidelines
 
 - Write unit tests for utility functions
@@ -202,6 +212,36 @@ project/                   # Your project directory
 - Write integration tests for user flows
 - E2E tests for critical user journeys
 - Aim for 80%+ test coverage
+
+### Playwright and Clerk E2E setup
+
+Install Chromium once after installing dependencies:
+
+```powershell
+pnpm exec playwright install chromium
+```
+
+The public suite uses Clerk Testing Tokens and the development Clerk keys already configured in `.env.local`. The
+authenticated suite also requires:
+
+```env
+E2E_CLERK_USER_EMAIL=e2e+clerk_test@your-domain.com
+```
+
+Use an existing user from the same Clerk development instance. The user must already be synchronized into the
+development Neon database through the Clerk webhook. A dedicated address containing `+clerk_test` is recommended so
+Clerk suppresses test-related email delivery. The E2E suite signs in through Clerk's server-side testing helper and
+does not require storing the user's password.
+
+Run all browser flows with:
+
+```powershell
+pnpm test:e2e
+```
+
+Playwright builds and starts QuestBoard on `http://localhost:3000` by default. Override an occupied port with
+`PLAYWRIGHT_PORT`, or test an already deployed environment by setting `PLAYWRIGHT_BASE_URL`. Authentication state,
+reports, traces, screenshots, and videos are ignored by Git.
 
 ## Getting Help
 
