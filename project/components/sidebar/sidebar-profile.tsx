@@ -2,6 +2,8 @@
 
 import { UserButton, useUser } from "@clerk/nextjs"
 
+import { questBoardClerkAppearance } from "@/lib/clerk/clerk-appearance"
+
 export function SidebarProfile({ collapsed }: { collapsed: boolean }) {
   const { user } = useUser()
   const userEmail = user?.primaryEmailAddress?.emailAddress
@@ -16,6 +18,7 @@ export function SidebarProfile({ collapsed }: { collapsed: boolean }) {
     >
       <UserButton
         showName
+        userProfileProps={{ appearance: questBoardClerkAppearance }}
         appearance={{
           elements: {
             rootBox: {

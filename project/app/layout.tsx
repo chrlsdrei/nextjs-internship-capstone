@@ -3,6 +3,8 @@ import type { Metadata } from "next"
 import { Inter, Oxanium, Sora } from "next/font/google"
 import type React from "react"
 
+import { questBoardClerkAppearance } from "@/lib/clerk/clerk-appearance"
+
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" })
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={questBoardClerkAppearance}>
       <html lang="en">
         <body className={`${inter.variable} ${sora.variable} ${oxanium.variable}`}>{children}</body>
       </html>
