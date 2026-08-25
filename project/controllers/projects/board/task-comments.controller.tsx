@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
+import { DeleteCommentDialog } from "@/components/modals/board/delete-comment-dialog"
 import { TaskComments } from "@/components/projects/board/task-comments"
 import { createTaskCommentAction } from "@/features/comments/actions/create-task-comment"
 import { deleteTaskCommentAction } from "@/features/comments/actions/delete-task-comment"
@@ -27,6 +28,7 @@ export function TaskCommentsController({
   const [draft, setDraft] = useState("")
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState("")
+  const [commentPendingDeletion, setCommentPendingDeletion] = useState<TaskCommentDto | null>(null)
   const [feedback, setFeedback] = useState<ActionState<TaskCommentDto>>(initialActionState)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isLoading, startLoadingTransition] = useTransition()
@@ -40,6 +42,7 @@ export function TaskCommentsController({
     setFeedback(initialActionState)
     setEditingCommentId(null)
     setEditDraft("")
+    setCommentPendingDeletion(null)
 
     startLoadingTransition(async () => {
       const state = await listTaskCommentsAction({ projectId, taskId, limit: PAGE_SIZE })
@@ -106,8 +109,15 @@ export function TaskCommentsController({
     })
   }
 
-  const deleteComment = (comment: TaskCommentDto) => {
-    if (isMutating || !window.confirm(`Delete ${comment.author.name}'s comment?`)) return
+  const requestCommentDeletion = (comment: TaskCommentDto) => {
+    if (isMutating) return
+    setFeedback(initialActionState)
+    setCommentPendingDeletion(comment)
+  }
+
+  const confirmCommentDeletion = () => {
+    if (!commentPendingDeletion || isMutating) return
+    const comment = commentPendingDeletion
     setFeedback(initialActionState)
     startMutationTransition(async () => {
       const state = await deleteTaskCommentAction({ projectId, taskId, commentId: comment.id })
@@ -119,37 +129,54 @@ export function TaskCommentsController({
           setEditingCommentId(null)
           setEditDraft("")
         }
+        setCommentPendingDeletion(null)
       }
     })
   }
 
   return (
-    <TaskComments
-      comments={comments}
-      canComment={canComment}
-      draft={draft}
-      editingCommentId={editingCommentId}
-      editDraft={editDraft}
-      feedback={feedback}
-      loadError={loadError}
-      hasMore={nextCursor !== null}
-      isLoading={isLoading}
-      isMutating={isMutating}
-      onDraftChange={setDraft}
-      onSubmit={submitComment}
-      onEditStart={(comment) => {
-        setFeedback(initialActionState)
-        setEditingCommentId(comment.id)
-        setEditDraft(comment.content ?? "")
-      }}
-      onEditCancel={() => {
-        setEditingCommentId(null)
-        setEditDraft("")
-      }}
-      onEditDraftChange={setEditDraft}
-      onEditSubmit={submitEdit}
-      onDelete={deleteComment}
-      onLoadMore={loadMore}
-    />
+    <>
+      <TaskComments
+        comments={comments}
+        canComment={canComment}
+        draft={draft}
+        editingCommentId={editingCommentId}
+        editDraft={editDraft}
+        feedback={feedback}
+        loadError={loadError}
+        hasMore={nextCursor !== null}
+        isLoading={isLoading}
+        isMutating={isMutating}
+        onDraftChange={setDraft}
+        onSubmit={submitComment}
+        onEditStart={(comment) => {
+          setFeedback(initialActionState)
+          setEditingCommentId(comment.id)
+          setEditDraft(comment.content ?? "")
+        }}
+        onEditCancel={() => {
+          setEditingCommentId(null)
+          setEditDraft("")
+        }}
+        onEditDraftChange={setEditDraft}
+        onEditSubmit={submitEdit}
+        onDelete={requestCommentDeletion}
+        onLoadMore={loadMore}
+      />
+      <DeleteCommentDialog
+        open={commentPendingDeletion !== null}
+        authorName={commentPendingDeletion?.author.name ?? "this user"}
+        commentContent={commentPendingDeletion?.content ?? null}
+        errorMessage={feedback.status === "error" ? feedback.message : undefined}
+        isDeleting={isMutating}
+        onCancel={() => {
+          if (!isMutating) {
+            setCommentPendingDeletion(null)
+            setFeedback(initialActionState)
+          }
+        }}
+        onConfirm={confirmCommentDeletion}
+      />
+    </>
   )
 }
