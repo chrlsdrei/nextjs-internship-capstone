@@ -5,6 +5,7 @@ import Link from "next/link"
 import { BrandLogo } from "@/components/global/brand-logo"
 import { Analytics } from "@/components/home/analytics"
 import { Collaboration } from "@/components/home/collaboration"
+import { Deadlines } from "@/components/home/deadlines"
 import { Features } from "@/components/home/features"
 import { Workflow } from "@/components/home/workflow"
 import { BrokenByDesign } from "@/components/ui/broken-by-design"
@@ -92,6 +93,7 @@ export function HeroPage() {
         <Workflow />
         <Collaboration />
         <Analytics />
+        <Deadlines />
 
         {/* Navigation Demo Section */}
         <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-outer-space-400/50">
