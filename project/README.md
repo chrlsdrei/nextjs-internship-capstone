@@ -1,27 +1,14 @@
-# QuestBoard
+# QuestBoard application
 
-QuestBoard is a collaborative Kanban project-management application built with Next.js 16, React 19, Clerk, Neon Postgres, Drizzle ORM, Tailwind CSS 4, Zod, Zustand, and dnd-kit.
-
-Implemented capabilities include:
-
-- Clerk authentication and protected application routes.
-- Clerk user synchronization through a signed webhook.
-- Database-backed projects and role-based project membership.
-- Lists and tasks with validation, authorization, ordering, and optimistic drag-and-drop.
-- Authenticated Server-Sent Events for local board refresh.
-- Separate user and workspace subscriptions with PayMongo webhook reconciliation.
-- Gemini-powered board generation, task generation, and persisted board summaries.
-- In-app and optional Resend email notifications for assignments, comments, and approaching deadlines.
-- Responsive light and dark interfaces.
-
-See the [architecture guide](../docs/ARCHITECTURE.md) for the directory map, dependency boundaries, data flows, and the process for adding a feature. See [development setup](../docs/DEVELOPMENT_SETUP.md) for local environment and service configuration.
+This directory contains the QuestBoard Next.js application. For the product overview and full feature list, see the [repository README](../README.md). For module boundaries and data flows, see the [architecture guide](../docs/ARCHITECTURE.md).
 
 ## Requirements
 
 - Node.js 22 LTS
 - pnpm 10
-- A Clerk application
-- A Neon Postgres database
+- Clerk application and webhook
+- Neon Postgres database
+- Optional Resend, Gemini, and PayMongo accounts for their associated features
 
 ## Local setup
 
@@ -33,39 +20,126 @@ pnpm db:check
 pnpm dev
 ```
 
-Configure the values described in `.env.example`. Never commit `.env.local`.
+Open [http://localhost:3000](http://localhost:3000). Never commit `.env.local` or `.env.test.local`.
 
-The Clerk webhook endpoint is `/api/webhooks/clerk` and subscribes to `user.created`, `user.updated`, and `user.deleted`. For local webhook delivery, expose the application using a trusted tunnel and configure `CLERK_WEBHOOK_SIGNING_SECRET`.
+The annotated environment template is [`.env.example`](.env.example). At minimum, normal authenticated database usage needs valid Clerk keys and `DATABASE_URL`.
 
-Workspace and board invitation delivery uses Resend. Configure `RESEND_API_KEY`, a verified `RESEND_FROM_EMAIL`, optional `RESEND_REPLY_TO_EMAIL`, and `NEXT_PUBLIC_APP_URL`; invitation links expire after seven days, are single-use, and are matched to the signed-in user's verified primary Clerk email. See the [Resend invitation email setup guide](../docs/RESEND_INVITATION_EMAIL_SETUP.md) for domain and DNS configuration.
+## External integrations
 
-Optional account notification emails use the same sender. A protected daily Vercel Cron job materializes deadline reminders; configure `CRON_SECRET` in Vercel before deploying `vercel.json`. Users can disable optional email notifications under `/settings` without disabling the in-app notification center or required invitation emails.
+### Clerk
 
-Gemini and PayMongo secrets remain server-only; billing access is activated by verified PayMongo webhooks.
+Configure the public webhook endpoint at `/api/webhooks/clerk` for:
 
-## Commands
+- `user.created`
+- `user.updated`
+- `user.deleted`
 
-```powershell
-pnpm dev
-pnpm build
-pnpm check
-pnpm check:write
-pnpm lint
-pnpm format
-pnpm format:check
-pnpm type-check
-pnpm db:generate
-pnpm db:migrate
-pnpm db:push
-pnpm db:studio
-pnpm db:check
-pnpm billing:plan:check
+Store its signing secret in `CLERK_WEBHOOK_SIGNING_SECRET`. Clerk owns authentication; the webhook synchronizes Clerk identities into QuestBoard's `users` table.
+
+### Resend and notification cron
+
+Workspace and board invitation delivery needs:
+
+```env
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=QuestBoard <invites@updates.your-domain.com>
+RESEND_REPLY_TO_EMAIL=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-Biome provides linting and formatting. Drizzle migrations are generated under `drizzle/`.
+The sender must belong to a verified Resend domain. Optional account notifications use the same sender. Invitation emails remain enabled because recipients need their secure acceptance link.
 
-## Realtime limitation
+The daily `/api/cron/notifications` endpoint creates approaching-deadline notifications. Vercel reads its schedule from [`vercel.json`](vercel.json); set `CRON_SECRET` in deployed environments.
 
-Board events currently use an in-memory, single-process event hub. Reconnects reconcile through an SSE sync event, but a multi-instance production deployment needs shared pub/sub infrastructure.
+### Gemini
 
-Vitest unit tests and isolated Neon integration tests are available through `pnpm test` and `pnpm test:db`. Database tests require a disposable `TEST_DATABASE_URL` that differs from `DATABASE_URL`.
+AI features use server-only values:
+
+```env
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.6-flash
+```
+
+Do not expose these through `NEXT_PUBLIC_*`. User Pro authorizes board/task generation; Workspace Pro authorizes project summaries.
+
+### PayMongo
+
+QuestBoard uses one-time Checkout Sessions. Configure:
+
+```env
+PAYMONGO_SECRET_KEY=
+PAYMONGO_WEBHOOK_SECRET=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+The webhook URL is `/api/webhooks/paymongo` and should subscribe to `checkout_session.payment.paid`. Checkout redirects are not the entitlement source of truth: verified webhook fulfillment grants the matching user or workspace 30 days of Pro access.
+
+Keep test keys with test payments and live keys with live payments.
+
+## Database
+
+- Complete schema: [`server/db/schema.ts`](server/db/schema.ts)
+- Typed Neon client: [`server/db/client.ts`](server/db/client.ts)
+- Drizzle configuration: [`drizzle.config.ts`](drizzle.config.ts)
+- Generated migrations: [`drizzle/`](drizzle/)
+
+Commands:
+
+```powershell
+pnpm db:generate
+pnpm db:migrate
+pnpm db:check
+pnpm db:studio
+```
+
+Database tests require a disposable `TEST_DATABASE_URL` that does not resolve to the same database identity as `DATABASE_URL`.
+
+## Quality and test commands
+
+```powershell
+pnpm check
+pnpm format:check
+pnpm type-check
+pnpm test
+pnpm test:db
+pnpm build
+```
+
+Playwright commands:
+
+```powershell
+pnpm exec playwright install chromium
+pnpm test:e2e
+pnpm test:e2e:public
+pnpm test:e2e:auth
+pnpm test:e2e:ui
+```
+
+The authenticated suite requires `E2E_CLERK_USER_EMAIL` for an existing Clerk development user already synchronized to the development Neon database. See [Development setup](../docs/DEVELOPMENT_SETUP.md#playwright-and-clerk-e2e-setup).
+
+## Architecture
+
+```text
+app/          Route composition, webhooks, cron, and SSE
+components/   Presentational route UI, modals, sidebar, and primitives
+controllers/  Client state, optimistic behavior, and Server Action calls
+features/     Schemas, DTOs, actions, queries, services, repositories, gateways
+server/db/    Neon client and Drizzle schema
+tests/        Unit, database integration, and Playwright E2E suites
+drizzle/      Generated migration history
+```
+
+The primary flows are:
+
+```text
+Server page → query → service → repository → database
+Client controller → Server Action → service → repository → database
+API route → service or gateway
+Component → serializable props and callbacks only
+```
+
+Board updates are optimistic through Zustand and dnd-kit, then persisted through typed Server Actions. The authenticated SSE route refreshes other clients. Its event hub is currently in-process; multi-instance production deployment needs shared pub/sub.
+
+## Deployment
+
+When importing this repository into Vercel, set `project` as the Root Directory and retain the detected Next.js defaults. Add production-only environment values, migrate the intended production Neon database, configure public webhook URLs, and verify Clerk, PayMongo, Resend, Gemini, and cron behavior after deployment.
